@@ -1,0 +1,13 @@
+services:
+  kho-truyen:
+    build: .
+    ports:
+      - "8787:8787"
+    volumes:
+      - kho_truyen_data:/app/server
+    environment:
+      PORT: 8787
+      KHO_CACHE_TTL_MS: 5000
+    restart: unless-stopped
+volumes:
+  kho_truyen_data:
