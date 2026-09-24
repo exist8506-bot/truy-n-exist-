@@ -417,7 +417,9 @@ function remoteTTSUrl(text,lang){
  return 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl='+encodeURIComponent(lang)+'&q='+q;
 }
 function playTTSAudio(text,lang,runId){
+ toast('Thiết bị chưa có giọng '+lang+', đang dùng âm thanh trực tuyến');
  const audio=new Audio(remoteTTSUrl(text,lang));
+ audio.preload='auto';
  ttsAudio=audio;ttsState.mode='audio';
  audio.onended=()=>{if(ttsState.active&&runId===ttsRunId){ttsAudio=null;setTimeout(()=>speakTTSChunk(runId),25)}};
  audio.onerror=()=>{ttsAudio=null;stopTTS(true);toast(T('ttsError'))};
