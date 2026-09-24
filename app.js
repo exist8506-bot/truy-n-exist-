@@ -1,9 +1,9 @@
-/* Kho Truyen Full 1.12.0 - compact application shell */
+/* Kho Truyen Full 1.13.0 - compact application shell */
 (()=> {
 'use strict';
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const localBooks=()=>Array.isArray(window.books)?window.books:[];
-const state={books:[],book:null,chapter:0,chapters:[],remoteSearch:false,order:'asc',filter:'all',sort:'title',mode:'all',fontSize:+localStorage.getItem('ktf_fs')||19,font:localStorage.getItem('ktf_font')||'Georgia',theme:localStorage.getItem('ktf_theme')||'dark',rate:+localStorage.getItem('ktf_rate')||1,continuous:false,user:null,token:localStorage.getItem('ktf_token')||'',offline:new Set()};
+const state={books:[],book:null,chapter:0,chapters:[],remoteSearch:false,order:'asc',filter:'all',sort:'title',mode:'all',libraryPage:1,libraryPageSize:100,libraryTotal:0,fontSize:+localStorage.getItem('ktf_fs')||19,font:localStorage.getItem('ktf_font')||'Georgia',theme:localStorage.getItem('ktf_theme')||'dark',rate:+localStorage.getItem('ktf_rate')||1,continuous:false,user:null,token:localStorage.getItem('ktf_token')||'',offline:new Set()};
 const apiBase=()=>window.KhoAPI?.base?.()||'/api/v1';
 const api=async(path,opt={})=>{const h={'Accept':'application/json',...(opt.headers||{})};if(state.token)h.Authorization='Bearer '+state.token;const r=await fetch(apiBase()+path,{...opt,headers:h});if(!r.ok){let m='HTTP_'+r.status;try{const j=await r.json();m=j.error||j.message||m}catch{}throw Error(m)}return r.status===204?null:r.json()};
 function toast(x){const t=$('#toast');if(!t)return;t.textContent=x;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2200)}
@@ -47,17 +47,21 @@ function renderFilterOptions(){
  const c=$('#categoryFilter');if(c){const current=c.value, cats=[...new Set(state.books.map(b=>b.cat).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'vi'));c.innerHTML='<option value="all">Tất cả thể loại</option>'+cats.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');if(cats.includes(current))c.value=current}
 }
 let searchTimer=0;
-async function refreshRemoteSearch(){
+async function refreshRemoteSearch(page=1){
  if(!state.remoteSearch)return;
  const q=($('#search')?.value||'').trim(),cat=$('#categoryFilter')?.value||'all',status=$('#statusFilter')?.value||'all',sort=$('#sortBooks')?.value||'title';
- const params=new URLSearchParams({page:'1',pageSize:'100',sort});if(q)params.set('q',q);if(cat!=='all')params.set('category',cat);if(status!=='all')params.set('status',status);
+ const params=new URLSearchParams({page:String(page),pageSize:String(state.libraryPageSize),sort});if(q)params.set('q',q);if(cat!=='all')params.set('category',cat);if(status!=='all')params.set('status',status);
  try{
-  const j=await api('/stories?'+params.toString());state.books=(j.items||[]).map(normalizeBook);$('#apiStatus').textContent='● SQLite API · '+Number(j.count||0)+' kết quả';renderFilterOptions();const c=$('#categoryFilter');if(c)c.value=cat;renderLibraryGridOnly();
+  const j=await api('/stories?'+params.toString());state.books=(j.items||[]).map(normalizeBook);state.libraryPage=Number(j.page||page);state.libraryTotal=Number(j.count||state.books.length);$('#apiStatus').textContent='● SQLite API · '+state.libraryTotal+' kết quả';renderFilterOptions();const c=$('#categoryFilter');if(c)c.value=cat;renderLibraryGridOnly();
  }catch{toast('Không thể tìm kiếm từ máy chủ')}
 }
-function renderLibraryGridOnly(){const a=filtered();$('#grid').innerHTML=a.length?a.map(card).join(''):'<div class="empty">Không tìm thấy truyện phù hợp.</div>';$('#pager').innerHTML='';renderHomeMode();updateStats()}
-window.renderLibrary=()=>{state.remoteSearch=true;renderLibraryGridOnly();clearTimeout(searchTimer);searchTimer=setTimeout(refreshRemoteSearch,180)};
-window.setAdvancedFilter=()=>{state.remoteSearch=true;refreshRemoteSearch()};
+function renderLibraryGridOnly(){
+ const a=filtered();$('#grid').innerHTML=a.length?a.map(card).join(''):'<div class="empty">Không tìm thấy truyện phù hợp.</div>';
+ if(state.remoteSearch&&state.libraryTotal>state.libraryPageSize){const pages=Math.ceil(state.libraryTotal/state.libraryPageSize);let h='<div class="row pagerrow"><button class="btn" '+(state.libraryPage<=1?'disabled':'')+' onclick="refreshRemoteSearch('+(state.libraryPage-1)+')">← Trước</button><span class="muted">Trang '+state.libraryPage+'/'+pages+'</span><button class="btn" '+(state.libraryPage>=pages?'disabled':'')+' onclick="refreshRemoteSearch('+(state.libraryPage+1)+')">Sau →</button></div>';$('#pager').innerHTML=h}else $('#pager').innerHTML='';
+ renderHomeMode();updateStats()
+}
+window.renderLibrary=()=>{state.remoteSearch=true;state.libraryPage=1;renderLibraryGridOnly();clearTimeout(searchTimer);searchTimer=setTimeout(()=>refreshRemoteSearch(1),180)};
+window.setAdvancedFilter=()=>{state.remoteSearch=true;state.libraryPage=1;refreshRemoteSearch(1)};
 
 function renderHomeMode(){
  const c=$('#homeMode');if(!c)return;
@@ -69,7 +73,7 @@ function renderHomeMode(){
   c.innerHTML='<div class="panel"><h3>🆕 Mới cập nhật</h3>'+a.map(b=>'<div class="rankrow"><span class="rankcover">🆕</span><span class="grow"><b>'+esc(b.title)+'</b><div class="muted">'+esc(b.author)+' · '+(b.chapterCount||0)+' chương</div></span><button class="btn" onclick="openBook(\''+esc(b.id)+'\')">Đọc</button></div>').join('')+'</div>';return
  }
 }window.setHomeMode=m=>{state.mode=m;state.remoteSearch=false;document.querySelectorAll('.seg button').forEach(x=>x.classList.remove('active'));$('#seg'+({all:'All',reading:'Reading',rank:'Rank',new:'New'}[m]||'All'))?.classList.add('active');renderLibrary()};
-window.setDataFilter=x=>{state.filter=x;renderLibrary()};window.setDataSort=x=>{state.sort=x;renderLibrary();if(state.remoteSearch)refreshRemoteSearch()};
+window.setDataFilter=x=>{state.filter=x;renderLibrary()};window.setDataSort=x=>{state.sort=x;renderLibrary();if(state.remoteSearch)refreshRemoteSearch(1)};
 window.toggleFav=async id=>{let a=favs();const active=!a.includes(id);a=active?[...a,id]:a.filter(x=>x!==id);setFavs(a);updateStats();renderLibrary();if(state.token)try{await api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active})})}catch{toast('Đã lưu cục bộ, sẽ đồng bộ khi online')}};
 let chapterPage=1,chapterPageSize=100,chapterTotal=0,chapterSearchTimer=0;
 async function loadChapterPage(page=1){
