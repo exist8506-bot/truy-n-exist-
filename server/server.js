@@ -154,7 +154,7 @@ if(p==='/api/v1/admin/import/batch'&&req.method==='POST')return body(req,30*1024
         for(let i=start;i<Math.min(start+batchSize,chapters.length);i++){const c=chapters[i];run('INSERT INTO chapters(id,story_id,chapter_index,title,content,created_at,updated_at,search_key) VALUES(?,?,?,?,?,?,?,?)',`${id}:${i}`,id,i,String(c.title||`Chương ${i+1}`).slice(0,200),c.content||'',t,t,norm(String(c.title||`Chương ${i+1}`)));done++;}
         run('UPDATE import_jobs SET processed=?,updated_at=? WHERE id=?',done,now(),jobId);}
       run('UPDATE stories SET updated_at=? WHERE id=?',now(),id); db.exec('COMMIT'); run('UPDATE import_jobs SET status=?,processed=?,updated_at=? WHERE id=?','COMPLETED',done,now(),jobId);
-      return cacheClear('/api/v1/stories'); reply(201,{ok:true,jobId,story:storyRow(getStory(id)),imported:done,batchSize,issues});
+      cacheClear('/api/v1/stories'); return reply(201,{ok:true,jobId,story:storyRow(getStory(id)),imported:done,batchSize,issues});
     }catch(e){try{db.exec('ROLLBACK')}catch{};run('UPDATE import_jobs SET status=?,error=?,updated_at=? WHERE id=?','FAILED',String(e.message||'IMPORT_ROLLBACK').slice(0,500),now(),jobId);return reply(400,{error:'IMPORT_ROLLBACK',detail:e.message,jobId})}
   }catch(e){return reply(400,{error:'IMPORT_BATCH_FAILED',detail:e.message})}
 }).catch(e=>reply(e.message==='BODY_TOO_LARGE'?413:400,{error:e.message||'BAD_JSON'}));
