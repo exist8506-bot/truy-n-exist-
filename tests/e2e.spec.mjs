@@ -180,6 +180,44 @@ test('all ten public stories: first chapter smoke', async ({ browser }) => {
   await context.close();
 });
 
+test('reader language translation stays synchronized with TTS', async ({ browser }) => {
+  const context=await browser.newContext();
+  await context.addInitScript(() => {
+    window.__ttsLast=null;
+    Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{
+      speaking:false,
+      cancel(){this.speaking=false},
+      resume(){},
+      speak(u){this.speaking=true;window.__ttsLast={text:u.text,lang:u.lang,rate:u.rate};setTimeout(()=>{this.speaking=false;u.onend?.()},0)}
+    }});
+    window.SpeechSynthesisUtterance=class{constructor(text){this.text=text;this.lang='';this.rate=1;this.onend=null;this.onerror=null;}};
+  });
+  const page=await context.newPage();
+  await page.route('https://translate.googleapis.com/**',async route=>{
+    const target=new URL(route.request().url()).searchParams.get('tl')||'en-US';
+    const label=target.startsWith('zh')?'[ZH]':target.startsWith('vi')?'[VI]':'[EN]';
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([[[label+' translated', 'source', null, null]]])});
+  });
+  await page.goto('/');
+  await page.locator('#search').fill('Mùa Sao');
+  await expect(page.locator('#grid .card')).toHaveCount(1);
+  await page.locator('#grid .card').first().locator('.info').click();
+  await page.locator('#chapters .chapter').first().click();
+  await expect(page.locator('#reader')).toHaveClass(/show/);
+
+  await page.selectOption('#langSelect','en');
+  await expect(page.locator('#rtext')).toContainText('[EN] translated');
+  await page.locator('.readerbar').getByRole('button',{name:/🔊/}).click();
+  await expect.poll(()=>page.evaluate(()=>window.__ttsLast?.lang)).toBe('en-US');
+
+  await page.selectOption('#langSelect','zh');
+  await expect(page.locator('#rtext')).toContainText('[ZH] translated');
+  await page.locator('.readerbar').getByRole('button',{name:/🔊/}).click();
+  await expect.poll(()=>page.evaluate(()=>window.__ttsLast?.lang)).toBe('zh-CN');
+  await context.close();
+});
+
+
 test('mobile responsive: bottom navigation, reader, bookmark and persistence', async ({ browser }) => {
   const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true});
   await context.addInitScript(() => localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1'));
