@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS reading_history(user_id TEXT NOT NULL,story_id TEXT N
 CREATE TABLE IF NOT EXISTS favorites(user_id TEXT NOT NULL,story_id TEXT NOT NULL,created_at TEXT NOT NULL,PRIMARY KEY(user_id,story_id));
 CREATE TABLE IF NOT EXISTS bookmarks(user_id TEXT NOT NULL,story_id TEXT NOT NULL,chapter_index INTEGER NOT NULL,title TEXT DEFAULT '',created_at TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(user_id,story_id,chapter_index));
 CREATE INDEX IF NOT EXISTS idx_bookmarks_user_updated ON bookmarks(user_id,updated_at);
+CREATE TABLE IF NOT EXISTS chapter_translations(story_id TEXT NOT NULL,chapter_index INTEGER NOT NULL,lang TEXT NOT NULL,source_hash TEXT NOT NULL,title TEXT DEFAULT '',content TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(story_id,chapter_index,lang));
+CREATE INDEX IF NOT EXISTS idx_chapter_translations_story ON chapter_translations(story_id,chapter_index);
 CREATE INDEX IF NOT EXISTS idx_chapters_story ON chapters(story_id,chapter_index);
 CREATE INDEX IF NOT EXISTS idx_stories_updated ON stories(updated_at);
 CREATE INDEX IF NOT EXISTS idx_stories_search ON stories(search_key);
