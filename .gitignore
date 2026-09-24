@@ -1,0 +1,8 @@
+node_modules/
+.env
+.env.*
+server/kho_truyen.sqlite
+server/kho_truyen.sqlite-wal
+server/kho_truyen.sqlite-shm
+server/covers/*
+!server/covers/.gitkeep
