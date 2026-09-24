@@ -77,14 +77,34 @@ function cleanWikiText(text){
     .replace(/\n{3,}/g,'\n\n')
     .trim();
 }
+async function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+async function fetchJson(u){
+  for(let attempt=0;attempt<5;attempt++){
+    const r=await fetch(u,{headers:{'User-Agent':'KhoTruyenFull/1.19 public-domain importer'}});
+    if(r.ok)return r.json();
+    if(r.status===429||r.status>=500){await sleep(1500*(attempt+1));continue}
+    throw new Error('WIKISOURCE_HTTP_'+r.status);
+  }
+  throw new Error('WIKISOURCE_RATE_LIMIT');
+}
 async function api(params){
   const u=new URL(API);
   for(const [k,v] of Object.entries({...params,format:'json',formatversion:'2'}))u.searchParams.set(k,v);
-  const r=await fetch(u,{headers:{'User-Agent':'KhoTruyenFull/1.19 public-domain importer'}});
-  if(!r.ok)throw new Error('WIKISOURCE_HTTP_'+r.status);
-  return r.json();
+  return fetchJson(u);
 }
 async function pageText(page){
+  const rest='https://vi.wikisource.org/api/rest_v1/page/html/'+encodeURIComponent(page.replace(/ /g,'_'));
+  for(let attempt=0;attempt<4;attempt++){
+    const r=await fetch(rest,{headers:{'User-Agent':'KhoTruyenFull/1.19 public-domain importer'}});
+    if(r.ok){
+      let html=await r.text();
+      const m=html.match(/<div class="mw-parser-output">([\\s\\S]*?)<\\/div>\\s*<div class="printfooter/i);
+      if(m)html=m[1];
+      return stripHtml(html);
+    }
+    if(r.status===429||r.status>=500){await sleep(2000*(attempt+1));continue}
+    break;
+  }
   const data=await api({action:'parse',page,prop:'text',disablelimitreport:'1'});
   const html=data.parse?.text||'';
   if(!html)throw new Error('EMPTY_PAGE:'+page);
@@ -94,7 +114,7 @@ async function main(){
   const out={version:1,generatedAt:new Date().toISOString(),licenseNote:'Imported from Wikisource pages whose source metadata identifies the underlying works as public-domain/compatible for reuse; source URLs are retained for attribution.',books:[]};
   for(const b of books){
     const chapters=[];
-    for(let i=0;i<b.pages.length;i++){
+    for(let i=0;i<b.pages.length;i++){\n      await sleep(900);
       const page=b.title+'/'+b.pages[i];
       const content=await pageText(page);
       if(content.length<500)throw new Error('CHAPTER_TOO_SHORT:'+page+':'+content.length);
