@@ -36,7 +36,7 @@ jobs:
       - name: Validate real public-domain seed when present
         run: |
           if [ -f server/public-domain-seed.json ]; then
-            node -e "const fs=require('fs'); const d=JSON.parse(fs.readFileSync('server/public-domain-seed.json','utf8')); const b=d.books?.find(x=>x.id==='phong-than-dien-nghia'); if(!b) throw new Error('Missing Phong Than Dien Nghia'); if(!Array.isArray(b.chapters)||b.chapters.length!==100) throw new Error('Expected 100 chapters'); const short=b.chapters.filter(c=>String(c.content||'').trim().length<200); if(short.length) throw new Error('Short chapters: '+short.map(c=>c.index).join(',')); console.log({books:d.books.length,chapters:b.chapters.length});"
+            node -e "const fs=require('fs'); const d=JSON.parse(fs.readFileSync('server/public-domain-seed.json','utf8')); const ids=['phong-than-dien-nghia','tay-du-ky','hau-tay-du-ky','dong-du-ky','nam-du-ky','bac-du-ky','bat-tien-dac-dao','nu-tien-ngoai-su','luc-da-tien-tung','tam-toai-binh-yeu-truyen','kinh-hoa-duyen']; for(const id of ids){const b=d.books?.find(x=>x.id===id); if(!b) throw new Error('Missing seed book '+id); if(b.status!=='FULL') throw new Error('Not FULL '+id); if(!Array.isArray(b.chapters)||!b.chapters.length) throw new Error('No chapters '+id); const short=b.chapters.filter(c=>String(c.content||'').trim().length<200); if(short.length) throw new Error('Short chapters '+id+': '+short.map(c=>c.index).join(','));} const feng=d.books.find(x=>x.id==='phong-than-dien-nghia'); if(feng.chapters.length!==100) throw new Error('Expected 100 Fengshen chapters'); console.log({books:d.books.length,chapters:d.books.reduce((n,b)=>n+b.chapters.length,0)});"
           else
             echo "public-domain-seed.json not generated yet; skipping"
           fi
@@ -61,7 +61,7 @@ jobs:
           curl -fsS 'http://127.0.0.1:8787/api/v1/stories?page=1&pageSize=10'
           curl -fsS 'http://127.0.0.1:8787/api/v1/stories/b1'
           curl -fsS http://127.0.0.1:8787/public-domain-seed.json -o /tmp/public-domain-seed.json
-          node -e "const fs=require('fs'); const d=JSON.parse(fs.readFileSync('/tmp/public-domain-seed.json','utf8')); const b=d.books?.find(x=>x.id==='phong-than-dien-nghia'); if(!b||b.chapters?.length!==100) throw new Error('static HTTP seed is not the 100-chapter book'); console.log('static HTTP seed OK',b.title,b.chapters.length);"
+          node -e "const fs=require('fs'); const d=JSON.parse(fs.readFileSync('/tmp/public-domain-seed.json','utf8')); const ids=['phong-than-dien-nghia','tay-du-ky','hau-tay-du-ky','dong-du-ky','nam-du-ky','bac-du-ky','bat-tien-dac-dao','nu-tien-ngoai-su','luc-da-tien-tung','tam-toai-binh-yeu-truyen','kinh-hoa-duyen']; for(const id of ids){const b=d.books?.find(x=>x.id===id);if(!b||b.status!=='FULL'||!b.chapters?.length)throw new Error('static HTTP seed missing '+id)} const feng=d.books.find(x=>x.id==='phong-than-dien-nghia');if(feng.chapters.length!==100)throw new Error('static HTTP Fengshen is not 100 chapters');console.log('static HTTP seed OK',d.books.length,d.books.reduce((n,b)=>n+b.chapters.length,0));"
           kill "$pid" 2>/dev/null || true
       - name: Frontend browser regression
         run: |
