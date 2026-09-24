@@ -102,11 +102,17 @@ async function searchSubpages(sourceTitle){
 
 async function discoverChapterPages(sourceTitle){
   const direct=await listSubpages(sourceTitle+'/');
-  const fallback=direct.length?direct:await searchSubpages(sourceTitle);
   const map=new Map();
-  for(const t of fallback){
+  for(const t of direct){
     const n=chapterNumber(t);
     if(n!=null)map.set(n,t);
+  }
+  if(map.size===0){
+    const searched=await searchSubpages(sourceTitle);
+    for(const t of searched){
+      const n=chapterNumber(t);
+      if(n!=null)map.set(n,t);
+    }
   }
   if(map.size===0){
     const prefixes=[...new Set(direct.filter(t=>t.startsWith(sourceTitle+'/')).filter(t=>chapterNumber(t)==null))];
