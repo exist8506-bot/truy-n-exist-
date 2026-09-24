@@ -1,3 +1,9 @@
+## 1.19.0
+- Added a reproducible Wikisource importer for real public-domain Vietnamese literary data.
+- Added real full-text seed generation for Hoàng Lê nhất thống chí, Nhị độ mai, Phan Trần and Lục Vân Tiên.
+- Server loads the generated public-domain seed into SQLite for fresh databases.
+- Source URLs are retained in the generated dataset for attribution.
+
 ## 1.18.0
 - Added configurable API endpoint for static GitHub Pages deployments.
 - Added browser-local API endpoint persistence and query-string override.
