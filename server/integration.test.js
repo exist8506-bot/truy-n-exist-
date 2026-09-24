@@ -8,7 +8,7 @@ async function req(path,opts={}){const r=await fetch('http://127.0.0.1:8787/api/
  let h;for(let i=0;i<30;i++){try{h=await req('/health');if(h.status===200)break}catch{}await wait(200)}if(h?.status!==200)throw Error('health failed: '+err1.slice(-4000));
  let x=await req('/stories?page=1&pageSize=10');if(x.status!==200||x.data.count!==3||x.data.items.length!==3)throw Error('stories list shape/seed failed');
  x=await req('/stories/b1/chapters/0');if(x.status!==200||!x.data.content)throw Error('chapter failed');
-x=await req('/stories/b1/chapters?page=1&pageSize=5&q=anh');if(x.status!==200||x.data.count<1)throw Error('chapter search failed');
+x=await req('/stories/b1/chapters?page=1&pageSize=5&q=anh');if(x.status!==200||x.data.count<1)throw Error('chapter search failed');x=await req('/stories/b1/chapters?page=1&pageSize=2&sort=desc');if(x.status!==200||x.data.items[0].index<x.data.items[1].index)throw Error('chapter descending order failed');
  const reg=await req('/auth/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'ci_admin',password:'secret123',displayName:'CI Admin'})});if(reg.status!==201)throw Error('register failed '+JSON.stringify(reg.data));const token=reg.data.token;const auth={'authorization':'Bearer '+token};
  x=await req('/auth/me',{headers:auth});if(x.status!==200||x.data.role!=='admin')throw Error('admin me failed');
  x=await req('/profile',{headers:auth});if(x.status!==200)throw Error('profile get failed');
