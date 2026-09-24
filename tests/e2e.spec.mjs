@@ -258,10 +258,10 @@ test('reader scroll performance: focused mode and debounced persistence', async 
   await page.mouse.wheel(0,120);
   await page.mouse.wheel(0,120);
   await page.mouse.wheel(0,120);
-  const during=await page.evaluate(()=>window.__setItemCalls-before);
+  const during=await page.evaluate(b=>window.__setItemCalls-b,before);
   expect(during).toBe(0);
   await page.waitForTimeout(450);
-  const after=await page.evaluate(()=>window.__setItemCalls-before);
+  const after=await page.evaluate(b=>window.__setItemCalls-b,before);
   expect(after).toBeLessThanOrEqual(2);
   await context.close();
 });
