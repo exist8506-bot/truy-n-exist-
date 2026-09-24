@@ -1,4 +1,4 @@
-/* Kho Truyen Full 1.14.0 - compact application shell */
+/* Kho Truyen Full 1.15.0 - compact application shell */
 (()=> {
 'use strict';
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -222,10 +222,10 @@ function accountModal(){
    bodyEl.innerHTML='<div class="panel" style="padding:14px;border:1px solid var(--line);border-radius:12px"><div class="muted">Tên đăng nhập</div><b>'+esc(state.user.username)+'</b><div class="muted" style="margin-top:12px">Vai trò</div><b>'+esc(state.user.role||'user')+'</b></div>'+
    '<label style="display:block;margin-top:14px">Tên hiển thị<input id="accountDisplay" value="'+esc(state.user.displayName||state.user.username)+'" style="width:100%;margin-top:6px;padding:11px;border-radius:10px;background:#0d1526;border:1px solid var(--line);color:var(--text)"></label>'+
    '<div id="accountMsg" class="muted" style="min-height:22px;margin-top:8px"></div>'+
-   '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn primary" id="accountSave">Lưu hồ sơ</button><button class="btn" id="accountLogout">Đăng xuất</button></div>';
+   '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn primary" id="accountSave">Lưu hồ sơ</button><button class="btn" id="accountPassword">Đổi mật khẩu</button><button class="btn" id="accountLogout">Đăng xuất</button></div><div id="passwordBox" style="display:none;margin-top:12px"></div>';
    $('#accountHint').textContent='Bạn đang đăng nhập';
    $('#accountSave').onclick=async()=>{try{const j=await api('/profile',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({displayName:$('#accountDisplay').value.trim()})});state.user={...state.user,displayName:j.displayName};toast('Đã cập nhật hồ sơ');render()}catch(e){$('#accountMsg').textContent=accountError(e)}};
-   $('#accountLogout').onclick=logout;
+   $('#accountPassword').onclick=()=>{$('#passwordBox').style.display='block';$('#passwordBox').innerHTML='<div style="display:grid;gap:8px"><input id="currentPassword" type="password" placeholder="Mật khẩu hiện tại"><input id="newPassword" type="password" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"><button class="btn good" id="passwordSave">Cập nhật mật khẩu</button></div>';$('#passwordSave').onclick=async()=>{try{await api('/account/password',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({currentPassword:$('#currentPassword').value,newPassword:$('#newPassword').value})});$('#accountMsg').textContent='Đã đổi mật khẩu. Các phiên khác đã được đăng xuất.';$('#passwordBox').style.display='none'}catch(e){$('#accountMsg').textContent=accountError(e)}}};$('#accountLogout').onclick=logout;
    return;
   }
   bodyEl.innerHTML='<div style="display:flex;gap:8px;margin-bottom:14px"><button class="btn primary" id="accountLoginTab">Đăng nhập</button><button class="btn" id="accountRegisterTab">Đăng ký</button></div><div id="accountForm"></div>';
