@@ -1,6 +1,6 @@
 # Kho Truyện Full
 
-### 1.17.0
+### 1.18.0
 - GitHub Pages can now connect to a deployed API using the 🌐 API button or `?api=` query parameter.
 - API endpoint can be persisted locally in the browser without changing the source.
 
@@ -24,7 +24,7 @@
 Kho Truyện Full is a Vietnamese story-reading web/API application.
 
 ## Current release
-- Current: v1.17.0
+- Current: v1.18.0
 - 3 original demo stories / 26 chapters
 - No stress-test stories or runtime SQLite database committed
 
@@ -55,3 +55,7 @@ docker compose up --build
 ```
 
 Sau đó mở `http://localhost:8787`. API health: `/api/v1/health`.
+
+
+## Backend public
+Xem `DEPLOY_BACKEND.md` để triển khai API Docker có persistent SQLite, sau đó nhập URL `/api/v1` bằng nút 🌐 trên GitHub Pages.
