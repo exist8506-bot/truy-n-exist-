@@ -240,6 +240,32 @@ test('remaining navigation and chapter controls', async ({ browser }) => {
 });
 
 
+test('reader scroll performance: focused mode and debounced persistence', async ({ browser }) => {
+  const context=await browser.newContext({viewport:{width:1280,height:900}});
+  await context.addInitScript(() => {
+    window.__setItemCalls=0;
+    const original=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(...args){window.__setItemCalls++;return original.apply(this,args)};
+  });
+  const page=await context.newPage();
+  await page.goto('/');
+  await page.locator('#grid .card').filter({hasText:'Mùa Sao Trên Đỉnh Núi'}).locator('.info').click();
+  await page.locator('#chapters .chapter').first().click();
+  await expect(page.locator('body')).toHaveClass(/reading-mode/);
+  await expect(page.locator('.top')).toBeHidden();
+  await page.locator('#rtext').scrollIntoViewIfNeeded();
+  const before=await page.evaluate(()=>window.__setItemCalls);
+  await page.mouse.wheel(0,120);
+  await page.mouse.wheel(0,120);
+  await page.mouse.wheel(0,120);
+  const during=await page.evaluate(()=>window.__setItemCalls-before);
+  expect(during).toBe(0);
+  await page.waitForTimeout(450);
+  const after=await page.evaluate(()=>window.__setItemCalls-before);
+  expect(after).toBeLessThanOrEqual(2);
+  await context.close();
+});
+
 test('reader auto advance and tts continuation', async ({ browser }) => {
   const context=await browser.newContext({viewport:{width:1280,height:900}});
   await context.addInitScript(() => {
