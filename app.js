@@ -333,7 +333,7 @@ async function fetchChapterData(i){
  chapterInflight.set(key,job);try{return await job}finally{chapterInflight.delete(key)}
 }
 async function prefetchChapter(i){if(!state.book||i<0||i>=Number(state.book.chapterCount||state.book.chapters?.length||state.chapters.length||0))return;try{await fetchChapterData(i)}catch{}}
-let autoAdvanceTimer=0,ttsRunId=0,readerLoadId=0;
+let autoAdvanceTimer=0,ttsRunId=0,readerLoadId=0,ttsAudio=null;
 function totalChapterCount(){return Number(state.book?.chapterCount||state.book?.chapters?.length||state.chapters.length||0)}
 function scheduleAutoAdvance(){
  if(autoAdvanceTimer||!state.book)return;
@@ -376,7 +376,8 @@ function isBookmarked(){const b=bookmarks();return !!(state.book&&b[state.book.i
 window.toggleBookmark=async()=>{if(!state.book)return;const b=bookmarks();b[state.book.id]=b[state.book.id]||{};const active=!!b[state.book.id][state.chapter];if(active)delete b[state.book.id][state.chapter];else b[state.book.id][state.chapter]={title:state.current?.title||'',at:Date.now()};setBookmarks(b);const el=$('#bookmarkBtn');if(el)el.textContent=isBookmarked()?'🔖 Đã đánh dấu':'🔖 Đánh dấu';if(state.token)api('/bookmarks',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:state.book.id,chapterIndex:state.chapter,title:state.current?.title||'',active:!active})}).catch(()=>{});renderBookcase();toast(!active?'Đã đánh dấu chương':'Đã bỏ đánh dấu')}
 function renderBookmarks(){const box=$('#bookmarkList');if(!box)return;const b=bookmarks(),items=[];for(const [storyId,chs] of Object.entries(b)){const story=state.books.find(x=>x.id===storyId);for(const [idx,v] of Object.entries(chs||{}))items.push({storyId,index:Number(idx),title:v?.title||('Chương '+(Number(idx)+1)),at:Number(v?.at||0),storyTitle:story?.title||storyId})}items.sort((a,b)=>b.at-a.at);box.innerHTML=items.length?items.map(x=>'<div class="histrow"><div><b>'+esc(x.storyTitle)+'</b><div class="muted">'+T('chapterUnit')+' '+(x.index+1)+' · '+esc(x.title)+'</div></div><button class="btn" onclick="openBook(\''+esc(x.storyId)+'\').then(()=>readChapter('+x.index+'))">'+T('read')+'</button></div>').join(''):'<div class="empty">'+T('noBookmarks')+'</div>'}
 window.goChapter=d=>{const n=totalChapterCount(),x=state.chapter+d;if(x<0||x>=n){toast(T('next'));return}const keepTts=ttsState.active,runId=ttsRunId;if(keepTts)try{speechSynthesis?.cancel?.()}catch{}readChapter(x).then(()=>{if(keepTts&&runId===ttsRunId)startTTSCurrent()})};
-window.font=d=>{state.fontSize=Math.max(14,Math.min(30,state.fontSize+d));save('ktf_fs',state.fontSize);applyReader()};window.setFont=x=>{state.font=x;save('ktf_font',x);applyReader()};window.setTheme=x=>{state.theme=x;save('ktf_theme',x);applyReader()};let ttsState={active:false,chunks:[],pos:0,chapterKey:''};
+window.font=d=>{state.fontSize=Math.max(14,Math.min(30,state.fontSize+d));save('ktf_fs',state.fontSize);applyReader()};window.setFont=x=>{state.font=x;save('ktf_font',x);applyReader()};window.setTheme=x=>{state.theme=x;save('ktf_theme',x);applyReader()};let if(ttsAudio){try{ttsAudio.pause();ttsAudio.src=''}catch{}ttsAudio=null}
+ ttsState={active:false,chunks:[],pos:0,chapterKey:'',mode:''};
 function stopTTS(silent=false){
  ttsRunId++;
  try{speechSynthesis?.cancel?.()}catch{}
@@ -406,12 +407,27 @@ function ttsLanguage(){
  if(/[ăâđêôơưĂÂĐÊÔƠƯÀ-ỹ]/.test(text))return 'vi-VN';
  return state.lang==='en'?'en-US':'en-US';
 }
+function preferredTTSVoice(lang){
+ const voices=Array.isArray(window.speechSynthesis?.getVoices?.())?window.speechSynthesis.getVoices():[];
+ const want=String(lang||'').toLowerCase();
+ return voices.find(v=>String(v.lang||'').toLowerCase()===want)||voices.find(v=>String(v.lang||'').toLowerCase().startsWith(want.split('-')[0]));
+}
+function remoteTTSUrl(text,lang){
+ const q=encodeURIComponent(String(text||'').slice(0,220));
+ return 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl='+encodeURIComponent(lang)+'&q='+q;
+}
+function playTTSAudio(text,lang,runId){
+ const audio=new Audio(remoteTTSUrl(text,lang));
+ ttsAudio=audio;ttsState.mode='audio';
+ audio.onended=()=>{if(ttsState.active&&runId===ttsRunId){ttsAudio=null;setTimeout(()=>speakTTSChunk(runId),25)}};
+ audio.onerror=()=>{ttsAudio=null;stopTTS(true);toast(T('ttsError'))};
+ audio.play().catch(()=>{ttsAudio=null;stopTTS(true);toast(T('ttsError'))});
+}
 function startTTSCurrent(){
- if(!window.speechSynthesis||!window.SpeechSynthesisUtterance)return toast('Thiết bị không hỗ trợ TTS');
  const text=$('#rtext')?.innerText?.trim()||'';if(!text)return;
  const key=state.book.id+':'+state.chapter;
  ttsRunId++;
- ttsState={active:true,chunks:splitTTSText(text),pos:0,chapterKey:key};
+ ttsState={active:true,chunks:splitTTSText(text,220),pos:0,chapterKey:key,mode:''};
  $('#ttsLabel').textContent=T('stop');
  speakTTSChunk(ttsRunId);
 }
@@ -427,11 +443,15 @@ function speakTTSChunk(runId=ttsRunId){
   }else stopTTS(true);
   return;
  }
- const u=new SpeechSynthesisUtterance(ttsState.chunks[ttsState.pos++]);
- u.lang=ttsLanguage();u.rate=state.rate;
- u.onend=()=>{if(ttsState.active&&runId===ttsRunId)setTimeout(()=>speakTTSChunk(runId),25)};
- u.onerror=()=>{stopTTS(true);toast(T('ttsError'))};
- try{speechSynthesis.speak(u);speechSynthesis.resume?.()}catch{stopTTS(true);toast(T('ttsError'))}
+ const text=ttsState.chunks[ttsState.pos++],lang=ttsLanguage();
+ const voice=preferredTTSVoice(lang);
+ if(voice&&window.SpeechSynthesisUtterance){
+  const u=new SpeechSynthesisUtterance(text);u.lang=voice.lang;u.voice=voice;u.rate=state.rate;ttsState.mode='speech';
+  u.onend=()=>{if(ttsState.active&&runId===ttsRunId)setTimeout(()=>speakTTSChunk(runId),25)};
+  u.onerror=()=>{if(runId===ttsRunId)playTTSAudio(text,lang,runId)};
+  try{speechSynthesis.speak(u);speechSynthesis.resume?.();return}catch{}
+ }
+ playTTSAudio(text,lang,runId)
 }
 window.speak=()=>{if(!window.speechSynthesis)return toast('Thiết bị không hỗ trợ TTS');if(ttsState.active){stopTTS(true);return}startTTSCurrent()};
 window.setTTSRate=x=>{state.rate=+x;save('ktf_rate',state.rate);if(ttsState.active){stopTTS(true);startTTSCurrent()}};
