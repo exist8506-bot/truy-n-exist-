@@ -1,4 +1,4 @@
-/* Kho Truyen Full 1.6.5 - compact application shell */
+/* Kho Truyen Full 1.6.6 - compact application shell */
 (()=> {
 'use strict';
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -76,9 +76,25 @@ window.openBook=openBook;window.openDetail=()=>state.book&&openBook(state.book.i
 window.renderChapters=()=>{let a=state.chapters.slice();const norm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('vi');const q=norm($('#chapterSearch')?.value||'');if(q)a=a.filter(c=>norm(c.title||'').includes(q)||String(Number(c.index??c.chapter??0)+1).includes(q));if(state.order==='desc')a.reverse();$('#chapterCount').textContent=state.chapters.length+' chương';$('#chapters').innerHTML=a.map(c=>'<button class="chapter" onclick="readChapter('+(c.index??c.chapter??0)+')">Chương '+(Number(c.index??c.chapter??0)+1)+' · '+esc(c.title||'')+'</button>').join('')||'<div class="empty">Chưa có chương.</div>'};
 window.toggleOrder=()=>{state.order=state.order==='asc'?'desc':'asc';renderChapters()};
 window.startBook=i=>readChapter(i);window.continueBook=()=>readChapter(progress()[state.book.id]?.chapter||0);
-async function readChapter(i){if(!state.book)return;let j;try{j=await api('/stories/'+encodeURIComponent(state.book.id)+'/chapters/'+i);offlinePut(state.book.id,i,j).catch(()=>{})}catch{j=await offlineGet(state.book.id,i).catch(()=>null);if(!j){const c=state.chapters.find(x=>(x.index??x.chapter)===i)||state.book.chapters?.[i];j={chapter:c,index:i,title:c?.title||('Chương '+(i+1)),content:c?.content||c?.[1]||''}}}state.chapter=i;state.current=j;show('reader');$('#rbook').textContent=state.book.title;$('#rtitle').textContent=j.title||('Chương '+i);$('#rmeta').textContent='Chương '+(i+1)+' · '+(state.book.author||'');$('#rtext').innerHTML=String(j.content||'').split(/\n+/).filter(Boolean).map(x=>'<p>'+esc(x)+'</p>').join('');applyReader();recordRead();updateReaderProgress();restoreScroll();history.pushState({},'',location.pathname+'#'+encodeURIComponent(state.book.id)+'/chapter/'+i)}
+const chapterInflight=new Map();
+async function fetchChapterData(i){
+ const key=state.book.id+':'+i;
+ if(chapterInflight.has(key))return chapterInflight.get(key);
+ const job=(async()=>{try{const j=await api('/stories/'+encodeURIComponent(state.book.id)+'/chapters/'+i);offlinePut(state.book.id,i,j).catch(()=>{});return j}catch{const j=await offlineGet(state.book.id,i).catch(()=>null);if(j)return j;const c=state.chapters.find(x=>(x.index??x.chapter)===i)||state.book.chapters?.[i];return {chapter:c,index:i,title:c?.title||('Chương '+(i+1)),content:c?.content||c?.[1]||''}}})();
+ chapterInflight.set(key,job);try{return await job}finally{chapterInflight.delete(key)}
+}
+async function prefetchChapter(i){if(!state.book||i<0||i>=(state.chapters.length||state.book.chapterCount||0))return;try{await fetchChapterData(i)}catch{}}
+async function readChapter(i){
+ if(!state.book)return;
+ const n=state.chapters.length||state.book.chapterCount||state.book.chapters?.length||0;
+ if(i<0||i>=n)return;
+ const j=await fetchChapterData(i);
+ state.chapter=i;state.current=j;show('reader');$('#rbook').textContent=state.book.title;$('#rtitle').textContent=j.title||('Chương '+i);$('#rmeta').textContent='Chương '+(i+1)+' · '+(state.book.author||'');$('#rtext').innerHTML=String(j.content||'').split(/\n+/).filter(Boolean).map(x=>'<p>'+esc(x)+'</p>').join('');
+ applyReader();recordRead();updateReaderProgress();restoreScroll();history.pushState({},'',location.pathname+'#'+encodeURIComponent(state.book.id)+'/chapter/'+i);
+ requestAnimationFrame(()=>prefetchChapter(i+1));
+}
 window.readChapter=readChapter;
-function recordRead(){const h=hist().filter(x=>!(x.bookId===state.book.id&&x.chapter===state.chapter));h.unshift({bookId:state.book.id,chapter:state.chapter,title:state.current?.title||'',at:Date.now()});setHist(h.slice(0,50));const p=progress();p[state.book.id]={chapter:state.chapter,percent:0,updated:Date.now()};setProgress(p);if(state.token)syncProgress().catch(()=>{})}
+function recordRead(){const h=hist().filter(x=>!(x.bookId===state.book.id&&x.chapter===state.chapter));h.unshift({bookId:state.book.id,chapter:state.chapter,title:state.current?.title||'',at:Date.now()});setHist(h.slice(0,50));const p=progress();p[state.book.id]={chapter:state.chapter,percent:(p[state.book.id]?.chapter===state.chapter?Number(p[state.book.id]?.percent)||0:0),updated:Date.now()};setProgress(p);if(state.token)syncProgress().catch(()=>{})}
 function updateReaderProgress(){const p=progress()[state.book.id]||{}, n=state.chapters.length||state.book.chapterCount||state.book.chapters?.length||1;const pct=Math.min(100,Math.round(((state.chapter+1)/n)*100));$('#rprogress').style.width=pct+'%';$('#readPosition').textContent='Chương '+(state.chapter+1)+' / '+n+' · '+pct+'%';$('#prev').disabled=state.chapter<=0;$('#autoNext').style.display=state.chapter<n-1?'flex':'none'}
 window.goChapter=d=>{const n=state.chapters.length||state.book?.chapters?.length||state.book?.chapterCount||0;const x=state.chapter+d;if(x>=0&&x<n)readChapter(x);else toast('Đã đến cuối truyện')};
 window.font=d=>{state.fontSize=Math.max(14,Math.min(30,state.fontSize+d));save('ktf_fs',state.fontSize);applyReader()};window.setFont=x=>{state.font=x;save('ktf_font',x);applyReader()};window.setTheme=x=>{state.theme=x;save('ktf_theme',x);applyReader()};window.setTTSRate=x=>{state.rate=+x;save('ktf_rate',state.rate);if(speechSynthesis.speaking)speak()};
@@ -90,7 +106,9 @@ let scrollSaveTimer=0;
 function scrollKey(){return state.book?state.book.id+':'+state.chapter:null}
 function saveScroll(){const k=scrollKey();if(!k)return;const max=Math.max(1,document.documentElement.scrollHeight-innerHeight);const pct=Math.round((scrollY/max)*1000)/10;const p=progress();p[state.book.id]={chapter:state.chapter,percent:Math.max(0,Math.min(100,pct)),updated:Date.now()};setProgress(p);$('#rprogress').style.width=Math.min(100,pct)+'%';$('#readPosition').textContent='Chương '+(state.chapter+1)+' / '+(state.chapters.length||state.book.chapterCount||1)+' · '+Math.round(pct)+'%';if(state.token){clearTimeout(scrollSaveTimer);scrollSaveTimer=setTimeout(()=>syncProgress().catch(()=>{}),600)}}
 function restoreScroll(){const p=progress()[state.book?.id];if(!p||p.chapter!==state.chapter)return;requestAnimationFrame(()=>{const max=Math.max(0,document.documentElement.scrollHeight-innerHeight);scrollTo(0,max*(Math.max(0,Math.min(100,p.percent))/100))})}
-window.addEventListener('scroll',()=>{if($('#reader')?.classList.contains('show'))saveScroll()},{passive:true});
+function markChapterRead(){const p=progress();const cur=p[state.book?.id];if(!state.book||!cur)return;cur.percent=100;cur.updated=Date.now();setProgress(p);if(state.token)syncProgress().catch(()=>{});updateReaderProgress()}
+window.addEventListener('scroll',()=>{if($('#reader')?.classList.contains('show')){saveScroll();const p=progress()[state.book?.id];if(p&&p.percent>=95&&state.chapter<(state.chapters.length||state.book.chapterCount||1)-1)markChapterRead()}},{passive:true});
+window.addEventListener('pagehide',()=>{if($('#reader')?.classList.contains('show'))saveScroll()});
 const OFFDB='ktf_offline_v1';
 function offlineOpen(){return new Promise((resolve,reject)=>{if(!indexedDB)return reject(Error('NO_INDEXEDDB'));const r=indexedDB.open(OFFDB,1);r.onupgradeneeded=()=>r.result.createObjectStore('chapters',{keyPath:'key'});r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
 async function offlinePut(bookId,index,data){const db=await offlineOpen();return new Promise((res,rej)=>{const tx=db.transaction('chapters','readwrite');tx.objectStore('chapters').put({key:bookId+':'+index,bookId,index,data,at:Date.now()});tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
