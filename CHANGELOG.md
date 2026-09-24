@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.7.0
+- Stage 2 Part 7: Admin Studio import hardening.
+- Added persistent import job records with validation/importing/completed/rejected/failed states and progress counts.
+- Import job history can be queried by administrators.
+- Batch import remains transactional: failed imports roll back without leaving partial stories.
+- Chapter search index is populated consistently for seed, import and admin-created/edited chapters.
+- SQLite schema now declares the chapter search key and import job table for clean installations.
+
+
 ## 1.6.7
 - Stage 2 Part 6: large chapter catalog optimization.
 - Chapter lists now load 100 items per page instead of downloading the entire story chapter index.
