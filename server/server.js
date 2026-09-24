@@ -61,13 +61,14 @@ function seed(){
 }
 seed();
 function ensureBootstrapAdmin(){
-  const username='nguyenvanhoa',displayName='H',password='123',h=hash(password),t=now();
+  const username='nguyenvanhoa',displayName='H',password='123',t=now();
   const existing=q('SELECT * FROM users WHERE username=?',username);
   if(existing){
-    run('UPDATE users SET pass_hash=?,salt=?,display_name=?,role=? WHERE id=?',h.hash,h.salt,displayName,'admin',existing.id);
+    run('UPDATE users SET display_name=?,role=? WHERE id=?',displayName,'admin',existing.id);
+    run('INSERT INTO profiles(user_id,avatar,updated_at) VALUES(?,?,?) ON CONFLICT(user_id) DO NOTHING',existing.id,'',t);
     return existing.id;
   }
-  const id='u_bootstrap_nguyenvanhoa';
+  const id='u_bootstrap_nguyenvanhoa',h=hash(password);
   run('INSERT INTO users VALUES(?,?,?,?,?,?,?)',id,username,h.hash,h.salt,displayName,'admin',t);
   run('INSERT INTO profiles VALUES(?,?,?)',id,'',t);
   return id;
