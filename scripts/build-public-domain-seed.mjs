@@ -89,10 +89,22 @@ async function listSubpages(prefix){
   return out;
 }
 
+async function searchSubpages(sourceTitle){
+  const out=[];let offset=0;
+  for(let page=0;page<20;page++){
+    const d=await api({action:'query',list:'search',srsearch:'prefix:"'+sourceTitle+'/"',srnamespace:0,srlimit:'50',sroffset:offset});
+    out.push(...(d.query?.search||[]).map(x=>x.title));
+    if(!d.continue?.sroffset)break;
+    offset=Number(d.continue.sroffset);
+  }
+  return out;
+}
+
 async function discoverChapterPages(sourceTitle){
   const direct=await listSubpages(sourceTitle+'/');
+  const fallback=direct.length?direct:await searchSubpages(sourceTitle);
   const map=new Map();
-  for(const t of direct){
+  for(const t of fallback){
     const n=chapterNumber(t);
     if(n!=null)map.set(n,t);
   }
