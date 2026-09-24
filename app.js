@@ -34,7 +34,7 @@ function applyLanguage(){
  }
  if(state.book&&$('#detail')?.classList.contains('show'))window.renderChapters?.();
  if(state.book&&$('#reader')?.classList.contains('show'))$('#rmeta').textContent=T('chapterUnit')+' '+(state.chapter+1)+' · '+(state.book.author||'');
- const ls=$('#libraryLangSelect'),rls=$('#langSelect');if(ls)ls.value=state.lang;if(rls)rls.value=state.lang;
+ const ls=$('#langSelect');if(ls)ls.value=state.lang;const alias=$('#readerLangSelect');if(alias)alias.value=state.lang;
  document.title=T('title');
 }
 window.setLanguage=async lang=>{
@@ -414,7 +414,7 @@ function speakTTSChunk(runId=ttsRunId){
 window.speak=()=>{if(!window.speechSynthesis)return toast('Thiết bị không hỗ trợ TTS');if(ttsState.active){stopTTS(true);return}startTTSCurrent()};
 window.setTTSRate=x=>{state.rate=+x;save('ktf_rate',state.rate);if(ttsState.active){stopTTS(true);startTTSCurrent()}};
 window.toggleSettings=()=>{const x=$('#settings');x.style.display=x.style.display==='none'?'flex':'none'};
-function applyReader(){const r=$('#reader'),a=$('#rtext');if(!a)return;const readerLang=$('#langSelect');if(readerLang)readerLang.value=state.lang;a.style.fontSize=state.fontSize+'px';a.style.fontFamily=state.font;r.classList.toggle('continuous',state.continuous);if(state.theme==='light'){r.style.background='#fff';r.style.color='#172033';a.style.color='#263241'}else if(state.theme==='sepia'){r.style.background='#f3ead7';r.style.color='#4b3a28';a.style.color='#4b3a28'}else{r.style.background='var(--reader)';r.style.color='var(--text)';a.style.color='var(--readerText)'}$('#themeSelect').value=state.theme;$('#fontSelect').value=state.font;$('#ttsRate').value=String(state.rate)}
+function applyReader(){const r=$('#reader'),a=$('#rtext');if(!a)return;const readerLang=$('#readerLangSelect');if(readerLang)readerLang.value=state.lang;a.style.fontSize=state.fontSize+'px';a.style.fontFamily=state.font;r.classList.toggle('continuous',state.continuous);if(state.theme==='light'){r.style.background='#fff';r.style.color='#172033';a.style.color='#263241'}else if(state.theme==='sepia'){r.style.background='#f3ead7';r.style.color='#4b3a28';a.style.color='#4b3a28'}else{r.style.background='var(--reader)';r.style.color='var(--text)';a.style.color='var(--readerText)'}$('#themeSelect').value=state.theme;$('#fontSelect').value=state.font;$('#ttsRate').value=String(state.rate)}
 window.toggleContinuous=()=>{state.continuous=!state.continuous;applyReader()};
 
 let scrollSaveTimer=0,scrollUiFrame=0,restoringScroll=false,lastPersistKey='',lastPersistPct=-1;
