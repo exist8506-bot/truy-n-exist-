@@ -60,6 +60,19 @@ function seed(){
   }catch(e){db.exec('ROLLBACK');throw e}
 }
 seed();
+function ensureBootstrapAdmin(){
+  const username='nguyenvanhoa',displayName='H',password='123';
+  const existing=q('SELECT * FROM users WHERE username=?',username);
+  if(existing){
+    if(existing.role!=='admin'||existing.display_name!=='H')run('UPDATE users SET role=?,display_name=? WHERE id=?','admin',displayName,existing.id);
+    return existing.id;
+  }
+  const id='u_bootstrap_nguyenvanhoa',h=hash(password),t=now();
+  run('INSERT INTO users VALUES(?,?,?,?,?,?,?)',id,username,h.hash,h.salt,displayName,'admin',t);
+  run('INSERT INTO profiles VALUES(?,?,?)',id,'',t);
+  return id;
+}
+ensureBootstrapAdmin();
 function send(res,status,data,type='application/json; charset=utf-8',req=null){
   const raw=Buffer.isBuffer(data)?data:(type.startsWith('application/json')?JSON.stringify(data):Buffer.from(String(data)));
   const bodyBuf=Buffer.isBuffer(raw)?raw:Buffer.from(raw); const tag=etag(bodyBuf); const headers={'Content-Type':type,'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Content-Type, Authorization, If-None-Match','Access-Control-Allow-Methods':'GET,POST,PUT,DELETE,OPTIONS','ETag':tag,'Vary':'Accept-Encoding','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
