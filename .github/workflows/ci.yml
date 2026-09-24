@@ -63,8 +63,9 @@ jobs:
           kill "$pid" 2>/dev/null || true
       - name: Frontend browser regression
         run: |
-          npx --yes playwright@1.55.0 install --with-deps chromium
-          npx --yes playwright@1.55.0 test tests/e2e.spec.mjs --config=playwright.config.mjs
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps chromium
+          npx playwright test tests/e2e.spec.mjs --config=playwright.config.mjs
 
       - name: Docker build
         run: docker build -t kho-truyen-full:ci .
