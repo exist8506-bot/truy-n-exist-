@@ -1,4 +1,4 @@
-/* Kho Truyen Full 1.6.6 - compact application shell */
+/* Kho Truyen Full 1.6.7 - compact application shell */
 (()=> {
 'use strict';
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -71,9 +71,42 @@ function renderHomeMode(){
 }window.setHomeMode=m=>{state.mode=m;state.remoteSearch=false;document.querySelectorAll('.seg button').forEach(x=>x.classList.remove('active'));$('#seg'+({all:'All',reading:'Reading',rank:'Rank',new:'New'}[m]||'All'))?.classList.add('active');renderLibrary()};
 window.setDataFilter=x=>{state.filter=x;renderLibrary()};window.setDataSort=x=>{state.sort=x;renderLibrary();if(state.remoteSearch)refreshRemoteSearch()};
 window.toggleFav=async id=>{let a=favs();const active=!a.includes(id);a=active?[...a,id]:a.filter(x=>x!==id);setFavs(a);updateStats();renderLibrary();if(state.token)try{await api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active})})}catch{toast('Đã lưu cục bộ, sẽ đồng bộ khi online')}};
-async function openBook(id){show('detail');let b=state.books.find(x=>x.id===id);try{b=normalizeBook(await api('/stories/'+encodeURIComponent(id)));}catch{}state.book=b;try{const out=[];let page=1,total=1;do{const j=await api('/stories/'+encodeURIComponent(id)+'/chapters?page='+page+'&pageSize=100');const items=j.items||[];out.push(...items);total=Number(j.count??items.length);if(!j.items)break;page++;if(!items.length)break}while(out.length<total);state.chapters=out}catch{state.chapters=[]}$('#detailBox').innerHTML='<div class="detailbox"><div class="detailcover" style="background:'+esc(b.tone||'#26324b')+'"><span style="font-size:48px">📚</span><span>'+esc(b.cat||'Truyện')+'</span></div><div><div class="badges"><span class="badge good">'+esc(b.status||'FULL')+'</span><span class="badge">'+esc(b.author||'')+'</span></div><h2>'+esc(b.title)+'</h2><p class="muted">'+esc(b.desc||'')+'</p><div class="settings"><button class="btn primary" onclick="startBook(0)">▶ Đọc từ đầu</button><button class="btn" onclick="continueBook()">↪ Đọc tiếp</button><button class="btn" onclick="toggleFav(\''+esc(b.id)+'\');openBook(\''+esc(b.id)+'\')">'+(favs().includes(b.id)?'♥ Bỏ tủ':'♡ Thêm tủ')+'</button><button class="btn" onclick="shareCurrent()">↗ Chia sẻ</button></div></div></div>';b.chapterCount=state.chapters.length;renderChapters()}
+let chapterPage=1,chapterPageSize=100,chapterTotal=0,chapterSearchTimer=0;
+async function loadChapterPage(page=1){
+ if(!state.book)return;
+ const q=($('#chapterSearch')?.value||'').trim();
+ const params=new URLSearchParams({page:String(page),pageSize:String(chapterPageSize)});
+ if(q)params.set('q',q);
+ try{
+  const j=await api('/stories/'+encodeURIComponent(state.book.id)+'/chapters?'+params);
+  state.chapters=(j.items||[]).map(c=>({...c,index:Number(c.index??c.chapter??0)}));
+  chapterPage=Number(j.page||page);chapterTotal=Number(j.count??state.chapters.length);
+  state.book.chapterCount=Number(state.book.chapterCount||chapterTotal);
+  renderChapters();
+ }catch{
+  if(page===1)state.chapters=[];
+  renderChapters();
+ }
+}
+async function openBook(id){
+ show('detail');let b=state.books.find(x=>x.id===id);
+ try{b=normalizeBook(await api('/stories/'+encodeURIComponent(id)))}catch{}
+ state.book=b;chapterPage=1;chapterTotal=Number(b.chapterCount||0);state.chapters=[];
+ $('#detailBox').innerHTML='<div class="detailbox"><div class="detailcover" style="background:'+esc(b.tone||'#26324b')+'"><span style="font-size:48px">📚</span><span>'+esc(b.cat||'Truyện')+'</span></div><div><div class="badges"><span class="badge good">'+esc(b.status||'FULL')+'</span><span class="badge">'+esc(b.author||'')+'</span></div><h2>'+esc(b.title)+'</h2><p class="muted">'+esc(b.desc||'')+'</p><div class="settings"><button class="btn primary" onclick="startBook(0)">▶ Đọc từ đầu</button><button class="btn" onclick="continueBook()">↪ Đọc tiếp</button><button class="btn" onclick="toggleFav(\''+esc(b.id)+'\');openBook(\''+esc(b.id)+'\')">'+(favs().includes(b.id)?'♥ Bỏ tủ':'♡ Thêm tủ')+'</button><button class="btn" onclick="shareCurrent()">↗ Chia sẻ</button></div></div></div>';
+ await loadChapterPage(1);
+}
 window.openBook=openBook;window.openDetail=()=>state.book&&openBook(state.book.id);
-window.renderChapters=()=>{let a=state.chapters.slice();const norm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('vi');const q=norm($('#chapterSearch')?.value||'');if(q)a=a.filter(c=>norm(c.title||'').includes(q)||String(Number(c.index??c.chapter??0)+1).includes(q));if(state.order==='desc')a.reverse();$('#chapterCount').textContent=state.chapters.length+' chương';$('#chapters').innerHTML=a.map(c=>'<button class="chapter" onclick="readChapter('+(c.index??c.chapter??0)+')">Chương '+(Number(c.index??c.chapter??0)+1)+' · '+esc(c.title||'')+'</button>').join('')||'<div class="empty">Chưa có chương.</div>'};
+window.renderChapters=()=>{
+ const a=state.chapters.slice();const order=state.order==='desc'?a.reverse():a;
+ $('#chapterCount').textContent=(chapterTotal||order.length)+' chương · trang '+chapterPage;
+ $('#chapters').innerHTML=order.map(c=>'<button class="chapter" onclick="readChapter('+(c.index??c.chapter??0)+')">Chương '+(Number(c.index??c.chapter??0)+1)+' · '+esc(c.title||'')+'</button>').join('')||'<div class="empty">Không tìm thấy chương.</div>';
+ const pages=Math.max(1,Math.ceil((chapterTotal||0)/chapterPageSize));
+ const pager=$('#chapterPager');if(pager)pager.innerHTML=pages>1?'<button class="btn" '+(chapterPage<=1?'disabled':'')+' onclick="loadChapterPage('+(chapterPage-1)+')">← Trước</button><span class="muted"> '+chapterPage+' / '+pages+' </span><button class="btn" '+(chapterPage>=pages?'disabled':'')+' onclick="loadChapterPage('+(chapterPage+1)+')">Sau →</button>':'';
+};
+window.toggleOrder=()=>{state.order=state.order==='asc'?'desc':'asc';renderChapters()};
+window.startBook=i=>readChapter(i);
+window.continueBook=()=>readChapter(progress()[state.book.id]?.chapter||0);
+window.addEventListener('popstate',()=>{});
 window.toggleOrder=()=>{state.order=state.order==='asc'?'desc':'asc';renderChapters()};
 window.startBook=i=>readChapter(i);window.continueBook=()=>readChapter(progress()[state.book.id]?.chapter||0);
 const chapterInflight=new Map();
