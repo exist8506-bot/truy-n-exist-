@@ -1,0 +1,8 @@
+.git
+.github
+source
+server/kho_truyen.sqlite*
+server/covers/*
+!server/covers/.gitkeep
+*.zip
+README*.txt
