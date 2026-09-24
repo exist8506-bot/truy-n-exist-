@@ -1,0 +1,11 @@
+PRAGMA journal_mode=WAL;
+CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY AUTOINCREMENT,username TEXT UNIQUE NOT NULL,password_hash TEXT NOT NULL,display_name TEXT NOT NULL,role TEXT NOT NULL DEFAULT 'user',created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY,user_id INTEGER NOT NULL,expires_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS profiles(user_id INTEGER PRIMARY KEY,avatar TEXT);
+CREATE TABLE IF NOT EXISTS stories(id TEXT PRIMARY KEY,title TEXT NOT NULL,author TEXT NOT NULL,category TEXT NOT NULL,status TEXT NOT NULL,description TEXT DEFAULT '',cover TEXT DEFAULT '',created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS chapters(id INTEGER PRIMARY KEY AUTOINCREMENT,story_id TEXT NOT NULL,chapter_index INTEGER NOT NULL,title TEXT NOT NULL,content TEXT NOT NULL,created_at TEXT NOT NULL,UNIQUE(story_id,chapter_index));
+CREATE TABLE IF NOT EXISTS reading_progress(user_id INTEGER NOT NULL,story_id TEXT NOT NULL,chapter_index INTEGER NOT NULL,position REAL DEFAULT 0,updated_at TEXT NOT NULL,PRIMARY KEY(user_id,story_id));
+CREATE TABLE IF NOT EXISTS reading_history(user_id INTEGER NOT NULL,story_id TEXT NOT NULL,chapter_index INTEGER NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(user_id,story_id));
+CREATE TABLE IF NOT EXISTS favorites(user_id INTEGER NOT NULL,story_id TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(user_id,story_id));
+CREATE INDEX IF NOT EXISTS idx_chapters_story ON chapters(story_id,chapter_index);
+CREATE INDEX IF NOT EXISTS idx_stories_updated ON stories(updated_at);
