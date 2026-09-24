@@ -91,6 +91,14 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   await page.locator('#accountSubmit').click();
   await expect(page.locator('#accountBody')).toContainText('e2e_admin');
   await page.locator('#accountClose').click();
+  await page.locator('.actions .btn').first().click();
+  await page.locator('#accountLogout').click();
+  await page.locator('.actions .btn').first().click();
+  await page.locator('#accountUser').fill('NGUYENVANHOA');
+  await page.locator('#accountPass').fill('123');
+  await page.locator('#accountSubmit').click();
+  await expect(page.locator('#accountBody')).toContainText('nguyenvanhoa');
+  await page.locator('#accountClose').click();
 
   await page.locator('.actions .btn').nth(2).click();
   await expect(page.locator('#adBook')).toBeVisible();
