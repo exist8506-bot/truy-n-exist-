@@ -38,7 +38,13 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   await expect(page.locator('#reader')).toHaveClass(/show/);
   await expect(page.locator('#rtitle')).toHaveText('Chương 1');
   await expect(page.locator('#rtext')).not.toBeEmpty();
+  const firstReaderUrl=page.url();
   await page.locator('#next').click();
+  await expect(page.locator('#rtitle')).toHaveText('Chương 2');
+  await page.goBack();
+  await expect(page.locator('#rtitle')).toHaveText('Chương 1');
+  expect(page.url()).toBe(firstReaderUrl);
+  await page.goForward();
   await expect(page.locator('#rtitle')).toHaveText('Chương 2');
 
   await page.locator('#bookmarkBtn').click();
