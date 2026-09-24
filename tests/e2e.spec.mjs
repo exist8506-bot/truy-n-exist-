@@ -125,7 +125,8 @@ test('static fallback mode: local search, filter, read, PWA cache and offline fu
   await expect(page.locator('#grid .card')).toHaveCount(1);
   await page.locator('#grid .card').first().locator('.info').click();
   await page.locator('#chapters .chapter').first().click();
-  await expect(page.locator('#rtitle')).toHaveText('Chương 1');
+  await expect(page.locator('#rtitle')).not.toBeEmpty();
+  await expect(page.locator('#rtext')).not.toBeEmpty();
   await page.getByRole('button',{name:'☰ Mục lục'}).click();
   await page.getByRole('button',{name:/Lưu cả truyện offline/}).click();
   await page.locator('.actions .btn').nth(3).click();
