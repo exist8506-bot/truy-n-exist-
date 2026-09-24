@@ -7,7 +7,7 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   await context.addInitScript(() => {
     window.__shared=null;
     Object.defineProperty(navigator,'share',{configurable:true,value:async v=>{window.__shared=v;}});
-    Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{speaking:false,cancel(){this.speaking=false},speak(){this.speaking=true}}});
+    Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{speaking:false,cancel(){this.speaking=false},resume(){},getVoices(){return [{lang:'vi-VN',name:'CI Vietnamese'}]},speak(){this.speaking=true}}});
     window.SpeechSynthesisUtterance=class{constructor(text){this.text=text;this.lang='';this.rate=1;this.onend=null;}};
     document.documentElement.requestFullscreen=async function(){this.__fullscreen=true;};
     document.exitFullscreen=async function(){document.documentElement.__fullscreen=false;};
@@ -186,44 +186,88 @@ test('all ten public stories: first chapter smoke', async ({ browser }) => {
   await context.close();
 });
 
-test('reader language translation stays synchronized with TTS', async ({ browser }) => {
+test('real translation provider translates text and reader TTS uses matching locale', async ({ browser, request }) => {
+  test.setTimeout(120000);
+  const login=await request.post('/api/v1/auth/login',{data:{username:'nguyenvanhoa',password:'123'}});
+  expect(login.ok()).toBeTruthy();
+  const {token}=await login.json();
+  const auth={Authorization:'Bearer '+token};
+  const created=await request.post('/api/v1/admin/stories',{headers:auth,data:{title:'__E2E_TRANSLATION__',author:'E2E',cat:'E2E'}});
+  expect(created.ok()).toBeTruthy();
+  const story=(await created.json()).story;
+  try{
+    const added=await request.post('/api/v1/admin/stories/'+encodeURIComponent(story.id)+'/chapters',{headers:auth,data:{title:'Đó là văn bản.',content:'Đó là văn bản.'}});
+    expect(added.ok()).toBeTruthy();
+    const en=await request.get('/api/v1/stories/'+encodeURIComponent(story.id)+'/chapters/0?lang=en');
+    expect(en.ok()).toBeTruthy();
+    const enJson=await en.json();
+    expect(enJson.translated).toBeTruthy();
+    expect(enJson.content).not.toBe('Đó là văn bản.');
+    expect(enJson.content).toMatch(/text/i);
+    const zh=await request.get('/api/v1/stories/'+encodeURIComponent(story.id)+'/chapters/0?lang=zh-CN');
+    expect(zh.ok()).toBeTruthy();
+    const zhJson=await zh.json();
+    expect(zhJson.translated).toBeTruthy();
+    expect(zhJson.content).not.toBe('Đó là văn bản.');
+    expect(zhJson.content).toMatch(/[\u3400-\u9fff]/);
+
+    const context=await browser.newContext();
+    await context.addInitScript(() => {
+      localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1');
+      window.__ttsLast=null;
+      Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{
+        speaking:false,cancel(){this.speaking=false},resume(){},
+        getVoices(){return [{lang:'en-US',name:'CI English'},{lang:'zh-CN',name:'CI Chinese'}]},
+        speak(u){this.speaking=true;window.__ttsLast={text:u.text,lang:u.lang};setTimeout(()=>{this.speaking=false;u.onend?.()},0)}
+      }});
+      window.SpeechSynthesisUtterance=class{constructor(text){this.text=text;this.lang='';this.rate=1;this.onend=null;this.onerror=null;}};
+    });
+    const page=await context.newPage();
+    await page.goto('/');
+    await page.locator('#grid').evaluate((el,{story})=>{
+      const card=document.createElement('div');card.className='card';
+      card.innerHTML='<div class="info" style="cursor:pointer"><b>'+story.title+'</b></div>';
+      card.querySelector('.info').onclick=()=>window.openBook(story.id);
+      el.prepend(card);
+    },{story});
+    await page.locator('#grid .card').filter({hasText:'__E2E_TRANSLATION__'}).locator('.info').click();
+    await page.locator('#chapters .chapter').first().click();
+    await page.selectOption('#langSelect','en');
+    await expect(page.locator('#rtext')).toContainText(enJson.content.slice(0,20));
+    await page.getByRole('button',{name:/🔊/}).click();
+    await expect.poll(()=>page.evaluate(()=>window.__ttsLast?.lang)).toBe('en-US');
+    await page.selectOption('#langSelect','zh');
+    await expect(page.locator('#rtext')).toContainText(zhJson.content.slice(0,20));
+    await page.getByRole('button',{name:/🔊/}).click();
+    await expect.poll(()=>page.evaluate(()=>window.__ttsLast?.lang)).toBe('zh-CN');
+    await context.close();
+  }finally{
+    await request.delete('/api/v1/admin/stories/'+encodeURIComponent(story.id),{headers:auth});
+  }
+});
+
+test('TTS falls back to remote audio when Chinese system voice is missing', async ({ browser }) => {
   const context=await browser.newContext();
   await context.addInitScript(() => {
     localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1');
-    window.__ttsLast=null;
+    window.__audioUrl=null;
     Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{
-      speaking:false,
-      cancel(){this.speaking=false},
-      resume(){},
-      speak(u){this.speaking=true;window.__ttsLast={text:u.text,lang:u.lang,rate:u.rate};setTimeout(()=>{this.speaking=false;u.onend?.()},0)}
+      speaking:false,cancel(){this.speaking=false},resume(){},getVoices(){return []},speak(){this.speaking=true}
     }});
     window.SpeechSynthesisUtterance=class{constructor(text){this.text=text;this.lang='';this.rate=1;this.onend=null;this.onerror=null;}};
+    const RealAudio=window.Audio;
+    window.Audio=function(url){window.__audioUrl=url;const a=new RealAudio();a.play=()=>Promise.resolve();return a};
   });
   const page=await context.newPage();
-  await page.route('https://translate.googleapis.com/**',async route=>{
-    const target=new URL(route.request().url()).searchParams.get('tl')||'en-US';
-    const label=target.startsWith('zh')?'[ZH]':target.startsWith('vi')?'[VI]':'[EN]';
-    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([[[label+' translated', 'source', null, null]]])});
-  });
   await page.goto('/');
-  await page.locator('#search').fill('Mùa Sao');
-  await expect(page.locator('#grid .card')).toHaveCount(1);
-  await page.locator('#grid .card').first().locator('.info').click();
+  await page.locator('#grid .card').filter({hasText:'Mùa Sao Trên Đỉnh Núi'}).locator('.info').click();
   await page.locator('#chapters .chapter').first().click();
-  await expect(page.locator('#reader')).toHaveClass(/show/);
-
-  await page.selectOption('#langSelect','en');
-  await expect(page.locator('#rtext')).toContainText('[EN] translated');
-  await page.locator('.readerbar').getByRole('button',{name:/🔊/}).click();
-  await expect.poll(()=>page.evaluate(()=>window.__ttsLast?.lang)).toBe('en-US');
-
-  await page.selectOption('#readerLangSelect','zh');
-  await expect(page.locator('#rtext')).toContainText('[ZH] translated');
-  await page.locator('.readerbar').getByRole('button',{name:/🔊/}).click();
-  await expect.poll(()=>page.evaluate(()=>window.__ttsLast?.lang)).toBe('zh-CN');
+  await page.selectOption('#langSelect','zh');
+  await expect(page.locator('#rtext')).not.toBeEmpty();
+  await page.getByRole('button',{name:/🔊/}).click();
+  await expect.poll(()=>page.evaluate(()=>String(window.__audioUrl||''))).toContain('tl=zh-CN');
   await context.close();
 });
-
 
 test('mobile responsive: bottom navigation, reader, bookmark and persistence', async ({ browser }) => {
   const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true});
