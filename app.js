@@ -193,7 +193,7 @@ async function restoreAccount(){
    if(!local||new Date(v.updatedAt||0)>=new Date(local.updatedAt||0))localP[id]={chapter:Number(v.chapterIndex)||0,percent:Number(v.position)||0,updated:new Date(v.updatedAt||Date.now()).getTime()};
   }
   setProgress(localP);
-  const remoteB=remote.bookmarks||{};for(const [id,items] of Object.entries(remoteB)){localB[id]=localB[id]||{};for(const v of (items||[])){const idx=Number(v.chapterIndex||0),cur=localB[id][idx];if(!cur||Number(v.updatedAt||0)>=Number(cur.at||0))localB[id][idx]={title:v.title||'',at:Number(v.updatedAt||Date.now())}}}setBookmarks(localB);
+  const remoteB=remote.bookmarks||{};for(const [id,items] of Object.entries(remoteB)){localB[id]=localB[id]||{};for(const v of (items||[])){const idx=Number(v.chapterIndex||0),cur=localB[id][idx];const remoteTime=Date.parse(v.updatedAt||'')||0;const localTime=Number(cur?.at||0);if(!cur||remoteTime>=localTime)localB[id][idx]={title:v.title||'',at:remoteTime||Date.now()}}}setBookmarks(localB);
   const mergedF=[...new Set([...(Array.isArray(remote.favorites)?remote.favorites:[]),...localF])];setFavs(mergedF);
   await pushLocalSync();
   updateStats();renderBookcase();
