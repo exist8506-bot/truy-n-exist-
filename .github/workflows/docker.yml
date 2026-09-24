@@ -7,6 +7,12 @@ on:
       - 'Dockerfile'
       - '.dockerignore'
       - 'server/**'
+      - 'app.js'
+      - 'index.html'
+      - 'api-client.js'
+      - 'books.js'
+      - 'manifest.webmanifest'
+      - 'sw.js'
       - 'render.yaml'
       - '.github/workflows/docker.yml'
 permissions:
