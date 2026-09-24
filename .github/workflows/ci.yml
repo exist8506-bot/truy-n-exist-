@@ -60,6 +60,8 @@ jobs:
           fi
           curl -fsS 'http://127.0.0.1:8787/api/v1/stories?page=1&pageSize=10'
           curl -fsS 'http://127.0.0.1:8787/api/v1/stories/b1'
+          curl -fsS http://127.0.0.1:8787/public-domain-seed.json -o /tmp/public-domain-seed.json
+          node -e "const fs=require('fs'); const d=JSON.parse(fs.readFileSync('/tmp/public-domain-seed.json','utf8')); const b=d.books?.find(x=>x.id==='phong-than-dien-nghia'); if(!b||b.chapters?.length!==100) throw new Error('static HTTP seed is not the 100-chapter book'); console.log('static HTTP seed OK',b.title,b.chapters.length);"
           kill "$pid" 2>/dev/null || true
       - name: Frontend browser regression
         run: |
