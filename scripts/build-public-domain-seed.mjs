@@ -221,10 +221,19 @@ async function buildBook(b){
 
 async function main(){
   const out={version:3,generatedAt:new Date().toISOString(),licenseNote:'Underlying classic works are public-domain texts on Chinese Wikisource; source pages are retained for attribution. Chapter text remains the source text.',books:[]};
-  for(const b of books){
-    console.log('Building '+b.title);
-    out.books.push(await buildBook(b));
-  }
+  const results=new Array(books.length);
+  let cursor=0;
+  const worker=async()=>{
+    while(true){
+      const index=cursor++;
+      if(index>=books.length)return;
+      const b=books[index];
+      console.log('Building '+b.title);
+      results[index]=await buildBook(b);
+    }
+  };
+  await Promise.all(Array.from({length:Math.min(3,books.length)},()=>worker()));
+  out.books=results;
   fs.mkdirSync('server',{recursive:true});
   fs.writeFileSync('server/public-domain-seed.json',JSON.stringify(out));
   console.log('Generated '+out.books.length+' books / '+out.books.reduce((n,b)=>n+b.chapters.length,0)+' chapters.');
