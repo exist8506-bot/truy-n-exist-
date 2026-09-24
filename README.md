@@ -3,7 +3,7 @@
 Kho Truyện Full is a Vietnamese story-reading web/API application.
 
 ## Current release
-- Baseline: v1.9.0
+- Baseline: v1.10.0
 - 3 original demo stories / 26 chapters
 - No stress-test stories or runtime SQLite database committed
 
@@ -22,4 +22,4 @@ Runtime SQLite files, WAL/SHM files, uploads and secrets are excluded from Git.
 The SQLite database is created from schema/seed data.
 
 ## Release
-v1.9.0 adds resumable full-book offline downloads with IndexedDB job state, progress, cancel/resume, deletion and storage estimates.
+v1.10.0 adds resumable full-book offline downloads with IndexedDB job state, progress, cancel/resume, deletion and storage estimates.
