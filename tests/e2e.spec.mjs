@@ -62,12 +62,12 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   expect(await page.evaluate(()=>window.__shared?.url)).toContain('#phong-than-dien-nghia/chapter/2');
 
   await page.getByRole('button',{name:/Lưu cả truyện offline/}).click();
-  await page.locator('.bottomnav button').nth(1).click();
+  await page.locator('.actions .btn').nth(3).click();
   await expect(page.locator('#downloadList')).toContainText('Đã lưu đầy đủ',{timeout:30000});
 
-  await page.locator('.bottomnav button').nth(2).click();
+  await page.locator('.actions .btn').nth(4).click();
   await expect(page.locator('#historyList')).toContainText('Chương 3');
-  await page.locator('.bottomnav button').nth(1).click();
+  await page.locator('.actions .btn').nth(3).click();
   await expect(page.locator('#bookmarkList')).toContainText('Chương 2');
 
   await page.locator('.actions .btn').first().click();
@@ -128,7 +128,7 @@ test('static fallback mode: search, category filter, read, PWA cache and offline
   await expect(page.locator('#rtitle')).toHaveText('Chương 1');
   await page.getByRole('button',{name:'☰ Mục lục'}).click();
   await page.getByRole('button',{name:/Lưu cả truyện offline/}).click();
-  await page.locator('.bottomnav button').nth(1).click();
+  await page.locator('.actions .btn').nth(3).click();
   await expect(page.locator('#downloadList')).toContainText('Đã lưu đầy đủ',{timeout:30000});
   const cache=await page.evaluate(async()=>{await navigator.serviceWorker.ready;const keys=await caches.keys();return {keys,seed:!!await caches.match('./public-domain-seed.json')};});
   expect(cache.keys.some(k=>k.includes('kho-truyen-1.20.0'))).toBeTruthy();
