@@ -136,3 +136,48 @@ test('static fallback mode: local search, filter, read, PWA cache and offline fu
   expect(cache.shell).toBeTruthy();
   await context.close();
 });
+
+
+test('mobile responsive: bottom navigation, reader, bookmark and persistence', async ({ browser }) => {
+  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true});
+  await context.addInitScript(() => localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1'));
+  const page=await context.newPage();
+  await page.goto('/');
+  await expect(page.locator('.bottomnav')).toBeVisible();
+  await expect(page.locator('.bottomnav button')).toHaveCount(4);
+  await expect(page.locator('#grid .card')).toHaveCount(3);
+
+  await page.locator('.bottomnav button').nth(3).click();
+  await expect(page.locator('#search')).toBeFocused();
+  await page.locator('#search').fill('Mùa Sao');
+  await expect(page.locator('#grid .card')).toHaveCount(1);
+  await page.locator('#grid .card').first().locator('.info').click();
+  await expect(page.locator('#detail')).toHaveClass(/show/);
+  await expect(page.locator('#chapters .chapter').first()).toBeVisible();
+
+  await page.locator('#chapters .chapter').first().click();
+  await expect(page.locator('#reader')).toHaveClass(/show/);
+  await expect(page.locator('#rtext')).not.toBeEmpty();
+  const firstTitle=await page.locator('#rtitle').textContent();
+  await page.locator('#next').click();
+  await expect(page.locator('#rtitle')).not.toHaveText(firstTitle||'');
+  await page.locator('#prev').click();
+  await expect(page.locator('#rtitle')).toHaveText(firstTitle||'');
+
+  await page.locator('#bookmarkBtn').click();
+  await page.locator('#reader').getByRole('button',{name:'☰ Mục lục'}).click();
+  await page.locator('.bottomnav button').nth(1).click();
+  await expect(page.locator('#bookmarkList')).toContainText('Ánh đèn cuối thung lũng');
+
+  await page.reload();
+  await page.locator('.bottomnav button').nth(1).click();
+  await expect(page.locator('#bookmarkList')).toContainText('Ánh đèn cuối thung lũng');
+
+  await page.locator('.bottomnav button').nth(2).click();
+  await expect(page.locator('#historyList')).toContainText('Ánh đèn cuối thung lũng');
+
+  const manifest=await page.locator('link[rel="manifest"]').getAttribute('href');
+  expect(manifest).toBe('manifest.webmanifest');
+  expect(await page.evaluate(()=>!!navigator.serviceWorker)).toBeTruthy();
+  await context.close();
+});
