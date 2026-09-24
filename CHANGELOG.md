@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.9.0
+- Stage 2 Part 9: resumable full-book offline downloads.
+- Added IndexedDB download jobs with per-book progress and resume after interruption.
+- Added cancel/resume/delete controls and browser storage usage/quota display.
+- Reader keeps cache-first chapter reading while full-book downloads run incrementally.
+- Offline download state is isolated from the clean SQLite seed and does not add runtime files to Git.
+
+
 ## 1.8.0
 - Stage 2 Part 8: large-catalog performance hardening.
 - Chapter search now uses SQL COUNT/LIMIT/OFFSET instead of loading all matching rows into Node memory.
