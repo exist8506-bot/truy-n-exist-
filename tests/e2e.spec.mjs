@@ -33,6 +33,7 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   await page.selectOption('#langSelect','en');
   await expect(page.locator('#detailBox .settings .btn').first()).toContainText('Start reading');
   await expect(page.locator('#chapterCount')).toContainText('chapters');
+  await page.selectOption('#langSelect','vi');
   await page.locator('#chapters .chapter').first().click();
   await expect(page.locator('#reader')).toHaveClass(/show/);
   await expect(page.locator('#rtitle')).toHaveText('Chương 1');
