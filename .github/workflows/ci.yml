@@ -33,6 +33,8 @@ jobs:
           if(chapters!==26) throw new Error('Expected 26 clean demo chapters');
           console.log({stories:d.books.length,chapters});
           NODE
+      - name: 1.6 integration flow
+        run: node server/integration.test.js
       - name: Start API smoke test
         run: |
           set +e
