@@ -277,7 +277,14 @@ function splitTTSText(text,limit=1500){
  }
  if(rest)out.push(rest);return out;
 }
-function ttsLanguage(){return String(state.book?.ttsLang||'').trim()||({vi:'vi-VN',en:'en-US',zh:'zh-CN'}[state.lang]||'vi-VN')}
+function ttsLanguage(){
+ const explicit=String(state.book?.ttsLang||'').trim();
+ if(explicit)return explicit;
+ const text=$('#rtext')?.innerText||'';
+ if(/[\\u3400-\\u9fff]/.test(text))return 'zh-CN';
+ if(/[ăâđêôơưĂÂĐÊÔƠƯÀ-ỹ]/.test(text))return 'vi-VN';
+ return 'en-US';
+}
 function startTTSCurrent(){
  if(!window.speechSynthesis||!window.SpeechSynthesisUtterance)return toast('Thiết bị không hỗ trợ TTS');
  const text=$('#rtext')?.innerText?.trim()||'';if(!text)return;
