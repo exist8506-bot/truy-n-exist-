@@ -1,6 +1,12 @@
 # Changelog
 
-## 1.9.0
+## 1.10.0
+- Reader UX: server-side chapter ordering for paginated lists.
+- Reader navigation now uses total chapter count, so large books remain navigable across pages.
+- Added chapter bookmarks and a sticky reader toolbar.
+
+
+## 1.10.0
 - Stage 2 Part 9: resumable full-book offline downloads.
 - Added IndexedDB download jobs with per-book progress and resume after interruption.
 - Added cancel/resume/delete controls and browser storage usage/quota display.
