@@ -221,8 +221,8 @@ async function openBook(id){
 window.openBook=openBook;window.openDetail=()=>state.book&&openBook(state.book.id);
 window.renderChapters=()=>{
  const a=state.chapters.slice();const order=state.order==='desc'?a.reverse():a;
- $('#chapterCount').textContent=(chapterTotal||order.length)+' chương · trang '+chapterPage;
- $('#chapters').innerHTML=order.map(c=>'<button class="chapter" onclick="readChapter('+(c.index??c.chapter??0)+')">Chương '+(Number(c.index??c.chapter??0)+1)+' · '+esc(c.title||'')+'</button>').join('')||'<div class="empty">Không tìm thấy chương.</div>';
+ $('#chapterCount').textContent=(chapterTotal||order.length)+' '+T('chapterUnit')+' · '+T('page')+' '+chapterPage;
+ $('#chapters').innerHTML=order.map(c=>'<button class="chapter" onclick="readChapter('+(c.index??c.chapter??0)+')">'+T('chapterUnit')+' '+(Number(c.index??c.chapter??0)+1)+' · '+esc(c.title||'')+'</button>').join('')||'<div class="empty">Không tìm thấy chương.</div>';
  const pages=Math.max(1,Math.ceil((chapterTotal||0)/chapterPageSize));
  const pager=$('#chapterPager');if(pager)pager.innerHTML=pages>1?'<button class="btn" '+(chapterPage<=1?'disabled':'')+' onclick="loadChapterPage('+(chapterPage-1)+')">← Trước</button><span class="muted"> '+chapterPage+' / '+pages+' </span><button class="btn" '+(chapterPage>=pages?'disabled':'')+' onclick="loadChapterPage('+(chapterPage+1)+')">Sau →</button>':'';
 };
