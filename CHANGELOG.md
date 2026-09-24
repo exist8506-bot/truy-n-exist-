@@ -1,3 +1,7 @@
+## 1.12.0
+- Bookmark filtering.
+- Quick bookmark removal with account synchronization.
+
 ## 1.11.0
 - Account-synced chapter bookmarks.
 - Bookcase bookmark list.
