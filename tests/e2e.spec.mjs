@@ -160,9 +160,9 @@ test('all ten public stories: first chapter smoke', async ({ browser }) => {
   const context=await browser.newContext({viewport:{width:1280,height:900}});
   const page=await context.newPage();
   await page.goto('/');
-  const titles=['Phong Thần Diễn Nghĩa','Tây Du Ký','Hậu Tây Du Ký','Đông Du Ký','Nam Du Ký','Bắc Du Ký','Bát Tiên Đắc Đạo','Nữ Tiên Ngoại Sử','Lục Dã Tiên Tung','Tam Toại Bình Yêu Truyện'];
-  for(const title of titles){
-    await page.locator('#search').fill(title);
+  const cases=[['Phong Thần Diễn Nghĩa','Phong Thần Diễn Nghĩa'],['Ngô Thừa Ân','Tây Du Ký'],['Đài Sơn Nhân','Hậu Tây Du Ký'],['Đông Du Ký','Đông Du Ký'],['Nam Du Ký','Nam Du Ký'],['Bắc Du Ký','Bắc Du Ký'],['Bát Tiên Đắc Đạo','Bát Tiên Đắc Đạo'],['Nữ Tiên Ngoại Sử','Nữ Tiên Ngoại Sử'],['Lục Dã Tiên Tung','Lục Dã Tiên Tung'],['Tam Toại Bình Yêu Truyện','Tam Toại Bình Yêu Truyện']];
+  for(const [query,title] of cases){
+    await page.locator('#search').fill(query);
     await expect(page.locator('#grid .card')).toHaveCount(1);
     await page.locator('#grid .card').first().locator('.info').click();
     await page.locator('#chapters .chapter').first().click();
