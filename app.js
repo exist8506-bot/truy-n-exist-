@@ -363,6 +363,11 @@ async function readChapter(i,options={}){
  requestAnimationFrame(()=>prefetchChapter(i+1));
 }
 window.readChapter=readChapter;
+window.addEventListener('popstate',async()=>{
+ const m=location.hash.match(/^#([^/]+)\/chapter\/(\d+)$/);
+ if(m){const id=decodeURIComponent(m[1]);if(state.books.some(b=>b.id===id)){if(state.book?.id!==id)await openBook(id);await readChapter(Number(m[2]),{skipHistory:true});return}}
+ if(state.book&&($('#reader')?.classList.contains('show')||$('#detail')?.classList.contains('show')))openDetail();
+});
 function recordRead(){const h=hist().filter(x=>!(x.bookId===state.book.id&&x.chapter===state.chapter));h.unshift({bookId:state.book.id,chapter:state.chapter,title:state.current?.title||'',at:Date.now()});setHist(h.slice(0,50));const p=progress();p[state.book.id]={chapter:state.chapter,percent:(p[state.book.id]?.chapter===state.chapter?Number(p[state.book.id]?.percent)||0:0),updated:Date.now()};setProgress(p);if(state.token)syncProgress().catch(()=>{})}
 function updateReaderProgress(){const p=progress()[state.book.id]||{}, n=totalChapterCount()||1;const chapterPct=Math.min(100,Math.round(((state.chapter+1)/n)*100));const localPct=state.chapter===p.chapter?Number(p.percent)||0:0;$('#rprogress').style.width=Math.max(chapterPct,Math.min(100,localPct))+'%';$('#readPosition').textContent=T('chapterUnit')+' '+(state.chapter+1)+' / '+n+' · '+Math.round(localPct||chapterPct)+'%';$('#prev').disabled=state.chapter<=0;$('#autoNext').style.display=state.chapter<n-1?'flex':'none';const jump=$('#readerSeek');if(jump){jump.max=String(n-1);jump.value=String(state.chapter)}}
 function bookmarks(){try{return JSON.parse(localStorage.getItem('ktf_bookmarks_v1')||'{}')}catch{return{}}}
@@ -669,6 +674,6 @@ s.querySelector('#adDiag').onclick=async()=>{try{out.textContent=JSON.stringify(
 };
 window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;if(e.key==='ArrowRight')goChapter(1);else if(e.key==='ArrowLeft')goChapter(-1);else if(e.code==='Space'){e.preventDefault();speak()}else if(e.key==='Escape')$('#reader')?.classList.toggle('focus')});
 let touchX=0;document.addEventListener('touchstart',e=>touchX=e.changedTouches[0].screenX,{passive:true});document.addEventListener('touchend',e=>{const d=e.changedTouches[0].screenX-touchX;if(Math.abs(d)>70&&$('#reader')?.classList.contains('show'))goChapter(d<0?1:-1)},{passive:true});
-async function boot(){applyLanguage();await loadBooks();await refreshOfflineUI();await restoreAccount();renderLibrary();applyLanguage();const m=location.hash.match(/^#([^/]+)\/chapter\/(\d+)/);if(m){const id=decodeURIComponent(m[1]);if(state.books.some(b=>b.id===id))await openBook(id).then(()=>readChapter(+m[2]))}if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{})}
+async function boot(){applyLanguage();await loadBooks();await refreshOfflineUI();await restoreAccount();renderLibrary();applyLanguage();const m=location.hash.match(/^#([^/]+)\/chapter\/(\d+)/);if(m){const id=decodeURIComponent(m[1]);if(state.books.some(b=>b.id===id))await openBook(id).then(()=>readChapter(+m[2],{skipHistory:true}))}if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{})}
 boot();
 })();
