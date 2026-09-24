@@ -1,5 +1,9 @@
 # Kho Truyện Full
 
+### 1.11.0
+- Chapter bookmarks are stored locally and synchronized with the signed-in account.
+- Bookcase includes a dedicated bookmarked-chapter list.
+
 Kho Truyện Full is a Vietnamese story-reading web/API application.
 
 ## Current release
