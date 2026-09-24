@@ -98,7 +98,7 @@ async function pageText(page){
     const r=await fetch(rest,{headers:{'User-Agent':'KhoTruyenFull/1.19 public-domain importer'}});
     if(r.ok){
       let html=await r.text();
-      const m=html.match(/<div class="mw-parser-output">([\\s\\S]*?)<\\/div>\\s*<div class="printfooter/i);
+      const m=html.match(/<div class="mw-parser-output">([\s\S]*?)<\/div>\s*<div class="printfooter/i);
       if(m)html=m[1];
       return stripHtml(html);
     }
