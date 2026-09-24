@@ -71,9 +71,8 @@ async function fetchBatch(titles){
   const data=await api({
     action:'query',
     prop:'revisions',
-    rvprop:'content',
+    rvprop:'ids|timestamp|content',
     rvslots:'main',
-    rvlimit:'1',
     titles:titles.join('|')
   });
   return (data.query?.pages||[]).map(p=>({
