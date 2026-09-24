@@ -22,7 +22,20 @@
 <div id="downloadProgress" class="panel" style="display:none;position:fixed;left:18px;right:18px;bottom:18px;z-index:90;max-width:520px;margin:auto"><div style="display:flex;justify-content:space-between;gap:8px"><div><b class="dp-title">Đang tải</b><div class="muted dp-name"></div></div><span class="muted">Offline</span></div><div class="progress dp-bar" style="margin-top:10px"><i style="width:0%"></i></div></div><section id="bookcase" class="history"><button class="back" onclick="home()">← Thư viện</button><h2>Tủ truyện</h2><div id="favList"></div><div class="panel" style="margin-top:16px"><h3>🔖 Chương đã đánh dấu</h3><div id="bookmarkList"></div></div><div class="panel" style="margin-top:16px"><h3>Đã lưu offline</h3><div id="downloadList"></div></div></section>
 </main><nav class="bottomnav"><button onclick="home()"><b>⌂</b>Trang chủ</button><button onclick="showBookcase()"><b>♡</b>Tủ truyện</button><button onclick="showHistory()"><b>◷</b>Lịch sử</button><button onclick="focusSearch()"><b>⌕</b>Tìm kiếm</button></nav><div id="toast" class="toast"></div>
 <script src="books.js"></script><script src="api-client.js"></script>
-<script src="app.js"></script></body></html>
+<script src="app.js"></script></body>
+<style>
+/* Reader compact header */
+.reader{padding:14px 20px}
+.reader h2{margin:10px 0 4px;font-size:11px}
+.reader h1{margin:0 0 4px;font-size:26px;line-height:1.25}
+.reader .sub{margin-bottom:4px}
+.reader .progress{margin-top:5px}
+.reader .readpos{margin-top:2px;font-size:10px}
+.reader .readerseek{margin:4px 0 12px;height:22px}
+.reader .readertext{margin-top:16px}
+@media(max-width:760px){.reader{padding:8px 10px}.reader h2{margin:6px 0 2px;font-size:10px}.reader h1{font-size:22px;margin-bottom:2px}.reader .readerseek{margin:2px 0 8px;height:20px}.reader .readertext{margin-top:10px}}
+</style>
+</html>
 <style>
 .import13{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}.import-grid13{display:grid;grid-template-columns:1fr 1.3fr;gap:16px;margin-top:12px}.import13 label{display:block;margin:10px 0 5px;color:var(--muted);font-size:12px}.check13{display:flex!important;gap:8px;align-items:center}.check13 input{width:auto}.import-status13,.import-preview13{padding:14px;background:#0d1526;border:1px solid var(--line);border-radius:12px}.import-status13{min-height:80px;display:grid;gap:7px;align-content:center}.import-preview13{margin-top:10px;max-height:360px;overflow:auto}.import-table13{width:100%;border-collapse:collapse;font-size:12px}.import-table13 th,.import-table13 td{padding:7px;border-bottom:1px solid var(--line);text-align:left}.warn13{color:#fde68a}.ok13{color:#86efac}.import-progress13{display:grid;gap:8px}.import-progress13 .progress{margin:0}@media(max-width:760px){.import-grid13{grid-template-columns:1fr}}
 </style>
