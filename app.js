@@ -281,7 +281,7 @@ function ttsLanguage(){
  const explicit=String(state.book?.ttsLang||'').trim();
  if(explicit)return explicit;
  const text=$('#rtext')?.innerText||'';
- if(/[\\u3400-\\u9fff]/.test(text))return 'zh-CN';
+ if(/[\u3400-\u9fff]/.test(text))return 'zh-CN';
  if(/[ăâđêôơưĂÂĐÊÔƠƯÀ-ỹ]/.test(text))return 'vi-VN';
  return 'en-US';
 }
