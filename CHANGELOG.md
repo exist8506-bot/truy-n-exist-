@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.4
+- Stage 2 Part 3: expanded discovery sections for Explore, Reading, Ranking and Recently Updated.
+- Reading mode uses local/server-synced progress to surface unfinished stories.
+- Recently Updated sorts by server update timestamps.
+- Ranking and discovery cards keep the existing reader/bookcase flow.
+
+
 ## 1.6.3
 - Stage 2 Part 2: server-side advanced library search.
 - Filter by title/author query, category and status through SQLite API.
