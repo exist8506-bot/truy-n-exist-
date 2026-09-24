@@ -1,5 +1,8 @@
 # Kho Truyện Full
 
+### 1.14.0
+- Reader 2.0 adds chapter seek and position-aware reading progress.
+
 ### 1.13.0
 - Remote library pagination preserves search, category, status, and sort controls.
 
