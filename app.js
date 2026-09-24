@@ -144,6 +144,25 @@ let chapterPage=1,chapterPageSize=100,chapterTotal=0;
 async function loadChapterPage(page=1){
  if(!state.book)return;
  const q=($('#chapterSearch')?.value||'').trim();
+ const renderLocal=()=>{
+  const local=Array.isArray(state.book.chapters)?state.book.chapters:[];
+  const normalized=local.map((c,i)=>Array.isArray(c)
+    ? {bookId:state.book.id,index:i,title:c[0]||('Chương '+(i+1)),content:c[1]||''}
+    : {...c,index:Number(c?.index??i),title:c?.title||('Chương '+(i+1)),content:c?.content||''});
+  const nq=String(q||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('vi');
+  const filteredLocal=nq?normalized.filter(c=>{
+    const title=String(c.title||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('vi');
+    const content=String(c.content||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('vi');
+    return title.includes(nq)||content.includes(nq);
+  }):normalized;
+  const startIndex=(Math.max(1,page)-1)*chapterPageSize;
+  state.chapters=filteredLocal.slice(startIndex,startIndex+chapterPageSize);
+  chapterPage=Math.max(1,page);
+  chapterTotal=filteredLocal.length;
+  state.book.chapterCount=normalized.length;
+  renderChapters();
+ };
+ if(!state.apiAvailable){renderLocal();return}
  const params=new URLSearchParams({page:String(page),pageSize:String(chapterPageSize),sort:state.order||'asc'});
  if(q)params.set('q',q);
  try{
@@ -153,18 +172,8 @@ async function loadChapterPage(page=1){
   state.book.chapterCount=Number(state.book.chapterCount||chapterTotal);
   renderChapters();
  }catch{
-  const local=Array.isArray(state.book.chapters)?state.book.chapters:[];
-  const normalized=local.map((c,i)=>Array.isArray(c)
-    ? {bookId:state.book.id,index:i,title:c[0]||('Chương '+(i+1)),content:c[1]||''}
-    : {...c,index:Number(c?.index??i),title:c?.title||('Chương '+(i+1)),content:c?.content||''});
-  const nq=String(q||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('vi');
-  const filteredLocal=nq?normalized.filter(c=>String(c.title||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('vi').includes(nq)||String(c.content||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('vi').includes(nq)):normalized;
-  const start=(Math.max(1,page)-1)*chapterPageSize;
-  state.chapters=filteredLocal.slice(start,start+chapterPageSize);
-  chapterPage=Math.max(1,page);
-  chapterTotal=filteredLocal.length;
-  state.book.chapterCount=normalized.length;
-  renderChapters();
+  state.apiAvailable=false;
+  renderLocal();
  }
 }
 async function openBook(id){
