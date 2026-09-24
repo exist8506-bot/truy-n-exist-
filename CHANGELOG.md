@@ -1,3 +1,7 @@
+## 1.11.0
+- Account-synced chapter bookmarks.
+- Bookcase bookmark list.
+
 # Changelog
 
 ## 1.10.0
