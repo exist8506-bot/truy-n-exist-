@@ -27,7 +27,7 @@ async function req(path,opts={}){const r=await fetch('http://127.0.0.1:8787/api/
  x=await req('/admin/stories/'+sid,{method:'DELETE',headers:auth});if(x.status!==200)throw Error('admin delete story failed');
  x=await req('/admin/stories/diagnostics',{headers:auth});if(x.status!==200||!Array.isArray(x.data.stories))throw Error('diagnostics failed');
  x=await req('/admin/backup',{headers:auth});if(x.status!==200||!Array.isArray(x.data.stories)||!Array.isArray(x.data.chapters))throw Error('backup failed');
- const u=await req('/auth/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'ci_user',password:'secret123'})});if(u.status!==201)throw Error('second user failed');
+ const png='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';x=await req('/admin/stories/b1/cover',{method:'POST',headers:{'authorization':'Bearer '+token,'content-type':'application/json'},body:JSON.stringify({data:'data:image/png;base64,'+png})});if(x.status!==200||!x.data.cover)throw Error('cover upload failed '+JSON.stringify(x.data)); const u=await req('/auth/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'ci_user',password:'secret123'})});if(u.status!==201)throw Error('second user failed');
  x=await req('/admin/stats',{headers:{authorization:'Bearer '+u.data.token}});if(x.status!==403)throw Error('admin guard failed');
  x=await req('/stories/b1');const et=x.headers.get('etag');if(!et)throw Error('etag missing');x=await req('/stories/b1',{headers:{'if-none-match':et}});if(x.status!==304)throw Error('etag 304 failed');
  x=await req('/stories',{headers:{'accept-encoding':'gzip'}});if(x.status!==200)throw Error('gzip request failed');
