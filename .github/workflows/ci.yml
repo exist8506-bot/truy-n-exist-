@@ -1,0 +1,44 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax check
+        run: |
+          node --check server/auth.js
+          node --check server/server.js
+          node --check api-client.js
+          node --check books.js
+      - name: Clean seed validation
+        run: |
+          test -f server/schema.sql
+          test -f server/seed.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const d=JSON.parse(fs.readFileSync('server/seed.json','utf8'));
+          if(!Array.isArray(d.books)||d.books.length!==3) throw new Error('Expected 3 clean demo stories');
+          const chapters=d.books.reduce((n,b)=>n+(b.chapters||[]).length,0);
+          if(chapters!==26) throw new Error('Expected 26 clean demo chapters');
+          console.log({stories:d.books.length,chapters});
+          NODE
+      - name: Start API smoke test
+        run: |
+          node server/server.js > /tmp/kho-api.log 2>&1 &
+          pid=$!
+          trap "kill $pid" EXIT
+          for i in $(seq 1 20); do curl -fsS http://127.0.0.1:8787/api/v1/health && break; sleep 1; done
+          curl -fsS http://127.0.0.1:8787/api/v1/stories?page=1\&pageSize=10
+          curl -fsS http://127.0.0.1:8787/api/v1/stories/truyen-thoi-gian
+          echo
+          cat /tmp/kho-api.log
