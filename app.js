@@ -3,7 +3,31 @@
 'use strict';
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const localBooks=()=>Array.isArray(window.books)?window.books:[];
-const state={books:[],book:null,chapter:0,chapters:[],remoteSearch:false,apiAvailable:false,order:'asc',filter:'all',sort:'title',mode:'all',libraryPage:1,libraryPageSize:100,libraryTotal:0,fontSize:+localStorage.getItem('ktf_fs')||19,font:localStorage.getItem('ktf_font')||'Georgia',theme:localStorage.getItem('ktf_theme')||'dark',rate:+localStorage.getItem('ktf_rate')||1,continuous:false,user:null,token:localStorage.getItem('ktf_token')||'',offline:new Set()};
+const state={books:[],book:null,chapter:0,chapters:[],remoteSearch:false,apiAvailable:false,order:'asc',filter:'all',sort:'title',mode:'all',libraryPage:1,libraryPageSize:100,libraryTotal:0,fontSize:+localStorage.getItem('ktf_fs')||19,font:localStorage.getItem('ktf_font')||'Georgia',theme:localStorage.getItem('ktf_theme')||'dark',rate:+localStorage.getItem('ktf_rate')||1,continuous:false,lang:localStorage.getItem('ktf_lang')||'vi',user:null,token:localStorage.getItem('ktf_token')||'',offline:new Set()};
+const I18N={
+ vi:{title:'Kho Truyện Full',tagline:'Demo offline • đọc liền mạch',status:'Đọc liền mạch từ chương đầu đến chương cuối. Dữ liệu được tách khỏi giao diện để dễ mở rộng kho truyện về sau.',books:'Bộ truyện FULL',chapters:'Tổng chương',shelf:'Trong tủ',offline:'Đã lưu offline',explore:'Khám phá',reading:'Đang đọc',rank:'Xếp hạng',new:'Mới cập nhật',all:'Tất cả',full:'FULL',anyStatus:'Mọi trạng thái',byTitle:'Tên A–Z',byChapters:'Nhiều chương',byAuthor:'Tác giả',updated:'Mới cập nhật',chapterList:'Danh sách chương',searchChapter:'Tìm chương…',contents:'☰ Mục lục',read:'Đọc',stop:'Dừng',mark:'🔖 Đánh dấu',marked:'🔖 Đã đánh dấu',top:'↑',bottom:'↓',fullscreen:'⛶',settings:'⚙',prev:'← Chương trước',next:'Chương sau →',downloadChapter:'⬇ Tải chương',back:'← Thư viện',offlineAll:'⬇ Lưu cả truyện offline',readFromStart:'▶ Đọc từ đầu',continue:'↪ Đọc tiếp',addShelf:'♡ Thêm tủ',removeShelf:'♥ Bỏ tủ',share:'↗ Chia sẻ',autoNear:'Đã gần cuối chương',autoNext:'Chương sau →',lang:'Ngôn ngữ',ttsError:'Âm thanh gặp lỗi, đã dừng.'},
+ en:{title:'Full Story Library',tagline:'Offline demo • continuous reading',status:'Read continuously from the first chapter to the last. Data is separated from the UI for easy expansion.',books:'FULL books',chapters:'Total chapters',shelf:'In shelf',offline:'Saved offline',explore:'Explore',reading:'Reading',rank:'Ranking',new:'Recently updated',all:'All',full:'FULL',anyStatus:'Any status',byTitle:'Title A–Z',byChapters:'Most chapters',byAuthor:'Author',updated:'Recently updated',chapterList:'Chapter list',searchChapter:'Search chapters…',contents:'☰ Contents',read:'Read',stop:'Stop',mark:'🔖 Bookmark',marked:'🔖 Bookmarked',top:'↑',bottom:'↓',fullscreen:'⛶',settings:'⚙',prev:'← Previous chapter',next:'Next chapter →',downloadChapter:'⬇ Download chapter',back:'← Library',offlineAll:'⬇ Save whole book offline',readFromStart:'▶ Start reading',continue:'↪ Continue',addShelf:'♡ Add to shelf',removeShelf:'♥ Remove from shelf',share:'↗ Share',autoNear:'Near the end of this chapter',autoNext:'Next chapter →',lang:'Language',ttsError:'Audio error, reading stopped.'},
+ zh:{title:'完本书库',tagline:'离线演示 • 连续阅读',status:'从第一章连续阅读到最后一章。数据与界面分离，方便继续扩充书库。',books:'完本小说',chapters:'总章节',shelf:'书架',offline:'已离线保存',explore:'发现',reading:'正在阅读',rank:'排行',new:'最近更新',all:'全部',full:'完本',anyStatus:'全部状态',byTitle:'书名 A–Z',byChapters:'章节最多',byAuthor:'作者',updated:'最近更新',chapterList:'章节目录',searchChapter:'搜索章节…',contents:'☰ 目录',read:'朗读',stop:'停止',mark:'🔖 收藏章节',marked:'🔖 已收藏',top:'↑',bottom:'↓',fullscreen:'⛶',settings:'⚙',prev:'← 上一章',next:'下一章 →',downloadChapter:'⬇ 下载本章',back:'← 书库',offlineAll:'⬇ 整本离线保存',readFromStart:'▶ 从头阅读',continue:'↪ 继续阅读',addShelf:'♡ 加入书架',removeShelf:'♥ 移出书架',share:'↗ 分享',autoNear:'本章即将结束',autoNext:'下一章 →',lang:'语言',ttsError:'朗读出错，已停止。'}
+};
+const T=k=>I18N[state.lang]?.[k]??I18N.vi[k]??k;
+function applyLanguage(){
+ document.documentElement.lang=state.lang==='zh'?'zh-CN':state.lang==='en'?'en':'vi';
+ const set=(sel,key)=>{const el=$(sel);if(el&&T(key)!=null)el.textContent=T(key)};
+ set('.brand b','title');set('#brandTagline','tagline');set('#libraryTitle','title');
+ const hero=$('#libraryTitle')?.parentElement?.querySelector('p');if(hero){const status=$('#apiStatus');hero.childNodes.forEach(n=>{if(n.nodeType===3)n.textContent=' · '+T('status')});}
+ set('#segAll','explore');set('#segReading','reading');set('#segRank','rank');set('#segNew','new');set('#filterAll','all');
+ const filterButtons=document.querySelectorAll('#dataTools>button');if(filterButtons[1])filterButtons[1].textContent=T('full');
+ const cf=$('#categoryFilter'),sf=$('#statusFilter'),ss=$('#sortBooks');if(cf?.options[0])cf.options[0].textContent=T('all');if(sf?.options[0])sf.options[0].textContent=T('anyStatus');if(sf?.options[1])sf.options[1].textContent=T('full');
+ if(ss){const keys=['byTitle','byChapters','byAuthor','updated'];[...ss.options].forEach((o,i)=>o.textContent=T(keys[i]||'byTitle'))}
+ const chapterTools=$('#chapterSearch');if(chapterTools)chapterTools.placeholder=T('searchChapter');set('#detail .back','back');set('#history .back','back');set('#bookcase .back','back');
+ const cl=$('.chapterTools b');if(cl)cl.textContent=T('chapterList');
+ const speakBtn=$('#ttsLabel')?.closest('button');if(speakBtn){const icon=speakBtn.childNodes[0];const label=$('#ttsLabel');if(icon&&icon.nodeType===3)icon.textContent='🔊 ';label.textContent=ttsState.active?T('stop'):T('read')}
+ const reader=$('#reader');if(reader){const mb=$('#bookmarkBtn');if(mb)mb.textContent=isBookmarked()?T('marked'):T('mark');const next=$('#next');if(next)next.textContent=T('next');const prev=$('#prev');if(prev)prev.textContent=T('prev');const dl=reader.querySelector('.pager .btn.good');if(dl)dl.textContent=T('downloadChapter');const menu=reader.querySelector('.readerbar>.btn');if(menu)menu.textContent=T('contents');const auto=$('#autoNext');if(auto){auto.querySelector('span')?.textContent=T('autoNear');auto.querySelector('button')?.textContent=T('autoNext')}}
+ const bottom=document.querySelector('.bottomnav');if(bottom){bottom.innerHTML='<button onclick="home()"><b>⌂</b>'+T('explore')+'</button><button onclick="showBookcase()"><b>♡</b>'+T('shelf')+'</button><button onclick="showHistory()"><b>◷</b>'+T('reading')+'</button><button onclick="focusSearch()"><b>⌕</b>'+T('all')+'</button>'}
+ const ls=$('#langSelect');if(ls)ls.value=state.lang;
+ document.title=T('title');
+}
+window.setLanguage=lang=>{if(!I18N[lang])lang='vi';state.lang=lang;save('ktf_lang',lang);applyLanguage();applyReader();renderLibrary()};
 const apiBase=()=>window.KhoAPI?.base?.()||'/api/v1';
 const api=async(path,opt={})=>{const h={'Accept':'application/json',...(opt.headers||{})};if(state.token)h.Authorization='Bearer '+state.token;const r=await fetch(apiBase()+path,{...opt,headers:h});if(!r.ok){let m='HTTP_'+r.status;try{const j=await r.json();m=j.error||j.message||m}catch{}throw Error(m)}return r.status===204?null:r.json()};
 window.configureApi=()=>{const current=window.KhoAPI?.base?.()||'';const value=prompt('URL API backend (ví dụ: https://api.example.com/api/v1)\\nĐể trống để dùng mặc định của trang.',current);if(value===null)return;const v=value.trim().replace(/\/$/,'');if(v)localStorage.setItem('ktf_api_base',v);else localStorage.removeItem('ktf_api_base');toast(v?'Đã lưu địa chỉ API. Đang tải lại…':'Đã khôi phục API mặc định. Đang tải lại…');setTimeout(()=>location.reload(),350)};
@@ -203,9 +227,18 @@ async function fetchChapterData(i){
  chapterInflight.set(key,job);try{return await job}finally{chapterInflight.delete(key)}
 }
 async function prefetchChapter(i){if(!state.book||i<0||i>=Number(state.book.chapterCount||state.book.chapters?.length||state.chapters.length||0))return;try{await fetchChapterData(i)}catch{}}
+let autoAdvanceTimer=0;
+function totalChapterCount(){return Number(state.book?.chapterCount||state.book?.chapters?.length||state.chapters.length||0)}
+function scheduleAutoAdvance(){
+ if(autoAdvanceTimer||!state.book)return;
+ const n=totalChapterCount();if(state.chapter>=n-1)return;
+ $('#autoNext').style.display='flex';
+ autoAdvanceTimer=setTimeout(async()=>{autoAdvanceTimer=0;const next=state.chapter+1;await readChapter(next);},900);
+}
 async function readChapter(i){
  if(!state.book)return;
- const n=Number(state.book.chapterCount||state.book.chapters?.length||state.chapters.length||0);
+ if(autoAdvanceTimer){clearTimeout(autoAdvanceTimer);autoAdvanceTimer=0}
+ const n=totalChapterCount();
  if(i<0||i>=n)return;
  const j=await fetchChapterData(i);
  state.chapter=i;state.current=j;show('reader');$('#rbook').textContent=state.book.title;$('#rtitle').textContent=j.title||('Chương '+i);$('#rmeta').textContent='Chương '+(i+1)+' · '+(state.book.author||'');const bookmarkBtn=$('#bookmarkBtn');if(bookmarkBtn)bookmarkBtn.textContent=isBookmarked()?'🔖 Đã đánh dấu':'🔖 Đánh dấu';$('#rtext').innerHTML=String(j.content||'').split(/\n+/).filter(Boolean).map(x=>'<p>'+esc(x)+'</p>').join('');
@@ -214,14 +247,57 @@ async function readChapter(i){
 }
 window.readChapter=readChapter;
 function recordRead(){const h=hist().filter(x=>!(x.bookId===state.book.id&&x.chapter===state.chapter));h.unshift({bookId:state.book.id,chapter:state.chapter,title:state.current?.title||'',at:Date.now()});setHist(h.slice(0,50));const p=progress();p[state.book.id]={chapter:state.chapter,percent:(p[state.book.id]?.chapter===state.chapter?Number(p[state.book.id]?.percent)||0:0),updated:Date.now()};setProgress(p);if(state.token)syncProgress().catch(()=>{})}
-function updateReaderProgress(){const p=progress()[state.book.id]||{}, n=state.book.chapterCount||state.chapters.length||state.book.chapters?.length||1;const chapterPct=Math.min(100,Math.round(((state.chapter+1)/n)*100));const localPct=state.chapter===p.chapter?Number(p.percent)||0:0;$('#rprogress').style.width=Math.max(chapterPct,Math.min(100,localPct))+'%';$('#readPosition').textContent='Chương '+(state.chapter+1)+' / '+n+' · '+Math.round(localPct||chapterPct)+'%';$('#prev').disabled=state.chapter<=0;$('#autoNext').style.display=state.chapter<n-1?'flex':'none';const jump=$('#readerSeek');if(jump){jump.max=String(n-1);jump.value=String(state.chapter)}}
+function updateReaderProgress(){const p=progress()[state.book.id]||{}, n=totalChapterCount()||1;const chapterPct=Math.min(100,Math.round(((state.chapter+1)/n)*100));const localPct=state.chapter===p.chapter?Number(p.percent)||0:0;$('#rprogress').style.width=Math.max(chapterPct,Math.min(100,localPct))+'%';$('#readPosition').textContent='Chương '+(state.chapter+1)+' / '+n+' · '+Math.round(localPct||chapterPct)+'%';$('#prev').disabled=state.chapter<=0;$('#autoNext').style.display=state.chapter<n-1?'flex':'none';const jump=$('#readerSeek');if(jump){jump.max=String(n-1);jump.value=String(state.chapter)}}
 function bookmarks(){try{return JSON.parse(localStorage.getItem('ktf_bookmarks_v1')||'{}')}catch{return{}}}
 function setBookmarks(v){localStorage.setItem('ktf_bookmarks_v1',JSON.stringify(v||{}))}
 function isBookmarked(){const b=bookmarks();return !!(state.book&&b[state.book.id]&&b[state.book.id][state.chapter])}
 window.toggleBookmark=async()=>{if(!state.book)return;const b=bookmarks();b[state.book.id]=b[state.book.id]||{};const active=!!b[state.book.id][state.chapter];if(active)delete b[state.book.id][state.chapter];else b[state.book.id][state.chapter]={title:state.current?.title||'',at:Date.now()};setBookmarks(b);const el=$('#bookmarkBtn');if(el)el.textContent=isBookmarked()?'🔖 Đã đánh dấu':'🔖 Đánh dấu';if(state.token)api('/bookmarks',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:state.book.id,chapterIndex:state.chapter,title:state.current?.title||'',active:!active})}).catch(()=>{});renderBookcase();toast(!active?'Đã đánh dấu chương':'Đã bỏ đánh dấu')}
 function renderBookmarks(){const box=$('#bookmarkList');if(!box)return;const b=bookmarks(),items=[];for(const [storyId,chs] of Object.entries(b)){const story=state.books.find(x=>x.id===storyId);for(const [idx,v] of Object.entries(chs||{}))items.push({storyId,index:Number(idx),title:v?.title||('Chương '+(Number(idx)+1)),at:Number(v?.at||0),storyTitle:story?.title||storyId})}items.sort((a,b)=>b.at-a.at);box.innerHTML=items.length?items.map(x=>'<div class="histrow"><div><b>'+esc(x.storyTitle)+'</b><div class="muted">Chương '+(x.index+1)+' · '+esc(x.title)+'</div></div><button class="btn" onclick="openBook(\''+esc(x.storyId)+'\').then(()=>readChapter('+x.index+'))">Đọc</button></div>').join(''):'<div class="empty">Chưa đánh dấu chương nào.</div>'}
-window.goChapter=d=>{const n=Number(state.book?.chapterCount||state.book?.chapters?.length||state.chapters.length||0);const x=state.chapter+d;if(x>=0&&x<n)readChapter(x);else toast('Đã đến cuối truyện')};
-window.font=d=>{state.fontSize=Math.max(14,Math.min(30,state.fontSize+d));save('ktf_fs',state.fontSize);applyReader()};window.setFont=x=>{state.font=x;save('ktf_font',x);applyReader()};window.setTheme=x=>{state.theme=x;save('ktf_theme',x);applyReader()};window.setTTSRate=x=>{state.rate=+x;save('ktf_rate',state.rate);if(speechSynthesis.speaking)speak()};
+window.goChapter=d=>{const n=totalChapterCount(),x=state.chapter+d;if(x<0||x>=n){toast(T('next'));return}const keepTts=ttsState.active;if(keepTts)stopTTS(true);readChapter(x).then(()=>{if(keepTts)startTTSCurrent()})};
+window.font=d=>{state.fontSize=Math.max(14,Math.min(30,state.fontSize+d));save('ktf_fs',state.fontSize);applyReader()};window.setFont=x=>{state.font=x;save('ktf_font',x);applyReader()};window.setTheme=x=>{state.theme=x;save('ktf_theme',x);applyReader()};let ttsState={active:false,chunks:[],pos:0,chapterKey:''};
+function stopTTS(silent=false){
+ try{speechSynthesis?.cancel?.()}catch{}
+ ttsState={active:false,chunks:[],pos:0,chapterKey:''};
+ const l=$('#ttsLabel');if(l)l.textContent=T('read');
+ if(!silent)toast(T('read'));
+}
+function splitTTSText(text,limit=1500){
+ let rest=String(text||'').trim(),out=[];
+ while(rest.length>limit){
+  let cut=Math.max(rest.lastIndexOf('。',limit),rest.lastIndexOf('！',limit),rest.lastIndexOf('？',limit),rest.lastIndexOf('.',limit),rest.lastIndexOf('!',limit),rest.lastIndexOf('?',limit));
+  if(cut<Math.floor(limit*.55))cut=limit;
+  out.push(rest.slice(0,cut+1).trim());rest=rest.slice(cut+1).trim();
+ }
+ if(rest)out.push(rest);return out;
+}
+function ttsLanguage(){return String(state.book?.ttsLang||'').trim()||({vi:'vi-VN',en:'en-US',zh:'zh-CN'}[state.lang]||'vi-VN')}
+function startTTSCurrent(){
+ if(!window.speechSynthesis||!window.SpeechSynthesisUtterance)return toast('Thiết bị không hỗ trợ TTS');
+ const text=$('#rtext')?.innerText?.trim()||'';if(!text)return;
+ const key=state.book.id+':'+state.chapter;
+ ttsState={active:true,chunks:splitTTSText(text),pos:0,chapterKey:key};
+ $('#ttsLabel').textContent=T('stop');
+ speakTTSChunk();
+}
+function speakTTSChunk(){
+ if(!ttsState.active)return;
+ if(ttsState.chapterKey!==state.book.id+':'+state.chapter)return;
+ if(ttsState.pos>=ttsState.chunks.length){
+  const next=state.chapter+1,n=totalChapterCount();
+  if(next<n){
+   const keep=true;stopTTS(true);
+   readChapter(next).then(()=>{if(keep)startTTSCurrent()});
+  }else stopTTS(true);
+  return;
+ }
+ const u=new SpeechSynthesisUtterance(ttsState.chunks[ttsState.pos++]);
+ u.lang=ttsLanguage();u.rate=state.rate;
+ u.onend=()=>{if(ttsState.active)setTimeout(speakTTSChunk,25)};
+ u.onerror=()=>{stopTTS(true);toast(T('ttsError'))};
+ try{speechSynthesis.speak(u)}catch{stopTTS(true);toast(T('ttsError'))}
+}
+window.speak=()=>{if(!window.speechSynthesis)return toast('Thiết bị không hỗ trợ TTS');if(ttsState.active){stopTTS(true);return}startTTSCurrent()};
+window.setTTSRate=x=>{state.rate=+x;save('ktf_rate',state.rate);if(ttsState.active){stopTTS(true);startTTSCurrent()}};
 window.toggleSettings=()=>{const x=$('#settings');x.style.display=x.style.display==='none'?'flex':'none'};
 function applyReader(){const r=$('#reader'),a=$('#rtext');if(!a)return;a.style.fontSize=state.fontSize+'px';a.style.fontFamily=state.font;r.classList.toggle('continuous',state.continuous);if(state.theme==='light'){r.style.background='#fff';r.style.color='#172033';a.style.color='#263241'}else if(state.theme==='sepia'){r.style.background='#f3ead7';r.style.color='#4b3a28';a.style.color='#4b3a28'}else{r.style.background='var(--reader)';r.style.color='var(--text)';a.style.color='var(--readerText)'}$('#themeSelect').value=state.theme;$('#fontSelect').value=state.font;$('#ttsRate').value=String(state.rate)}
 window.toggleContinuous=()=>{state.continuous=!state.continuous;applyReader()};
@@ -231,7 +307,7 @@ function scrollKey(){return state.book?state.book.id+':'+state.chapter:null}
 function saveScroll(){const k=scrollKey();if(!k)return;const max=Math.max(1,document.documentElement.scrollHeight-innerHeight);const pct=Math.round((scrollY/max)*1000)/10;const p=progress();p[state.book.id]={chapter:state.chapter,percent:Math.max(0,Math.min(100,pct)),updated:Date.now()};setProgress(p);$('#rprogress').style.width=Math.min(100,pct)+'%';$('#readPosition').textContent='Chương '+(state.chapter+1)+' / '+(state.book.chapterCount||1)+' · '+Math.round(pct)+'%';if(state.token){clearTimeout(scrollSaveTimer);scrollSaveTimer=setTimeout(()=>syncProgress().catch(()=>{}),600)}}
 function restoreScroll(){const p=progress()[state.book?.id];if(!p||p.chapter!==state.chapter)return;requestAnimationFrame(()=>{const max=Math.max(0,document.documentElement.scrollHeight-innerHeight);scrollTo(0,max*(Math.max(0,Math.min(100,p.percent))/100))})}
 function markChapterRead(){const p=progress();const cur=p[state.book?.id];if(!state.book||!cur)return;cur.percent=100;cur.updated=Date.now();setProgress(p);if(state.token)syncProgress().catch(()=>{});updateReaderProgress()}
-window.addEventListener('scroll',()=>{if($('#reader')?.classList.contains('show')){saveScroll();const p=progress()[state.book?.id];if(p&&p.percent>=95&&state.chapter<(state.chapters.length||state.book.chapterCount||1)-1)markChapterRead()}},{passive:true});
+window.addEventListener('scroll',()=>{if($('#reader')?.classList.contains('show')){saveScroll();const p=progress()[state.book?.id];if(p&&p.percent>=99){markChapterRead();scheduleAutoAdvance()}else if(p&&p.percent<95&&autoAdvanceTimer){clearTimeout(autoAdvanceTimer);autoAdvanceTimer=0}}},{passive:true});
 window.addEventListener('pagehide',()=>{if($('#reader')?.classList.contains('show'))saveScroll()});
 window.readerSeekChapter=async v=>{const i=Number(v);if(Number.isFinite(i)&&state.book){await readChapter(Math.max(0,Math.min(Number(state.book.chapterCount||1)-1,i)))}};window.readerTop=()=>window.scrollTo({top:0,behavior:'smooth'});
 window.readerBottom=()=>window.scrollTo({top:document.documentElement.scrollHeight,behavior:'smooth'});
@@ -450,6 +526,6 @@ s.querySelector('#adDiag').onclick=async()=>{try{out.textContent=JSON.stringify(
 };
 window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;if(e.key==='ArrowRight')goChapter(1);else if(e.key==='ArrowLeft')goChapter(-1);else if(e.code==='Space'){e.preventDefault();speak()}else if(e.key==='Escape')$('#reader')?.classList.toggle('focus')});
 let touchX=0;document.addEventListener('touchstart',e=>touchX=e.changedTouches[0].screenX,{passive:true});document.addEventListener('touchend',e=>{const d=e.changedTouches[0].screenX-touchX;if(Math.abs(d)>70&&$('#reader')?.classList.contains('show'))goChapter(d<0?1:-1)},{passive:true});
-async function boot(){await loadBooks();await refreshOfflineUI();await restoreAccount();renderLibrary();const m=location.hash.match(/^#([^/]+)\/chapter\/(\d+)/);if(m){const id=decodeURIComponent(m[1]);if(state.books.some(b=>b.id===id))await openBook(id).then(()=>readChapter(+m[2]))}if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{})}
+async function boot(){applyLanguage();await loadBooks();await refreshOfflineUI();await restoreAccount();renderLibrary();applyLanguage();const m=location.hash.match(/^#([^/]+)\/chapter\/(\d+)/);if(m){const id=decodeURIComponent(m[1]);if(state.books.some(b=>b.id===id))await openBook(id).then(()=>readChapter(+m[2]))}if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{})}
 boot();
 })();
