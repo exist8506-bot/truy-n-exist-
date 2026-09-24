@@ -27,7 +27,7 @@ function applyLanguage(){
  const ls=$('#langSelect');if(ls)ls.value=state.lang;
  document.title=T('title');
 }
-window.setLanguage=lang=>{if(!I18N[lang])lang='vi';state.lang=lang;save('ktf_lang',lang);applyLanguage();applyReader();renderLibrary()};
+window.setLanguage=lang=>{if(!I18N[lang])lang='vi';state.lang=lang;save('ktf_lang',lang);renderLibrary();applyLanguage();applyReader()};
 const apiBase=()=>window.KhoAPI?.base?.()||'/api/v1';
 const api=async(path,opt={})=>{const h={'Accept':'application/json',...(opt.headers||{})};if(state.token)h.Authorization='Bearer '+state.token;const r=await fetch(apiBase()+path,{...opt,headers:h});if(!r.ok){let m='HTTP_'+r.status;try{const j=await r.json();m=j.error||j.message||m}catch{}throw Error(m)}return r.status===204?null:r.json()};
 window.configureApi=()=>{const current=window.KhoAPI?.base?.()||'';const value=prompt('URL API backend (ví dụ: https://api.example.com/api/v1)\\nĐể trống để dùng mặc định của trang.',current);if(value===null)return;const v=value.trim().replace(/\/$/,'');if(v)localStorage.setItem('ktf_api_base',v);else localStorage.removeItem('ktf_api_base');toast(v?'Đã lưu địa chỉ API. Đang tải lại…':'Đã khôi phục API mặc định. Đang tải lại…');setTimeout(()=>location.reload(),350)};
