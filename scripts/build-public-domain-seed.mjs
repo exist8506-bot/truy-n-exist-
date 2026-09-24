@@ -7,7 +7,7 @@ const books=[
   {id:'tay-du-ky',title:'Tây Du Ký',author:'Ngô Thừa Ân / 吳承恩',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/西遊記',sourceTitle:'西遊記',mode:'chapters',expected:100},
   {id:'hau-tay-du-ky',title:'Hậu Tây Du Ký',author:'Đài Sơn Nhân / 無名氏',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/後西遊記',sourceTitle:'後西遊記',mode:'chapters',expected:40},
   {id:'dong-du-ky',title:'Đông Du Ký',author:'Ngô Nguyên Thái / 吳元泰',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/東遊記',sourceTitle:'東遊記',mode:'chapters',expected:56},
-  {id:'nam-du-ky',title:'Nam Du Ký',author:'Dư Tượng Đẩu / 余象斗',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/南遊記',sourceTitle:'南遊記',mode:'south-volumes',expected:4},
+  {id:'nam-du-ky',title:'Nam Du Ký',author:'Dư Tượng Đẩu / 余象斗',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/南遊記',sourceTitle:'南遊記',mode:'south-volumes'},
   {id:'bac-du-ky',title:'Bắc Du Ký',author:'Dư Tượng Đẩu / 余象斗',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/北遊記',sourceTitle:'北遊記',mode:'chapters',expected:24},
   {id:'bat-tien-dac-dao',title:'Bát Tiên Đắc Đạo',author:'Vô Danh Thị / 無名氏',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/八仙得道',sourceTitle:'八仙得道',mode:'chapters',expected:100},
   {id:'nu-tien-ngoai-su',title:'Nữ Tiên Ngoại Sử',author:'Lữ Hùng / 呂熊',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/女仙外史',sourceTitle:'女仙外史',mode:'chapters',expected:100},
@@ -21,16 +21,14 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function chineseNumber(s){
   s=String(s||'').replace(/^第/,'').replace(/[回章卷]$/,'');
   const map={零:0,〇:0,一:1,二:2,兩:2,两:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9};
-  let current=0,unit=1,seen=false;
-  for(let i=s.length-1;i>=0;i--){
-    const ch=s[i];
-    if(map[ch]!=null){current+=map[ch]*unit;seen=true}
-    else if(ch==='十'){unit=10;if(current===0)current=1}
-    else if(ch==='百'){unit=100;if(current===0)current=1}
-    else if(ch==='千'){unit=1000;if(current===0)current=1}
-    else return null;
+  let total=0,section=0,seen=false;
+  for(const ch of s){
+    if(map[ch]!=null){section=map[ch];seen=true;continue}
+    const unit={十:10,百:100,千:1000}[ch];
+    if(unit){total+=(section||1)*unit;section=0;continue}
+    return null;
   }
-  return seen?(current||null):null;
+  return seen?total+section:null;
 }
 
 function chapterNumber(title){
