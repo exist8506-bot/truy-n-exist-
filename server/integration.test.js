@@ -18,6 +18,15 @@ async function req(path,opts={}){const r=await fetch('http://127.0.0.1:8787/api/
  x=await req('/favorites',{headers:auth});if(x.status!==200||!x.data.includes('b1'))throw Error('favorite get failed');
  x=await req('/sync',{headers:auth});if(x.status!==200||x.data.progress.b1.chapterIndex!==2||!x.data.favorites.includes('b1'))throw Error('sync failed');
  x=await req('/admin/stats',{headers:auth});if(x.status!==200||x.data.stories!==3||x.data.chapters!==26)throw Error('admin stats failed');
+ x=await req('/admin/stories',{method:'POST',headers:{...auth,'content-type':'application/json'},body:JSON.stringify({title:'CI CRUD Story',author:'CI',cat:'Test',desc:'Integration'})});if(x.status!==201)throw Error('admin create story failed');const sid=x.data.id;
+ x=await req('/admin/stories/'+sid+'/chapters',{method:'POST',headers:{...auth,'content-type':'application/json'},body:JSON.stringify({index:0,title:'Chương CI',content:'Nội dung tích hợp đủ dài để kiểm tra API CRUD.'})});if(x.status!==201)throw Error('admin create chapter failed');
+ x=await req('/stories/'+sid+'/chapters/0');if(x.status!==200||x.data.title!=='Chương CI')throw Error('new chapter read failed');
+ x=await req('/admin/stories/'+sid+'/chapters/0',{method:'PUT',headers:{...auth,'content-type':'application/json'},body:JSON.stringify({title:'Chương CI sửa',content:'Nội dung đã được chỉnh sửa.'})});if(x.status!==200)throw Error('admin update chapter failed');
+ x=await req('/admin/stories/'+sid,{method:'PUT',headers:{...auth,'content-type':'application/json'},body:JSON.stringify({title:'CI CRUD Story sửa'})});if(x.status!==200)throw Error('admin update story failed');
+ x=await req('/admin/stories/'+sid+'/chapters/0',{method:'DELETE',headers:auth});if(x.status!==200)throw Error('admin delete chapter failed');
+ x=await req('/admin/stories/'+sid,{method:'DELETE',headers:auth});if(x.status!==200)throw Error('admin delete story failed');
+ x=await req('/admin/stories/diagnostics',{headers:auth});if(x.status!==200||!Array.isArray(x.data.stories))throw Error('diagnostics failed');
+ x=await req('/admin/backup',{headers:auth});if(x.status!==200||!Array.isArray(x.data.stories)||!Array.isArray(x.data.chapters))throw Error('backup failed');
  const u=await req('/auth/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'ci_user',password:'secret123'})});if(u.status!==201)throw Error('second user failed');
  x=await req('/admin/stats',{headers:{authorization:'Bearer '+u.data.token}});if(x.status!==403)throw Error('admin guard failed');
  x=await req('/stories/b1');const et=x.headers.get('etag');if(!et)throw Error('etag missing');x=await req('/stories/b1',{headers:{'if-none-match':et}});if(x.status!==304)throw Error('etag 304 failed');
