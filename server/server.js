@@ -18,6 +18,8 @@ const q=(sql,...a)=>db.prepare(sql).get(...a); const all=(sql,...a)=>db.prepare(
 try{db.exec("ALTER TABLE chapters ADD COLUMN search_key TEXT DEFAULT ''");}catch{}
 for(const r of all("SELECT id,title FROM chapters WHERE search_key='' OR search_key IS NULL"))run('UPDATE chapters SET search_key=? WHERE id=?',norm(r.title),r.id);
 db.exec('CREATE INDEX IF NOT EXISTS idx_chapters_search ON chapters(story_id,search_key);');
+db.exec("CREATE TABLE IF NOT EXISTS bookmarks(user_id TEXT NOT NULL,story_id TEXT NOT NULL,chapter_index INTEGER NOT NULL,title TEXT DEFAULT '',created_at TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(user_id,story_id,chapter_index));");
+db.exec('CREATE INDEX IF NOT EXISTS idx_bookmarks_user_updated ON bookmarks(user_id,updated_at);');
 function seed(){if(q('SELECT 1 AS x FROM stories LIMIT 1'))return;const legacy=path.join(DATA_DIR,'seed.json');if(!fs.existsSync(legacy))return;const d=JSON.parse(fs.readFileSync(legacy,'utf8'));const t=now();for(const b of d.books||[]){run('INSERT INTO stories(id,title,author,category,description,search_key,tone,status,cover_path,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)',b.id,b.title,b.author||'',b.cat||'Khác',b.desc||'',norm([b.title,b.author,b.cat,b.desc].join(' ')),b.tone||'', 'FULL','',t,t);(b.chapters||[]).forEach((c,i)=>run('INSERT INTO chapters(id,story_id,chapter_index,title,content,created_at,updated_at,search_key) VALUES(?,?,?,?,?,?,?,?)',`${b.id}:${i}`,b.id,i,c[0]||`Chương ${i+1}`,c[1]||'',t,t,norm(c[0]||`Chương ${i+1}`)));} }
 seed();
 function send(res,status,data,type='application/json; charset=utf-8',req=null){
