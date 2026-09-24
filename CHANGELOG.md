@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.5
+- Stage 2 Part 4: resilient bookcase/account synchronization.
+- Local favorites are preserved and merged with server favorites after sign-in.
+- Reading progress uses server timestamps when merging local and remote state.
+- Pending local changes are pushed after restore and automatically retried when the browser returns online.
+- Favorite changes remain local when the API is temporarily unavailable and are retried later.
+
+
 ## 1.6.4
 - Stage 2 Part 3: expanded discovery sections for Explore, Reading, Ranking and Recently Updated.
 - Reading mode uses local/server-synced progress to surface unfinished stories.
