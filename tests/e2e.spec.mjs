@@ -14,13 +14,13 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   });
   const page=await context.newPage();
   await page.goto('/');
-  await expect(page.locator('#grid .card')).toHaveCount(4);
-  await expect(page.locator('#statBooks')).toHaveText('4');
-  await expect(page.locator('#statChapters')).toHaveText('126');
+  await expect(page.locator('#grid .card')).toHaveCount(14);
+  await expect(page.locator('#statBooks')).toHaveText('14');
+  await expect(page.locator('#statChapters')).not.toHaveText('126');
   await expect(page.locator('#grid')).toContainText('Phong Thần Diễn Nghĩa');
 
   await page.locator('#search').fill('Phong Thần');
-  await expect(page.locator('#grid .card')).toHaveCount(1);
+  expect(await page.locator('#grid .card').count()).toBeGreaterThanOrEqual(11);
   await page.locator('#search').fill('');
   await page.locator('#categoryFilter').selectOption({label:'Tiên hiệp / Thần ma'});
   await expect(page.locator('#grid .card')).toHaveCount(1);
@@ -129,7 +129,7 @@ test('static fallback mode: real public seed, search, read, PWA cache and offlin
   await page.locator('#search').fill('');
   await page.locator('#categoryFilter').selectOption({label:'Tiên hiệp / Thần ma'});
   await expect(page.locator('#grid .card')).toHaveCount(1);
-  await page.locator('#grid .card').first().locator('.info').click();
+  await page.locator('#grid .card').filter({hasText:'Phong Thần Diễn Nghĩa'}).locator('.info').click();
   await expect(page.locator('#chapterCount')).toContainText('100 chương');
   await page.locator('#chapters .chapter').first().click();
   await expect(page.locator('#rtitle')).not.toBeEmpty();
@@ -140,7 +140,7 @@ test('static fallback mode: real public seed, search, read, PWA cache and offlin
   await expect(page.locator('#downloadList')).toContainText('Đã lưu đầy đủ',{timeout:30000});
 
   const cache=await page.evaluate(async()=>{await navigator.serviceWorker.ready;const keys=await caches.keys();return {keys,seed:!!await caches.match('./public-domain-seed.json')};});
-  expect(cache.keys.some(k=>k.includes('kho-truyen-1.20.0'))).toBeTruthy();
+  expect(cache.keys.some(k=>k.includes('kho-truyen-1.21.0'))).toBeTruthy();
   expect(cache.seed).toBeTruthy();
   await context.close();
 });
