@@ -259,7 +259,17 @@ async function downloadBook(bookId){
  let job=await offlineGetDownload(bookId)||{bookId,title:b.title,done:0,total:0,status:'queued',bytes:0,updatedAt:new Date().toISOString()};
  job.status='downloading';job.error='';job.updatedAt=new Date().toISOString();await offlineSetDownload(job);refreshOfflineUI();
  try{
-  const chapters=await getDownloadChapterMeta(bookId);
+  let chapters=[];
+  try{
+   const staticBooks=await loadStaticSeed();
+   const sb=staticBooks.find(x=>x.id===bookId);
+   if(sb&&Array.isArray(sb.chapters)&&sb.chapters.length){
+    chapters=sb.chapters.map((c,i)=>Array.isArray(c)
+      ? {index:i,title:c[0]||('Chương '+(i+1)),content:c[1]||'',bookId}
+      : {...c,index:Number(c?.index??i),title:c?.title||('Chương '+(i+1)),content:c?.content||'',bookId});
+   }
+  }catch{}
+  if(!chapters.length)chapters=await getDownloadChapterMeta(bookId);
   job.total=chapters.length;
   job.done=0;
   job.updatedAt=new Date().toISOString();
@@ -270,10 +280,11 @@ async function downloadBook(bookId){
     }
     const meta=chapters[k],idx=Number(meta.index??k),existing=await offlineGet(bookId,idx);
     if(existing){job.done++;continue}
-    const data=await fetchChapterForOffline(bookId,idx);
+    const data=String(meta.content||'').trim()?meta:await fetchChapterForOffline(bookId,idx);
     await offlinePut(bookId,idx,data);
     job.done++;job.bytes+=JSON.stringify(data).length;job.updatedAt=new Date().toISOString();
-    if(job.done===1||job.done%5===0||job.done===job.total){await offlineSetDownload(job);refreshOfflineUI()}
+    if(job.done===1||job.done%10===0||job.done===job.total){await offlineSetDownload(job);refreshOfflineUI()}
+    if(job.done%3===0)await new Promise(resolve=>setTimeout(resolve,0));
   }
   job.status='complete';job.updatedAt=new Date().toISOString();await offlineSetDownload(job);toast('Đã lưu '+b.title+' offline');refreshOfflineUI();
  }catch(e){
