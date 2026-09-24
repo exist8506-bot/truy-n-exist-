@@ -33,6 +33,22 @@ jobs:
           if(chapters!==26) throw new Error('Expected 26 clean demo chapters');
           console.log({stories:d.books.length,chapters});
           NODE
+      - name: Validate real public-domain seed when present
+        run: |
+          if [ -f server/public-domain-seed.json ]; then
+            node - <<'NODE'
+            const fs=require('fs');
+            const d=JSON.parse(fs.readFileSync('server/public-domain-seed.json','utf8'));
+            const b=d.books?.find(x=>x.id==='phong-than-dien-nghia');
+            if(!b) throw new Error('Missing Phong Than Dien Nghia');
+            if(!Array.isArray(b.chapters)||b.chapters.length!==100) throw new Error('Expected 100 chapters');
+            const short=b.chapters.filter(c=>String(c.content||'').trim().length<200);
+            if(short.length) throw new Error('Short chapters: '+short.map(c=>c.index).join(','));
+            console.log({books:d.books.length,chapters:b.chapters.length});
+            NODE
+          else
+            echo "public-domain-seed.json not generated yet; skipping"
+          fi
       - name: 1.6 integration flow
         run: node server/integration.test.js
       - name: Start API smoke test

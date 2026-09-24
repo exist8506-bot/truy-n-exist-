@@ -20,7 +20,45 @@ for(const r of all("SELECT id,title FROM chapters WHERE search_key='' OR search_
 db.exec('CREATE INDEX IF NOT EXISTS idx_chapters_search ON chapters(story_id,search_key);');
 db.exec("CREATE TABLE IF NOT EXISTS bookmarks(user_id TEXT NOT NULL,story_id TEXT NOT NULL,chapter_index INTEGER NOT NULL,title TEXT DEFAULT '',created_at TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(user_id,story_id,chapter_index));");
 db.exec('CREATE INDEX IF NOT EXISTS idx_bookmarks_user_updated ON bookmarks(user_id,updated_at);');
-function seed(){if(q('SELECT 1 AS x FROM stories LIMIT 1'))return;const legacy=path.join(DATA_DIR,'seed.json'),publicSeed=path.join(DATA_DIR,'public-domain-seed.json'),sources=[];if(fs.existsSync(legacy))sources.push(JSON.parse(fs.readFileSync(legacy,'utf8')));if(fs.existsSync(publicSeed))sources.push(JSON.parse(fs.readFileSync(publicSeed,'utf8')));if(!sources.length)return;const t=now();for(const d of sources)for(const b of d.books||[]){const cat=b.category||b.cat||'Khác',desc=b.description||b.desc||'';run('INSERT INTO stories(id,title,author,category,description,search_key,tone,status,cover_path,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)',b.id,b.title,b.author||'',cat,desc,norm([b.title,b.author,cat,desc].join(' ')),b.tone||'',b.status||'FULL','',t,t);(b.chapters||[]).forEach((c,i)=>run('INSERT INTO chapters(id,story_id,chapter_index,title,content,created_at,updated_at,search_key) VALUES(?,?,?,?,?,?,?,?)',b.id+':'+i,b.id,i,c.title||('Chương '+(i+1)),c.content||'',t,t,norm(c.title||('Chương '+(i+1)))));}}
+function seed(){
+  const legacy=path.join(DATA_DIR,'seed.json'),publicSeed=path.join(DATA_DIR,'public-domain-seed.json'),sources=[];
+  if(fs.existsSync(legacy))sources.push(JSON.parse(fs.readFileSync(legacy,'utf8')));
+  if(fs.existsSync(publicSeed))sources.push(JSON.parse(fs.readFileSync(publicSeed,'utf8')));
+  if(!sources.length)return;
+  const t=now();
+  db.exec('BEGIN');
+  try{
+    for(const d of sources)for(const b of d.books||[]){
+      const id=String(b.id||'').trim();
+      if(!id)continue;
+      const cat=String(b.category||b.cat||'Khác'),desc=String(b.description||b.desc||'');
+      const existing=q('SELECT id FROM stories WHERE id=?',id);
+      if(!existing){
+        run('INSERT INTO stories(id,title,author,category,description,search_key,tone,status,cover_path,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+          id,String(b.title||id),String(b.author||''),cat,desc,norm([b.title,b.author,cat,desc].join(' ')),String(b.tone||''),String(b.status||'FULL'),'',
+          String(b.createdAt||t),String(b.updatedAt||t));
+      }
+      const chapters=Array.isArray(b.chapters)?b.chapters:[];
+      for(let i=0;i<chapters.length;i++){
+        const c=Array.isArray(chapters[i])
+          ? {title:chapters[i][0],content:chapters[i][1],index:i}
+          : chapters[i]||{};
+        const idx=Math.max(0,Number(c.index??i));
+        const cid=id+':'+idx;
+        const present=q('SELECT id FROM chapters WHERE id=?',cid);
+        if(!present){
+          run('INSERT INTO chapters(id,story_id,chapter_index,title,content,created_at,updated_at,search_key) VALUES(?,?,?,?,?,?,?,?)',
+            cid,id,idx,String(c.title||('Chương '+(idx+1))),String(c.content||''),String(c.createdAt||t),String(c.updatedAt||t),norm(c.title||('Chương '+(idx+1))));
+        }else if(String(c.content||'').trim()){
+          const current=q('SELECT content FROM chapters WHERE id=?',cid);
+          if(!current?.content)run('UPDATE chapters SET title=?,content=?,updated_at=?,search_key=? WHERE id=?',
+            String(c.title||('Chương '+(idx+1))),String(c.content||''),String(c.updatedAt||t),norm(c.title||('Chương '+(idx+1))),cid);
+        }
+      }
+    }
+    db.exec('COMMIT');
+  }catch(e){db.exec('ROLLBACK');throw e}
+}
 seed();
 function send(res,status,data,type='application/json; charset=utf-8',req=null){
   const raw=type.startsWith('application/json')?JSON.stringify(data):Buffer.isBuffer(data)?data:Buffer.from(String(data));

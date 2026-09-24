@@ -17,6 +17,14 @@ function show(id){['library','detail','reader','history','bookcase'].forEach(x=>
 window.home=()=>{show('library');renderAll()}; window.focusSearch=()=>{$('#search')?.focus();show('library')};
 window.showHistory=()=>{show('history');renderHistory()}; window.showBookcase=()=>{show('bookcase');renderBookcase()};window.openAdmin=()=>window.adminStudio?.();
 function normalizeBook(b){const count=Number(b.chapterCount??(Array.isArray(b.chapters)?b.chapters.length:b.chapters??0));return {...b,chapterCount:count,chapters:Array.isArray(b.chapters)?b.chapters:[]}}
+async function loadStaticSeed(){
+ try{
+  const r=await fetch('public-domain-seed.json',{cache:'no-store'});
+  if(!r.ok)throw Error('SEED_'+r.status);
+  const d=await r.json();
+  return Array.isArray(d.books)?d.books.map(normalizeBook):[];
+ }catch{return[]}
+}
 async function loadBooks(){
  try{
   const out=[];let page=1,total=0;
@@ -29,7 +37,16 @@ async function loadBooks(){
    if(!items.length||items.length<100||out.length>=total)break;
   }while(page<10000);
   state.books=out.map(normalizeBook);state.remoteSearch=false;$('#apiStatus').textContent='● SQLite API';renderFilterOptions();
- }catch{state.books=localBooks().map(normalizeBook);$('#apiStatus').textContent='● Dữ liệu local'}
+ }catch{
+  const local=localBooks().map(normalizeBook);
+  const staticBooks=await loadStaticSeed();
+  const map=new Map(local.map(b=>[b.id,b]));
+  for(const item of staticBooks)if(!map.has(item.id))map.set(item.id,item);
+  state.books=[...map.values()];
+  state.remoteSearch=false;
+  $('#apiStatus').textContent=staticBooks.length?'● Dữ liệu tĩnh':'● Dữ liệu local';
+  renderFilterOptions();
+ }
  updateStats(); return state.books;
 }
 async function updateStats(){const n=state.books.reduce((a,b)=>a+(Array.isArray(b.chapters)?b.chapters.length:(b.chapterCount||0)),0);$('#statBooks').textContent=state.books.length;$('#statChapters').textContent=n;$('#statFav').textContent=favs().length;$('#statDownloaded').textContent=state.offline.size;refreshOfflineUI()}
@@ -89,7 +106,15 @@ async function loadChapterPage(page=1){
   state.book.chapterCount=Number(state.book.chapterCount||chapterTotal);
   renderChapters();
  }catch{
-  if(page===1)state.chapters=[];
+  const local=Array.isArray(state.book.chapters)?state.book.chapters:[];
+  const normalized=local.map((c,i)=>Array.isArray(c)
+    ? {bookId:state.book.id,index:i,title:c[0]||('Chương '+(i+1)),content:c[1]||''}
+    : {...c,index:Number(c?.index??i),title:c?.title||('Chương '+(i+1)),content:c?.content||''});
+  const start=(Math.max(1,page)-1)*chapterPageSize;
+  state.chapters=normalized.slice(start,start+chapterPageSize);
+  chapterPage=Math.max(1,page);
+  chapterTotal=normalized.length;
+  state.book.chapterCount=normalized.length;
   renderChapters();
  }
 }

@@ -1,131 +1,126 @@
 import fs from 'node:fs';
 
-const API='https://vi.wikisource.org/w/api.php';
-const books=[
-  {
-    id:'hoang-le-nhat-thong-chi',
-    title:'Hoàng Lê nhất thống chí',
-    author:'Ngô gia văn phái',
-    category:'Lịch sử',
-    status:'FULL',
-    source:'https://vi.wikisource.org/wiki/Ho%C3%A0ng_L%C3%AA_nh%E1%BA%A5t_th%E1%BB%91ng_ch%C3%AD',
-    pages:['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX','XXI']
-  },
-  {
-    id:'nhi-do-mai',
-    title:'Nhị độ mai',
-    author:'Khuyết danh',
-    category:'Truyện Nôm',
-    status:'FULL',
-    source:'https://vi.wikisource.org/wiki/Nh%E1%BB%8B_%C4%91%E1%BB%99_mai',
-    pages:['I','II','III','IV']
-  },
-  {
-    id:'phan-tran',
-    title:'Phan Trần',
-    author:'Khuyết danh',
-    category:'Truyện Nôm',
-    status:'FULL',
-    source:'https://vi.wikisource.org/wiki/Phan_Tr%E1%BA%A7n',
-    pages:['I','II','III','IV']
-  },
-  {
-    id:'luc-van-tien',
-    title:'Lục Vân Tiên',
-    author:'Nguyễn Đình Chiểu',
-    category:'Truyện thơ',
-    status:'FULL',
-    source:'https://vi.wikisource.org/wiki/L%E1%BB%A5c_V%C3%A2n_Ti%C3%AAn',
-    pages:['I','II','III','IV']
-  }
-];
+const API='https://zh.wikisource.org/w/api.php';
+const books=[{
+  id:'phong-than-dien-nghia',
+  title:'Phong Thần Diễn Nghĩa',
+  author:'Trần Trọng Lâm / 陳仲琳',
+  category:'Tiên hiệp / Thần ma',
+  status:'FULL',
+  source:'https://zh.wikisource.org/wiki/封神演義',
+  sourceTitle:'封神演義',
+  pages:Array.from({length:100},(_,i)=>'卷'+String(i+1).padStart(3,'0'))
+}];
 
-function stripHtml(html){
-  return String(html||'')
-    .replace(/<script[\s\S]*?<\/script>/gi,' ')
-    .replace(/<style[\s\S]*?<\/style>/gi,' ')
-    .replace(/<sup[\s\S]*?<\/sup>/gi,' ')
-    .replace(/<br\s*\/?>/gi,'\n')
-    .replace(/<\/(p|div|h[1-6]|li|blockquote|dd|dt|tr)>/gi,'\n')
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+function cleanWikiText(text){
+  return String(text||'')
+    .replace(/<!--[\\s\\S]*?-->/g,' ')
+    .replace(/<ref(?:\\s[^>]*)?>[\\s\\S]*?<\\/ref>/gi,' ')
     .replace(/<[^>]+>/g,' ')
+    .replace(/\\{\\{[\\s\\S]*?\\}\\}/g,' ')
+    .replace(/\\[\\[File:[^\\]]+\\]\\]/gi,' ')
+    .replace(/\\[\\[[^\\]|]+\\|([^\\]]+)\\]\\]/g,'$1')
+    .replace(/\\[\\[([^\\]]+)\\]\\]/g,'$1')
     .replace(/&nbsp;/gi,' ')
     .replace(/&amp;/gi,'&')
     .replace(/&lt;/gi,'<')
     .replace(/&gt;/gi,'>')
     .replace(/&quot;/gi,'"')
     .replace(/&#39;/gi,"'")
-    .replace(/&#x27;/gi,"'")
-    .replace(/&#(\d+);/g,(_,n)=>String.fromCodePoint(Number(n)))
+    .replace(/&#(\\d+);/g,(_,n)=>String.fromCodePoint(Number(n)))
     .replace(/&#x([0-9a-f]+);/gi,(_,n)=>String.fromCodePoint(parseInt(n,16)))
-    .replace(/[ \t]+\n/g,'\n')
-    .replace(/\n[ \t]+/g,'\n')
-    .replace(/\n{3,}/g,'\n\n')
+    .replace(/^\\s*(?:本回\\s*完|\\[编辑\\]|\\[编辑本段\\])\\s*$/gmi,'')
+    .replace(/[ \\t]+\\n/g,'\\n')
+    .replace(/\\n[ \\t]+/g,'\\n')
+    .replace(/\\n{3,}/g,'\\n\\n')
     .trim();
 }
-function cleanWikiText(text){
-  return String(text||'')
-    .replace(/\{\{[\s\S]*?\}\}/g,' ')
-    .replace(/\[\[File:[^\]]+\]\]/gi,' ')
-    .replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g,'$1')
-    .replace(/\[\[([^\]]+)\]\]/g,'$1')
-    .replace(/\'\'\'([^']+)\'\'\'/g,'$1')
-    .replace(/\'\'([^']+)\'\'/g,'$1')
-    .replace(/<ref[\s\S]*?<\/ref>/gi,' ')
-    .replace(/<[^>]+>/g,' ')
-    .replace(/\r/g,'')
-    .replace(/[ \t]+\n/g,'\n')
-    .replace(/\n{3,}/g,'\n\n')
-    .trim();
-}
-async function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
 async function fetchJson(u){
-  for(let attempt=0;attempt<5;attempt++){
-    const r=await fetch(u,{headers:{'User-Agent':'KhoTruyenFull/1.19 public-domain importer'}});
-    if(r.ok)return r.json();
-    if(r.status===429||r.status>=500){await sleep(1500*(attempt+1));continue}
-    throw new Error('WIKISOURCE_HTTP_'+r.status);
+  let last='WIKISOURCE_HTTP_ERROR';
+  for(let attempt=0;attempt<8;attempt++){
+    try{
+      const r=await fetch(u,{headers:{'User-Agent':'KhoTruyenFull/1.20 public-domain importer'}});
+      if(r.ok)return await r.json();
+      last='WIKISOURCE_HTTP_'+r.status;
+      if(r.status===429||r.status>=500){
+        const retry=Number(r.headers.get('retry-after'));
+        const delay=Number.isFinite(retry)&&retry>0?Math.min(30000,retry*1000):Math.min(30000,1500*Math.pow(2,attempt));
+        await sleep(delay);continue;
+      }
+      throw new Error(last);
+    }catch(e){
+      last=e?.message||last;
+      if(attempt===7)break;
+      await sleep(Math.min(30000,1500*Math.pow(2,attempt)));
+    }
   }
-  throw new Error('WIKISOURCE_RATE_LIMIT');
+  throw new Error(last);
 }
+
 async function api(params){
   const u=new URL(API);
-  for(const [k,v] of Object.entries({...params,format:'json',formatversion:'2'}))u.searchParams.set(k,v);
+  for(const [k,v] of Object.entries({...params,format:'json',formatversion:'2'}))u.searchParams.set(k,String(v));
   return fetchJson(u);
 }
-async function pageText(page){
-  const rest='https://vi.wikisource.org/api/rest_v1/page/html/'+encodeURIComponent(page.replace(/ /g,'_'));
-  for(let attempt=0;attempt<4;attempt++){
-    const r=await fetch(rest,{headers:{'User-Agent':'KhoTruyenFull/1.19 public-domain importer'}});
-    if(r.ok){
-      let html=await r.text();
-      const m=html.match(/<div class="mw-parser-output">([\s\S]*?)<\/div>\s*<div class="printfooter/i);
-      if(m)html=m[1];
-      return stripHtml(html);
-    }
-    if(r.status===429||r.status>=500){await sleep(2000*(attempt+1));continue}
-    break;
-  }
-  const data=await api({action:'parse',page,prop:'text',disablelimitreport:'1'});
-  const html=data.parse?.text||'';
-  if(!html)throw new Error('EMPTY_PAGE:'+page);
-  return stripHtml(html);
+
+async function fetchBatch(titles){
+  const data=await api({
+    action:'query',
+    prop:'revisions',
+    rvprop:'content',
+    rvslots:'main',
+    rvlimit:'1',
+    titles:titles.join('|')
+  });
+  return (data.query?.pages||[]).map(p=>({
+    title:p.title,
+    content:p.revisions?.[0]?.slots?.main?.content ?? p.revisions?.[0]?.content ?? ''
+  }));
 }
+
 async function main(){
-  const out={version:1,generatedAt:new Date().toISOString(),licenseNote:'Imported from Wikisource pages whose source metadata identifies the underlying works as public-domain/compatible for reuse; source URLs are retained for attribution.',books:[]};
+  const out={
+    version:2,
+    generatedAt:new Date().toISOString(),
+    licenseNote:'The seed uses the original Ming-dynasty text of 封神演義 from Chinese Wikisource; source URLs are retained for attribution.',
+    books:[]
+  };
   for(const b of books){
     const chapters=[];
-    for(let i=0;i<b.pages.length;i++){
-      await sleep(900);
-      const page=b.title+'/'+b.pages[i];
-      const content=await pageText(page);
-      if(content.length<500)throw new Error('CHAPTER_TOO_SHORT:'+page+':'+content.length);
-      chapters.push({index:i,title:'Chương '+(i+1),content,sourcePage:'https://vi.wikisource.org/wiki/'+encodeURIComponent(page.replace(/ /g,'_'))});
+    for(let start=0;start<b.pages.length;start+=10){
+      const batch=b.pages.slice(start,start+10);
+      let pages;
+      try{
+        pages=await fetchBatch(batch.map(x=>b.sourceTitle+'/'+x));
+      }catch(e){
+        pages=[];
+        for(const page of batch){
+          pages.push(...await fetchBatch([b.sourceTitle+'/'+page]));
+          await sleep(1200);
+        }
+      }
+      const byTitle=new Map(pages.map(x=>[x.title,x.content]));
+      for(let i=0;i<batch.length;i++){
+        const pageName=b.sourceTitle+'/'+batch[i];
+        const content=cleanWikiText(byTitle.get(pageName)||'');
+        if(content.length<200)throw new Error('CHAPTER_TOO_SHORT:'+pageName+':'+content.length);
+        chapters.push({
+          index:start+i,
+          title:'Chương '+(start+i+1),
+          content,
+          sourcePage:'https://zh.wikisource.org/wiki/'+encodeURIComponent(pageName)
+        });
+      }
+      console.log('Fetched '+Math.min(start+10,b.pages.length)+' / '+b.pages.length+' chapters');
+      if(start+10<b.pages.length)await sleep(1200);
     }
     out.books.push({...b,chapters});
   }
   fs.mkdirSync('server',{recursive:true});
   fs.writeFileSync('server/public-domain-seed.json',JSON.stringify(out));
-  console.log('Generated',out.books.length,'books and',out.books.reduce((n,b)=>n+b.chapters.length,0),'chapters.');
-  for(const b of out.books)console.log(b.title,b.chapters.map(c=>c.content.length).join(','));
+  console.log('Generated '+out.books.length+' book and '+out.books[0].chapters.length+' chapters.');
 }
 main().catch(e=>{console.error(e);process.exit(1)});

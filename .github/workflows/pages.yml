@@ -18,7 +18,10 @@ jobs:
       - name: Prepare static preview
         run: |
           mkdir -p _site
-          cp index.html books.js api-client.js manifest.webmanifest sw.js _site/
+          cp index.html books.js api-client.js app.js manifest.webmanifest sw.js _site/
+          if [ -f server/public-domain-seed.json ]; then
+            cp server/public-domain-seed.json _site/
+          fi
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
