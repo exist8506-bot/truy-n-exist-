@@ -32,5 +32,5 @@ x=await req('/stories/b1/chapters?page=1&pageSize=5&q=anh');if(x.status!==200||x
  x=await req('/admin/stats',{headers:{authorization:'Bearer '+u.data.token}});if(x.status!==403)throw Error('admin guard failed');
  x=await req('/stories/b1');const et=x.headers.get('etag');if(!et)throw Error('etag missing');x=await req('/stories/b1',{headers:{'if-none-match':et}});if(x.status!==304)throw Error('etag 304 failed');
  x=await req('/stories',{headers:{'accept-encoding':'gzip'}});if(x.status!==200)throw Error('gzip request failed');
- console.log('1.6 integration OK');
+ x=await req('/bookmarks',{method:'PUT',headers:{...auth,'content-type':'application/json'},body:JSON.stringify({storyId:'b1',chapterIndex:3,title:'Migration bookmark',active:true})});if(x.status!==200)throw Error('bookmark migration table failed');console.log('1.6 integration OK');
 }finally{p.kill('SIGTERM');if(p2)p2.kill('SIGTERM');await wait(100);for(const f of ['kho_truyen.sqlite','kho_truyen.sqlite-wal','kho_truyen.sqlite-shm'])try{fs.unlinkSync(path.join(root,f))}catch{}}})().catch(e=>{console.error(e);process.exitCode=1})
