@@ -255,9 +255,11 @@ test('reader scroll performance: focused mode and debounced persistence', async 
   await expect(page.locator('.top')).toBeHidden();
   await page.locator('#rtext').scrollIntoViewIfNeeded();
   const before=await page.evaluate(()=>window.__setItemCalls);
-  await page.mouse.wheel(0,120);
-  await page.mouse.wheel(0,120);
-  await page.mouse.wheel(0,120);
+  await page.evaluate(() => {
+    window.scrollBy(0,120);
+    window.scrollBy(0,120);
+    window.scrollBy(0,120);
+  });
   const during=await page.evaluate(b=>window.__setItemCalls-b,before);
   expect(during).toBe(0);
   await page.waitForTimeout(450);
