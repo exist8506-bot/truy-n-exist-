@@ -1,3 +1,4 @@
+// exactly 10 requested completed cultivation classics
 import fs from 'node:fs';
 
 const API='https://zh.wikisource.org/w/api.php';
