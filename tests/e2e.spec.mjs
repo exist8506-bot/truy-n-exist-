@@ -196,6 +196,13 @@ test('remaining navigation and chapter controls', async ({ browser }) => {
   await context.addInitScript(() => localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1'));
   const page=await context.newPage();
   await page.goto('/');
+  await page.selectOption('#langSelect','en');
+  await expect(page.locator('#libraryTitle')).toHaveText('Full Story Library');
+  await page.reload();
+  await expect(page.locator('#libraryTitle')).toHaveText('Full Story Library');
+  await page.selectOption('#langSelect','zh');
+  await expect(page.locator('#libraryTitle')).toHaveText('完本书库');
+  await page.selectOption('#langSelect','vi');
   await page.getByRole('button',{name:'Xếp hạng'}).click();
   await expect(page.locator('#homeMode')).not.toBeEmpty();
   await page.getByRole('button',{name:'Mới cập nhật'}).click();
