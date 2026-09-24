@@ -268,14 +268,20 @@ test('remaining navigation and chapter controls', async ({ browser }) => {
 test('reader scroll performance: focused mode and debounced persistence', async ({ browser }) => {
   const context=await browser.newContext({viewport:{width:1280,height:900}});
   await context.addInitScript(() => {
+    localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1');
     window.__setItemCalls=0;
+    window.__apiCalls=0;
     const original=Storage.prototype.setItem;
     Storage.prototype.setItem=function(...args){window.__setItemCalls++;return original.apply(this,args)};
+    const realFetch=window.fetch.bind(window);
+    window.fetch=(input,init)=>{const u=String(typeof input==='string'?input:input?.url||'');if(u.includes('/api/v1/'))window.__apiCalls++;return realFetch(input,init)};
   });
   const page=await context.newPage();
   await page.goto('/');
+  await page.evaluate(()=>window.__apiCalls=0);
   await page.locator('#grid .card').filter({hasText:'Mùa Sao Trên Đỉnh Núi'}).locator('.info').click();
   await page.locator('#chapters .chapter').first().click();
+  expect(await page.evaluate(()=>window.__apiCalls)).toBe(0);
   await expect(page.locator('body')).toHaveClass(/reading-mode/);
   await expect(page.locator('.top')).toBeHidden();
   await page.locator('#rtext').scrollIntoViewIfNeeded();
