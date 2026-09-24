@@ -161,7 +161,7 @@ test('mobile responsive: bottom navigation, reader, bookmark and persistence', a
   await page.goto('/');
   await expect(page.locator('.bottomnav')).toBeVisible();
   await expect(page.locator('.bottomnav button')).toHaveCount(4);
-  await expect(page.locator('#grid .card')).toHaveCount(4);
+  await expect(page.locator('#grid .card')).toHaveCount(14);
 
   await page.locator('.bottomnav button').nth(3).click();
   await expect(page.locator('#search')).toBeFocused();
