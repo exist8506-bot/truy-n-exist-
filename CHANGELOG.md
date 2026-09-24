@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.3
+- Stage 2 Part 2: server-side advanced library search.
+- Filter by title/author query, category and status through SQLite API.
+- Added category/status controls and debounced remote search in the library.
+- Search results stay paginated at the API boundary (up to 100 results per request).
+
+
 ## 1.6.2
 - Stage 2 Part 1: account UI replaces prompt-based login/register/profile flow.
 - Register, login, profile update and logout are handled in one modal UI.
