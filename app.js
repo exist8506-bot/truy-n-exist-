@@ -24,6 +24,16 @@ function applyLanguage(){
  const speakBtn=$('#ttsLabel')?.closest('button');if(speakBtn){const icon=speakBtn.childNodes[0];const label=$('#ttsLabel');if(icon&&icon.nodeType===3)icon.textContent='🔊 ';label.textContent=ttsState.active?T('stop'):T('read')}
  const reader=$('#reader');if(reader){const mb=$('#bookmarkBtn');if(mb)mb.textContent=isBookmarked()?T('marked'):T('mark');const next=$('#next');if(next)next.textContent=T('next');const prev=$('#prev');if(prev)prev.textContent=T('prev');const dl=reader.querySelector('.pager .btn.good');if(dl)dl.textContent=T('downloadChapter');const menu=reader.querySelector('.readerbar>.btn');if(menu)menu.textContent=T('contents');const auto=$('#autoNext');if(auto){const as=auto.querySelector('span');if(as)as.textContent=T('autoNear');const ab=auto.querySelector('button');if(ab)ab.textContent=T('autoNext')}}
  const bottom=document.querySelector('.bottomnav');if(bottom){bottom.innerHTML='<button onclick="home()"><b>⌂</b>'+T('explore')+'</button><button onclick="showBookcase()"><b>♡</b>'+T('shelf')+'</button><button onclick="showHistory()"><b>◷</b>'+T('reading')+'</button><button onclick="focusSearch()"><b>⌕</b>'+T('all')+'</button>'}
+ const detailButtons=$('#detailBox')?.querySelectorAll('.settings .btn');
+ if(detailButtons?.length){
+  if(detailButtons[0])detailButtons[0].textContent=T('readFromStart');
+  if(detailButtons[1])detailButtons[1].textContent=T('continue');
+  if(detailButtons[2])detailButtons[2].textContent=favs().includes(state.book?.id)?T('removeShelf'):T('addShelf');
+  if(detailButtons[3])detailButtons[3].textContent=T('share');
+  if(detailButtons[4])detailButtons[4].textContent=T('offlineAll');
+ }
+ if(state.book&&$('#detail')?.classList.contains('show'))window.renderChapters?.();
+ if(state.book&&$('#reader')?.classList.contains('show'))$('#rmeta').textContent=T('chapterUnit')+' '+(state.chapter+1)+' · '+(state.book.author||'');
  const ls=$('#langSelect');if(ls)ls.value=state.lang;
  document.title=T('title');
 }
