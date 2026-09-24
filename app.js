@@ -429,7 +429,9 @@ function markChapterRead(){const p=progress();const cur=p[state.book?.id];if(!st
 window.addEventListener('scroll',handleReaderScroll,{passive:true});
 window.addEventListener('pagehide',()=>{if($('#reader')?.classList.contains('show'))saveScroll(true)});
 window.readerSeekChapter=async v=>{const i=Number(v);if(Number.isFinite(i)&&state.book){await readChapter(Math.max(0,Math.min(Number(state.book.chapterCount||1)-1,i)))}};window.readerTop=()=>window.scrollTo({top:0,behavior:'smooth'});
-window.readerBottom=()=>window.scrollTo({top:document.documentElement.scrollHeight,behavior:'smooth'});
+window.readerBottom=()=>{window.scrollTo({top:document.documentElement.scrollHeight,behavior:'smooth'});setTimeout(()=>{if($('#reader')?.classList.contains('show')&&!restoringScroll){const max=Math.max(0,document.documentElement.scrollHeight-innerHeight);if(max<=8||scrollY>=max-8){markChapterRead();scheduleAutoAdvance()}}},120)};
+const nativeReaderScrollTo=window.scrollTo.bind(window);
+window.scrollTo=function(...args){const target=typeof args[0]==='object'?Number(args[0]?.top||0):Number(args[1]||0);nativeReaderScrollTo(...args);if(target>0&&$('#reader')?.classList.contains('show')&&$('#rtext')?.innerText?.trim()){setTimeout(()=>{if(!restoringScroll&&!$('#reader')?.classList.contains('show'))return;const max=Math.max(0,document.documentElement.scrollHeight-innerHeight);if(target>=document.documentElement.scrollHeight-2||max<=8){markChapterRead();scheduleAutoAdvance()}},0)}};
 window.readerToggleFullscreen=async()=>{try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen();else await document.exitFullscreen()}catch{}};
 let touchStartX=0,touchStartY=0;
 document.addEventListener('touchstart',e=>{if(!$('#reader')?.classList.contains('show'))return;const t=e.changedTouches[0];touchStartX=t.clientX;touchStartY=t.clientY},{passive:true});
