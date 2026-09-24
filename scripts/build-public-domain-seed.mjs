@@ -114,7 +114,8 @@ async function main(){
   const out={version:1,generatedAt:new Date().toISOString(),licenseNote:'Imported from Wikisource pages whose source metadata identifies the underlying works as public-domain/compatible for reuse; source URLs are retained for attribution.',books:[]};
   for(const b of books){
     const chapters=[];
-    for(let i=0;i<b.pages.length;i++){\n      await sleep(900);
+    for(let i=0;i<b.pages.length;i++){
+      await sleep(900);
       const page=b.title+'/'+b.pages[i];
       const content=await pageText(page);
       if(content.length<500)throw new Error('CHAPTER_TOO_SHORT:'+page+':'+content.length);
