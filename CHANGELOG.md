@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.6
+- Stage 2 Part 5: reader navigation and performance improvements.
+- Added in-flight chapter request deduplication and next-chapter prefetch into IndexedDB.
+- Preserved exact reading position when reopening the same chapter.
+- Reader progress is persisted on page hide and marks a chapter complete near the end.
+- Existing keyboard, swipe, TTS, theme, font and offline reader behavior remains intact.
+
+
 ## 1.6.5
 - Stage 2 Part 4: resilient bookcase/account synchronization.
 - Local favorites are preserved and merged with server favorites after sign-in.
