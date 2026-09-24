@@ -1,4 +1,4 @@
-/* Kho Truyen Full 1.15.0 - compact application shell */
+/* Kho Truyen Full 1.16.0 - compact application shell */
 (()=> {
 'use strict';
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
