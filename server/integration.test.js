@@ -27,6 +27,8 @@ async function req(path,opts={}){const r=await fetch('http://127.0.0.1:8787/api/
  x=await req('/admin/stories/'+sid,{method:'DELETE',headers:auth});if(x.status!==200)throw Error('admin delete story failed');
  x=await req('/admin/stories/diagnostics',{headers:auth});if(x.status!==200||!Array.isArray(x.data.stories))throw Error('diagnostics failed');
  x=await req('/admin/backup',{headers:auth});if(x.status!==200||!Array.isArray(x.data.stories)||!Array.isArray(x.data.chapters))throw Error('backup failed');const cleanBackup=x.data;
+ const u=await req('/auth/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'ci_user',password:'secret123'})});if(u.status!==201)throw Error('second user failed');
+ x=await req('/admin/stats',{headers:{authorization:'Bearer '+u.data.token}});if(x.status!==403)throw Error('admin guard failed');
  // Cover upload + TXT import + backup restore + restart persistence
  const png='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
  x=await req('/admin/stories/b1/cover',{method:'POST',headers:{...auth,'content-type':'application/json'},body:JSON.stringify({data:'data:image/png;base64,'+png})});if(x.status!==200||!x.data.cover)throw Error('cover upload failed');
@@ -42,8 +44,6 @@ async function req(path,opts={}){const r=await fetch('http://127.0.0.1:8787/api/
  let h2;for(let i=0;i<30;i++){try{h2=await req('/health');if(h2.status===200)break}catch{}await wait(200)}if(h2?.status!==200)throw Error('restart health failed');
  x=await req('/stories?page=1&pageSize=10');if(x.status!==200||x.data.count!==3)throw Error('restart persistence failed');
  p2.kill('SIGTERM');await wait(200);
- const u=await req('/auth/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'ci_user',password:'secret123'})});if(u.status!==201)throw Error('second user failed');
- x=await req('/admin/stats',{headers:{authorization:'Bearer '+u.data.token}});if(x.status!==403)throw Error('admin guard failed');
  x=await req('/stories/b1');const et=x.headers.get('etag');if(!et)throw Error('etag missing');x=await req('/stories/b1',{headers:{'if-none-match':et}});if(x.status!==304)throw Error('etag 304 failed');
  x=await req('/stories',{headers:{'accept-encoding':'gzip'}});if(x.status!==200)throw Error('gzip request failed');
  console.log('1.6 integration OK');
