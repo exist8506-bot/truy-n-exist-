@@ -54,3 +54,5 @@ jobs:
           curl -fsS 'http://127.0.0.1:8787/api/v1/stories?page=1&pageSize=10'
           curl -fsS 'http://127.0.0.1:8787/api/v1/stories/b1'
           kill "$pid" 2>/dev/null || true
+      - name: Docker build
+        run: docker build -t kho-truyen-full:ci .
