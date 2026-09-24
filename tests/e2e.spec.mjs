@@ -229,3 +229,33 @@ test('remaining navigation and chapter controls', async ({ browser }) => {
   await expect(page.locator('#rtitle')).not.toBeEmpty();
   await context.close();
 });
+
+
+test('reader auto advance and tts continuation', async ({ browser }) => {
+  const context=await browser.newContext({viewport:{width:1280,height:900}});
+  await context.addInitScript(() => {
+    localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1');
+    window.__finishTts=false;
+    Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{
+      speaking:false,
+      cancel(){this.speaking=false},
+      speak(u){this.speaking=true;if(window.__finishTts)setTimeout(()=>{this.speaking=false;u.onend&&u.onend()},5)}
+    }});
+    window.SpeechSynthesisUtterance=class{constructor(text){this.text=text;this.onend=null;this.onerror=null;this.lang='';this.rate=1;}};
+  });
+  const page=await context.newPage();
+  await page.goto('/');
+  await page.locator('#grid .card').filter({hasText:'Mùa Sao Trên Đỉnh Núi'}).locator('.info').click();
+  await page.locator('#chapters .chapter').first().click();
+  const first=await page.locator('#rtitle').textContent();
+  await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
+  await expect(page.locator('#rtitle')).not.toHaveText(first||'',{timeout:5000});
+  await page.evaluate(()=>{window.__finishTts=true});
+  await page.getByRole('button',{name:/🔊/}).click();
+  await expect(page.locator('#ttsLabel')).toHaveText('Dừng');
+  await expect(page.locator('#rtitle')).toContainText('Bí mật',{timeout:5000});
+  await page.evaluate(()=>{window.__finishTts=false});
+  await page.getByRole('button',{name:/🔊/}).click();
+  await expect(page.locator('#ttsLabel')).toHaveText('Đọc');
+  await context.close();
+});
