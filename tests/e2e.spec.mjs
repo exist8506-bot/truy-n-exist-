@@ -155,6 +155,27 @@ test('static fallback mode: real public seed, search, read, PWA cache and offlin
 });
 
 
+test('all ten public stories: first chapter smoke', async ({ browser }) => {
+  test.setTimeout(120000);
+  const context=await browser.newContext({viewport:{width:1280,height:900}});
+  const page=await context.newPage();
+  await page.goto('/');
+  const titles=['Phong Thần Diễn Nghĩa','Tây Du Ký','Hậu Tây Du Ký','Đông Du Ký','Nam Du Ký','Bắc Du Ký','Bát Tiên Đắc Đạo','Nữ Tiên Ngoại Sử','Lục Dã Tiên Tung','Tam Toại Bình Yêu Truyện'];
+  for(const title of titles){
+    await page.locator('#search').fill(title);
+    await expect(page.locator('#grid .card')).toHaveCount(1);
+    await page.locator('#grid .card').first().locator('.info').click();
+    await page.locator('#chapters .chapter').first().click();
+    await expect(page.locator('#reader')).toHaveClass(/show/);
+    await expect(page.locator('#rtext')).not.toBeEmpty();
+    await page.locator('#reader').getByRole('button',{name:'☰ Mục lục'}).click();
+    await expect(page.locator('#detail')).toHaveClass(/show/);
+    await page.locator('#detail .back').click();
+    await expect(page.locator('#library')).toHaveClass(/show/);
+  }
+  await context.close();
+});
+
 test('mobile responsive: bottom navigation, reader, bookmark and persistence', async ({ browser }) => {
   const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true});
   await context.addInitScript(() => localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1'));
