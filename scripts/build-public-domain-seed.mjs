@@ -16,25 +16,25 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 function cleanWikiText(text){
   return String(text||'')
-    .replace(/<!--[\\s\\S]*?-->/g,' ')
-    .replace(/<ref(?:\\s[^>]*)?>[\\s\\S]*?<\\/ref>/gi,' ')
+    .replace(/<!--[\s\S]*?-->/g,' ')
+    .replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi,' ')
     .replace(/<[^>]+>/g,' ')
-    .replace(/\\{\\{[\\s\\S]*?\\}\\}/g,' ')
-    .replace(/\\[\\[File:[^\\]]+\\]\\]/gi,' ')
-    .replace(/\\[\\[[^\\]|]+\\|([^\\]]+)\\]\\]/g,'$1')
-    .replace(/\\[\\[([^\\]]+)\\]\\]/g,'$1')
+    .replace(/\{\{[\s\S]*?\}\}/g,' ')
+    .replace(/\[\[File:[^\]]+\]\]/gi,' ')
+    .replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g,'$1')
+    .replace(/\[\[([^\]]+)\]\]/g,'$1')
     .replace(/&nbsp;/gi,' ')
     .replace(/&amp;/gi,'&')
     .replace(/&lt;/gi,'<')
     .replace(/&gt;/gi,'>')
     .replace(/&quot;/gi,'"')
     .replace(/&#39;/gi,"'")
-    .replace(/&#(\\d+);/g,(_,n)=>String.fromCodePoint(Number(n)))
+    .replace(/&#(\d+);/g,(_,n)=>String.fromCodePoint(Number(n)))
     .replace(/&#x([0-9a-f]+);/gi,(_,n)=>String.fromCodePoint(parseInt(n,16)))
-    .replace(/^\\s*(?:本回\\s*完|\\[编辑\\]|\\[编辑本段\\])\\s*$/gmi,'')
-    .replace(/[ \\t]+\\n/g,'\\n')
-    .replace(/\\n[ \\t]+/g,'\\n')
-    .replace(/\\n{3,}/g,'\\n\\n')
+    .replace(/^\s*(?:本回\s*完|\[编辑\]|\[编辑本段\])\s*$/gmi,'')
+    .replace(/[ \t]+\n/g,'\n')
+    .replace(/\n[ \t]+/g,'\n')
+    .replace(/\n{3,}/g,'\n\n')
     .trim();
 }
 
@@ -48,7 +48,8 @@ async function fetchJson(u){
       if(r.status===429||r.status>=500){
         const retry=Number(r.headers.get('retry-after'));
         const delay=Number.isFinite(retry)&&retry>0?Math.min(30000,retry*1000):Math.min(30000,1500*Math.pow(2,attempt));
-        await sleep(delay);continue;
+        await sleep(delay);
+        continue;
       }
       throw new Error(last);
     }catch(e){
