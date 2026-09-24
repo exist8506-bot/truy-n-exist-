@@ -116,7 +116,7 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
 
 test('static fallback mode: search, category filter, read, PWA cache and offline full book', async ({ browser }) => {
   const context=await browser.newContext();
-  await context.route('**/api/v1/**',route=>route.abort());
+  await context.addInitScript(() => localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1'));
   const page=await context.newPage();
   await page.goto('/');
   await expect(page.locator('#apiStatus')).toContainText('Dữ liệu tĩnh');
