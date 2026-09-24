@@ -157,10 +157,12 @@ async function loadChapterPage(page=1){
   const normalized=local.map((c,i)=>Array.isArray(c)
     ? {bookId:state.book.id,index:i,title:c[0]||('Chương '+(i+1)),content:c[1]||''}
     : {...c,index:Number(c?.index??i),title:c?.title||('Chương '+(i+1)),content:c?.content||''});
+  const nq=String(q||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('vi');
+  const filteredLocal=nq?normalized.filter(c=>String(c.title||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('vi').includes(nq)||String(c.content||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('vi').includes(nq)):normalized;
   const start=(Math.max(1,page)-1)*chapterPageSize;
-  state.chapters=normalized.slice(start,start+chapterPageSize);
+  state.chapters=filteredLocal.slice(start,start+chapterPageSize);
   chapterPage=Math.max(1,page);
-  chapterTotal=normalized.length;
+  chapterTotal=filteredLocal.length;
   state.book.chapterCount=normalized.length;
   renderChapters();
  }

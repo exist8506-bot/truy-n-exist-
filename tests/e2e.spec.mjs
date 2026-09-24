@@ -189,3 +189,36 @@ test('mobile responsive: bottom navigation, reader, bookmark and persistence', a
   expect(await page.evaluate(()=>!!navigator.serviceWorker)).toBeTruthy();
   await context.close();
 });
+
+
+test('remaining navigation and chapter controls', async ({ browser }) => {
+  const context=await browser.newContext({viewport:{width:1280,height:900},acceptDownloads:true});
+  await context.addInitScript(() => localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1'));
+  const page=await context.newPage();
+  await page.goto('/');
+  await page.getByRole('button',{name:'Xếp hạng'}).click();
+  await expect(page.locator('#homeMode')).not.toBeEmpty();
+  await page.getByRole('button',{name:'Mới cập nhật'}).click();
+  await expect(page.locator('#homeMode')).not.toBeEmpty();
+  await page.getByRole('button',{name:'Đang đọc'}).click();
+  await expect(page.locator('#grid .card')).toHaveCount(0);
+
+  await page.getByRole('button',{name:'Khám phá'}).click();
+  await page.locator('#grid .card').filter({hasText:'Phong Thần Diễn Nghĩa'}).locator('.info').click();
+  await expect(page.locator('#chapterCount')).toContainText('100 chương');
+  await page.locator('#chapterSearch').fill('100');
+  await expect(page.locator('#chapters .chapter')).toHaveCount(1);
+  await expect(page.locator('#chapters')).toContainText('Chương 100');
+  await page.locator('#chapterSearch').fill('');
+  await page.locator('.chapterTools .btn').click();
+  await expect(page.locator('#chapters .chapter').first()).toContainText('Chương 100');
+  await page.locator('.chapterTools .btn').click();
+  await expect(page.locator('#chapters .chapter').first()).toContainText('Chương 1');
+
+  await page.locator('#chapters .chapter').first().click();
+  await page.locator('#readerSeek').evaluate((el)=>{el.value='5';el.dispatchEvent(new Event('change',{bubbles:true}))});
+  await expect(page.locator('#rtitle')).not.toBeEmpty();
+  await page.locator('#readerSeek').evaluate((el)=>{el.value='0';el.dispatchEvent(new Event('change',{bubbles:true}))});
+  await expect(page.locator('#rtitle')).not.toBeEmpty();
+  await context.close();
+});
