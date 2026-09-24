@@ -31,17 +31,17 @@ async function req(path,opts={}){const r=await fetch('http://127.0.0.1:8787/api/
  x=await req('/admin/stats',{headers:{authorization:'Bearer '+u.data.token}});if(x.status!==403)throw Error('admin guard failed');
  // Cover upload + TXT import + backup restore + restart persistence
  const png='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
- x=await req('/admin/stories/b1/cover',{method:'POST',headers:{...auth,'content-type':'application/json'},body:JSON.stringify({data:'data:image/png;base64,'+png})});if(x.status!==200||!x.data.cover)throw Error('cover upload failed');
- x=await req('/admin/import/preview',{method:'POST',headers:{...auth,'content-type':'application/json'},body:JSON.stringify({filename:'ci-import.txt',data:'data:text/plain;base64,'+Buffer.from('Chương 1\n'+('Nội dung chương một dùng để kiểm tra import tự động, có đủ độ dài cần thiết. ').repeat(2)+'\nChương 2\n'+('Nội dung chương hai dùng để kiểm tra import tự động, có đủ độ dài cần thiết. ').repeat(2)) .toString('base64')})});if(x.status!==200||x.data.total!==2)throw Error('TXT preview failed');
+ x=await req('/admin/stories/b1/cover',{method:'POST',headers:{...auth,'content-type':'application/json'},body:JSON.stringify({data:'data:image/png;base64,'+png})});if(x.status!==200||!x.data.cover)throw Error('cover upload failed '+JSON.stringify(x.data));
+ x=await req('/admin/import/preview',{method:'POST',headers:{...auth,'content-type':'application/json'},body:JSON.stringify({filename:'ci-import.txt',data:'data:text/plain;base64,'+Buffer.from('Chương 1\n'+('Nội dung chương một dùng để kiểm tra import tự động, có đủ độ dài cần thiết. ').repeat(2)+'\nChương 2\n'+('Nội dung chương hai dùng để kiểm tra import tự động, có đủ độ dài cần thiết. ').repeat(2)) .toString('base64')})});if(x.status!==200||x.data.total!==2)throw Error('TXT preview failed '+JSON.stringify(x.data));
  const importData='data:text/plain;base64,'+Buffer.from('Chương 1\n'+('Nội dung chương một dùng để kiểm tra import tự động, có đủ độ dài cần thiết. ').repeat(2)+'\nChương 2\n'+('Nội dung chương hai dùng để kiểm tra import tự động, có đủ độ dài cần thiết. ').repeat(2)).toString('base64');
- x=await req('/admin/import/batch',{method:'POST',headers:{...auth,'content-type':'application/json'},body:JSON.stringify({filename:'ci-import.txt',data:importData,batchSize:1,title:'CI Import Story',author:'CI'})});if(x.status!==201||x.data.imported!==2)throw Error('TXT import failed');
+ x=await req('/admin/import/batch',{method:'POST',headers:{...auth,'content-type':'application/json'},body:JSON.stringify({filename:'ci-import.txt',data:importData,batchSize:1,title:'CI Import Story',author:'CI'})});if(x.status!==201||x.data.imported!==2)throw Error('TXT import failed '+JSON.stringify(x.data));
  x=await req('/stories?page=1&pageSize=20');if(x.data.count!==4)throw Error('import count failed');
- x=await req('/admin/backup/restore',{method:'POST',headers:{...auth,'content-type':'application/json'},body:JSON.stringify(cleanBackup)});if(x.status!==200)throw Error('backup restore failed');
- x=await req('/stories?page=1&pageSize=20');if(x.data.count!==3)throw Error('restore snapshot failed');
+ x=await req('/admin/backup/restore',{method:'POST',headers:{...auth,'content-type':'application/json'},body:JSON.stringify(cleanBackup)});if(x.status!==200)throw Error('backup restore failed '+JSON.stringify(x.data));
+ x=await req('/stories?page=1&pageSize=20');if(x.data.count!==3)throw Error('restore snapshot failed '+JSON.stringify(x.data));
  // Restore deletes sessions by design; restart and verify SQLite persistence.
- p.kill('SIGTERM');await wait(300);
+ p.kill('SIGTERM');await wait(1000);
  const p2=spawn(process.execPath,['server.js'],{cwd:root,stdio:['ignore','pipe','pipe']});
- let h2;for(let i=0;i<30;i++){try{h2=await req('/health');if(h2.status===200)break}catch{}await wait(200)}if(h2?.status!==200)throw Error('restart health failed');
+ let h2;for(let i=0;i<30;i++){try{h2=await req('/health');if(h2.status===200)break}catch{}await wait(200)}if(h2?.status!==200)throw Error('restart health failed '+JSON.stringify(h2?.data||null));
  x=await req('/stories?page=1&pageSize=10');if(x.status!==200||x.data.count!==3)throw Error('restart persistence failed');
  p2.kill('SIGTERM');await wait(200);
  x=await req('/stories/b1');const et=x.headers.get('etag');if(!et)throw Error('etag missing');x=await req('/stories/b1',{headers:{'if-none-match':et}});if(x.status!==304)throw Error('etag 304 failed');
