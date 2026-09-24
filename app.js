@@ -37,7 +37,16 @@ function applyLanguage(){
  const ls=$('#langSelect');if(ls)ls.value=state.lang;
  document.title=T('title');
 }
-window.setLanguage=lang=>{if(!I18N[lang])lang='vi';state.lang=lang;save('ktf_lang',lang);renderLibrary();applyLanguage();applyReader()};
+window.setLanguage=async lang=>{
+ if(!I18N[lang])lang='vi';
+ const changed=state.lang!==lang;
+ state.lang=lang;save('ktf_lang',lang);renderLibrary();applyLanguage();applyReader();
+ if(changed&&state.book&&$('#reader')?.classList.contains('show')){
+  const i=state.chapter;
+  stopTTS(true);
+  await readChapter(i,{languageChange:true});
+ }
+};
 const apiBase=()=>window.KhoAPI?.base?.()||'/api/v1';
 const api=async(path,opt={})=>{const h={'Accept':'application/json',...(opt.headers||{})};if(state.token)h.Authorization='Bearer '+state.token;const r=await fetch(apiBase()+path,{...opt,headers:h});if(!r.ok){let m='HTTP_'+r.status;try{const j=await r.json();m=j.error||j.message||m}catch{}throw Error(m)}return r.status===204?null:r.json()};
 window.configureApi=()=>{const current=window.KhoAPI?.base?.()||'';const value=prompt('URL API backend (ví dụ: https://api.example.com/api/v1)\\nĐể trống để dùng mặc định của trang.',current);if(value===null)return;const v=value.trim().replace(/\/$/,'');if(v)localStorage.setItem('ktf_api_base',v);else localStorage.removeItem('ktf_api_base');toast(v?'Đã lưu địa chỉ API. Đang tải lại…':'Đã khôi phục API mặc định. Đang tải lại…');setTimeout(()=>location.reload(),350)};
@@ -232,14 +241,85 @@ window.toggleOrder=()=>{state.order=state.order==='asc'?'desc':'asc';chapterPage
 window.startBook=i=>readChapter(i);
 window.continueBook=()=>readChapter(progress()[state.book.id]?.chapter||0);
 const chapterInflight=new Map();
+const translatedChapterCache=new Map();
+function storyTargetLanguage(){
+ return state.lang==='zh'?'zh-CN':state.lang==='en'?'en-US':'vi-VN';
+}
+function translationCacheKey(bookId,index,lang){return bookId+':'+index+':'+lang}
+async function translateClientText(text,target){
+ const source=String(text||'').trim();
+ if(!source)return '';
+ const chunks=[];
+ let rest=source;
+ const limit=3200;
+ while(rest.length>limit){
+  let cut=Math.max(
+   rest.lastIndexOf('\n',limit),
+   rest.lastIndexOf('。',limit),
+   rest.lastIndexOf('！',limit),
+   rest.lastIndexOf('？',limit),
+   rest.lastIndexOf('.',limit),
+   rest.lastIndexOf('!',limit),
+   rest.lastIndexOf('?',limit)
+  );
+  if(cut<Math.floor(limit*.55))cut=limit;
+  chunks.push(rest.slice(0,cut+1).trim());
+  rest=rest.slice(cut+1).trim();
+ }
+ if(rest)chunks.push(rest);
+ const out=[];
+ for(const chunk of chunks){
+  const u='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+encodeURIComponent(target)+'&dt=t&q='+encodeURIComponent(chunk);
+  const r=await fetch(u,{headers:{Accept:'application/json'}});
+  if(!r.ok)throw Error('TRANSLATION_HTTP_'+r.status);
+  const j=await r.json();
+  const translated=Array.isArray(j?.[0])?j[0].map(x=>x?.[0]||'').join(''):'';
+  if(!translated)throw Error('TRANSLATION_EMPTY');
+  out.push(translated);
+ }
+ return out.join('\n');
+}
+async function translateChapterFallback(chapter,lang){
+ if(lang==='vi-VN'&&/[㐀-鿿]/.test(String(chapter.content||''))===false){
+  return {...chapter,language:'vi-VN',translated:false};
+ }
+ if(lang==='en-US'&&/^[\x00-\x7F\s\p{P}\p{N}]+$/u.test(String(chapter.content||''))){
+  return {...chapter,language:'en-US',translated:false};
+ }
+ const key=translationCacheKey(state.book.id,chapter.index??state.chapter,lang);
+ if(translatedChapterCache.has(key))return translatedChapterCache.get(key);
+ const [content,title]=await Promise.all([
+  translateClientText(chapter.content||'',lang),
+  translateClientText(chapter.title||'',lang).catch(()=>chapter.title||'')
+ ]);
+ const result={...chapter,title,content,language:lang,translated:true};
+ translatedChapterCache.set(key,result);
+ return result;
+}
 async function fetchChapterData(i){
- const key=state.book.id+':'+i;
+ const lang=storyTargetLanguage();
+ const key=state.book.id+':'+i+':'+lang;
  if(chapterInflight.has(key))return chapterInflight.get(key);
- const fallback=async()=>{const cached=await offlineGet(state.book.id,i).catch(()=>null);if(cached)return cached;const c=state.chapters.find(x=>(x.index??x.chapter)===i)||state.book.chapters?.[i];return {chapter:c,index:i,title:c?.title||('Chương '+(i+1)),content:c?.content||c?.[1]||''}};
+ const fallback=async()=>{
+  const cached=await offlineGet(state.book.id,i).catch(()=>null);
+  const base=cached||state.chapters.find(x=>(x.index??x.chapter)===i)||state.book.chapters?.[i];
+  const original=cached||{bookId:state.book.id,index:i,title:base?.title||('Chương '+(i+1)),content:base?.content||base?.[1]||''};
+  if(original.language===lang&&original.translated)return original;
+  try{return await translateChapterFallback(original,lang)}
+  catch{return {...original,language:null,translated:false}}
+ };
  const job=(async()=>{
   if(!state.apiAvailable)return fallback();
-  try{const j=await api('/stories/'+encodeURIComponent(state.book.id)+'/chapters/'+i);offlinePut(state.book.id,i,j).catch(()=>{});return j}
-  catch{state.apiAvailable=false;return fallback()}
+  try{
+   const j=await api('/stories/'+encodeURIComponent(state.book.id)+'/chapters/'+i+'?lang='+encodeURIComponent(lang));
+   if(j?.translated===false){
+    try{return await translateChapterFallback(j,lang)}catch{return j}
+   }
+   offlinePut(state.book.id,i,j).catch(()=>{});
+   return j;
+  }catch{
+   try{return await fallback()}catch{state.apiAvailable=false;return fallback()}
+  }
  })();
  chapterInflight.set(key,job);try{return await job}finally{chapterInflight.delete(key)}
 }
@@ -259,7 +339,7 @@ function scheduleAutoAdvance(){
   if(keepTts&&runId===ttsRunId)startTTSCurrent();
  },900);
 }
-async function readChapter(i){
+async function readChapter(i,options={}){
  if(!state.book)return;
  if(autoAdvanceTimer){clearTimeout(autoAdvanceTimer);autoAdvanceTimer=0}
  const n=totalChapterCount();
@@ -296,12 +376,13 @@ function splitTTSText(text,limit=1500){
  if(rest)out.push(rest);return out;
 }
 function ttsLanguage(){
+ if(state.current?.language&&state.current.language!=='auto')return state.current.language;
  const explicit=String(state.book?.ttsLang||'').trim();
- if(explicit)return explicit;
+ if(explicit&&!['auto',''].includes(explicit))return explicit;
  const text=$('#rtext')?.innerText||'';
  if(/[\u3400-\u9fff]/.test(text))return 'zh-CN';
  if(/[ăâđêôơưĂÂĐÊÔƠƯÀ-ỹ]/.test(text))return 'vi-VN';
- return 'en-US';
+ return state.lang==='en'?'en-US':'en-US';
 }
 function startTTSCurrent(){
  if(!window.speechSynthesis||!window.SpeechSynthesisUtterance)return toast('Thiết bị không hỗ trợ TTS');
