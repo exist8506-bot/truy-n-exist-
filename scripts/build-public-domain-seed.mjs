@@ -227,8 +227,29 @@ const mirrorBooks=books.map(b=>({
   mirrorDir:{'phong-than-dien-nghia':'封神演義','tay-du-ky':'西遊記','hau-tay-du-ky':'後西遊記','dong-du-ky':'東遊記','nam-du-ky':'南遊記','bac-du-ky':'北遊記','bat-tien-dac-dao':'八仙得道','nu-tien-ngoai-su':'女仙外史','luc-da-tien-tung':'綠野仙蹤','tam-toai-binh-yeu-truyen':'三遂平妖傳'}[b.id])
 }));
 async function mirrorJson(url){
-  const r=await fetchJson(url);
-  return r;
+  return fetchJson(url);
+}
+async function fetchMirrorText(u){
+  let last='MIRROR_HTTP_ERROR';
+  for(let attempt=0;attempt<6;attempt++){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),15000);
+    try{
+      const r=await fetch(u,{headers:{'User-Agent':'KhoTruyenFull/1.22 public-domain mirror importer'},signal:controller.signal});
+      if(r.ok)return await r.text();
+      last='MIRROR_HTTP_'+r.status;
+      if(r.status===429||r.status>=500){
+        const delay=Math.min(15000,1000*Math.pow(2,attempt));
+        await sleep(delay);continue;
+      }
+      throw new Error(last);
+    }catch(e){
+      last=e?.message||last;
+      if(attempt===5)break;
+      await sleep(Math.min(15000,1000*Math.pow(2,attempt)));
+    }finally{clearTimeout(timer)}
+  }
+  throw new Error(last);
 }
 async function buildMirrorBook(b){
   const dirUrl='https://api.github.com/repos/'+MIRROR_REPO+'/contents/zhtts/text/'+encodeURIComponent(b.mirrorDir)+'?ref='+MIRROR_REF;
@@ -242,7 +263,7 @@ async function buildMirrorBook(b){
     const batch=files.slice(i,i+width);
     const rows=await Promise.all(batch.map(async f=>{
       const rawUrl='https://raw.githubusercontent.com/'+MIRROR_REPO+'/'+MIRROR_REF+'/'+f.path.split('/').map(encodeURIComponent).join('/');
-      return {f,content:await mirrorJson(rawUrl)};
+      return {f,content:await fetchMirrorText(rawUrl)};
     }));
     for(const row of rows)got.set(row.f.name,String(row.content||'').trim());
   }
@@ -265,20 +286,22 @@ async function buildMirrorBook(b){
   };
 }
 async function main(){
-  const out={version:3,generatedAt:new Date().toISOString(),licenseNote:'Underlying classic works are public-domain texts on Chinese Wikisource; source pages are retained for attribution. Chapter text remains the source text.',books:[]};
-  const results=new Array(books.length);
+  const out={version:4,generatedAt:new Date().toISOString(),licenseNote:'Underlying classic works are public-domain works; original source pages are retained for attribution, and chapter text is assembled from a public text mirror.',books:[]};
+  const results=new Array(mirrorBooks.length);
   let cursor=0;
   const worker=async()=>{
     while(true){
       const index=cursor++;
-      if(index>=books.length)return;
-      const b=books[index];
-      console.log('Building '+b.title);
-      results[index]=await buildBook(b);
+      if(index>=mirrorBooks.length)return;
+      const b=mirrorBooks[index];
+      console.log('Building mirror '+b.title);
+      results[index]=await buildMirrorBook(b);
     }
   };
-  await Promise.all(Array.from({length:Math.min(3,books.length)},()=>worker()));
+  await Promise.all(Array.from({length:Math.min(3,mirrorBooks.length)},()=>worker()));
   out.books=results;
+  if(out.books.length!==10)throw new Error('EXPECTED_10_BOOKS:'+out.books.length);
+  for(const b of out.books)if(!b.chapters?.length||b.status!=='FULL')throw new Error('INVALID_BOOK:'+b.id);
   fs.mkdirSync('server',{recursive:true});
   fs.writeFileSync('server/public-domain-seed.json',JSON.stringify(out));
   console.log('Generated '+out.books.length+' books / '+out.books.reduce((n,b)=>n+b.chapters.length,0)+' chapters.');
