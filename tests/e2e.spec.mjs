@@ -253,7 +253,7 @@ test('reader auto advance and tts continuation', async ({ browser }) => {
   await page.evaluate(()=>{window.__finishTts=true});
   await page.getByRole('button',{name:/🔊/}).click();
   await expect(page.locator('#ttsLabel')).toHaveText('Dừng');
-  await expect(page.locator('#rtitle')).toContainText('Bí mật',{timeout:5000});
+  await expect(page.locator('#rtitle')).toContainText('Vệt sáng trong rừng',{timeout:5000});
   await page.evaluate(()=>{window.__finishTts=false});
   await page.getByRole('button',{name:/🔊/}).click();
   await expect(page.locator('#ttsLabel')).toHaveText('Đọc');
