@@ -20,6 +20,7 @@ for(const r of all("SELECT id,title FROM chapters WHERE search_key='' OR search_
 db.exec('CREATE INDEX IF NOT EXISTS idx_chapters_search ON chapters(story_id,search_key);');
 db.exec("CREATE TABLE IF NOT EXISTS bookmarks(user_id TEXT NOT NULL,story_id TEXT NOT NULL,chapter_index INTEGER NOT NULL,title TEXT DEFAULT '',created_at TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(user_id,story_id,chapter_index));");
 db.exec('CREATE INDEX IF NOT EXISTS idx_bookmarks_user_updated ON bookmarks(user_id,updated_at);');
+db.exec('CREATE TABLE IF NOT EXISTS chapter_translations(story_id TEXT NOT NULL,chapter_index INTEGER NOT NULL,lang TEXT NOT NULL,source_hash TEXT NOT NULL,title TEXT DEFAULT "",content TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(story_id,chapter_index,lang));');
 function seed(){
   const legacy=path.join(DATA_DIR,'seed.json'),publicSeed=path.join(DATA_DIR,'public-domain-seed.json'),sources=[];
   if(fs.existsSync(legacy))sources.push(JSON.parse(fs.readFileSync(legacy,'utf8')));
@@ -91,6 +92,45 @@ function publicUser(u){return {id:u.id,username:u.username,displayName:u.display
 function storyRow(r){return {id:r.id,title:r.title,author:r.author,cat:r.category,desc:r.description,tone:r.tone,status:r.status,cover:r.cover_path||'',chapters:Number(r.chapters||0),createdAt:r.created_at,updatedAt:r.updated_at}}
 function getStory(id){return q(`SELECT s.*,COUNT(c.id) chapters FROM stories s LEFT JOIN chapters c ON c.story_id=s.id WHERE s.id=? GROUP BY s.id`,id)}
 function chapterRow(r){return {bookId:r.story_id,index:Number(r.chapter_index),title:r.title,content:r.content,id:r.id,updatedAt:r.updated_at}}
+const TRANSLATE_LANGS=new Set(['vi-VN','en-US','zh-CN']);
+const translationHash=s=>crypto.createHash('sha1').update(String(s||'')).digest('hex');
+function splitTranslationText(text,limit=3200){
+ const src=String(text||''),out=[];let rest=src;
+ while(rest.length>limit){
+  let cut=Math.max(rest.lastIndexOf('\n',limit),rest.lastIndexOf('。',limit),rest.lastIndexOf('！',limit),rest.lastIndexOf('？',limit),rest.lastIndexOf('.',limit),rest.lastIndexOf('!',limit),rest.lastIndexOf('?',limit));
+  if(cut<Math.floor(limit*.55))cut=limit;
+  out.push(rest.slice(0,cut+1).trim());rest=rest.slice(cut+1).trim();
+ }
+ if(rest)out.push(rest);
+ return out;
+}
+async function translateExternal(text,target){
+ const chunks=splitTranslationText(text);
+ const out=[];
+ for(const chunk of chunks){
+  const endpoint='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+encodeURIComponent(target)+'&dt=t&q='+encodeURIComponent(chunk);
+  const r=await fetch(endpoint,{headers:{Accept:'application/json'}});
+  if(!r.ok)throw Error('TRANSLATION_HTTP_'+r.status);
+  const j=await r.json(),translated=Array.isArray(j?.[0])?j[0].map(x=>x?.[0]||'').join(''):'';
+  if(!translated)throw Error('TRANSLATION_EMPTY');
+  out.push(translated);
+ }
+ return out.join('\n');
+}
+async function getTranslatedChapter(row,lang){
+ if(!TRANSLATE_LANGS.has(lang))return {...chapterRow(row),language:null,translated:false};
+ const sourceHash=translationHash(row.title+'\n'+row.content);
+ const cached=q('SELECT * FROM chapter_translations WHERE story_id=? AND chapter_index=? AND lang=?',row.story_id,Number(row.chapter_index),lang);
+ if(cached&&cached.source_hash===sourceHash)return {bookId:row.story_id,index:Number(row.chapter_index),title:cached.title||row.title,content:cached.content,id:row.id,updatedAt:cached.updated_at,language:lang,translated:true};
+ try{
+  const [title,content]=await Promise.all([translateExternal(row.title,lang),translateExternal(row.content,lang)]);
+  const t=now();
+  run('INSERT INTO chapter_translations(story_id,chapter_index,lang,source_hash,title,content,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(story_id,chapter_index,lang) DO UPDATE SET source_hash=excluded.source_hash,title=excluded.title,content=excluded.content,updated_at=excluded.updated_at',row.story_id,Number(row.chapter_index),lang,sourceHash,title,content,t);
+  return {bookId:row.story_id,index:Number(row.chapter_index),title,content,id:row.id,updatedAt:row.updated_at,language:lang,translated:true};
+ }catch(e){
+  return {...chapterRow(row),language:null,translated:false,translationError:String(e.message||e)};
+ }
+}
 function route(req,res){const reply=(status,data,type='application/json; charset=utf-8')=>send(res,status,data,type,req); if(req.method==='OPTIONS')return reply(204,'');const u=url.parse(req.url,true),p=u.pathname.replace(/\/+$/,'')||'/';
 if(p==='/api/v1/auth/login'||p==='/api/v1/auth/register'){if(!rateLimit(req,res,'auth',60))return;}
 if(p.startsWith('/api/v1/admin/')){if(!rateLimit(req,res,'admin',180))return;}
@@ -108,7 +148,7 @@ if(p==='/api/v1/bookmarks'&&req.method==='GET'){const u=requireUser(req,res);if(
 if(p==='/api/v1/bookmarks'&&req.method==='PUT')return body(req).then(x=>{const u=requireUser(req,res);if(!u)return;const story=String(x.storyId||''),i=Math.max(0,Number(x.chapterIndex||0));if(!getStory(story))return reply(400,{error:'INVALID_STORY'});const t=now();if(x.active===false)run('DELETE FROM bookmarks WHERE user_id=? AND story_id=? AND chapter_index=?',u.id,story,i);else run('INSERT INTO bookmarks(user_id,story_id,chapter_index,title,created_at,updated_at) VALUES(?,?,?,?,?,?) ON CONFLICT(user_id,story_id,chapter_index) DO UPDATE SET title=excluded.title,updated_at=excluded.updated_at',u.id,story,i,String(x.title||'').slice(0,200),t,t);return reply(200,{items:all('SELECT story_id,chapter_index,title,created_at,updated_at FROM bookmarks WHERE user_id=? ORDER BY updated_at DESC',u.id).map(r=>({storyId:r.story_id,chapterIndex:r.chapter_index,title:r.title,createdAt:r.created_at,updatedAt:r.updated_at}))})}).catch(()=>reply(400,{error:'BAD_JSON'}));
 if(p==='/api/v1/favorites'&&req.method==='GET'){const u=requireUser(req,res);if(!u)return;return reply(200,all('SELECT story_id FROM favorites WHERE user_id=? ORDER BY created_at DESC',u.id).map(r=>r.story_id))}
 if(p==='/api/v1/favorites'&&req.method==='PUT')return body(req).then(x=>{const u=requireUser(req,res);if(!u)return;const s=getStory(String(x.storyId||''));if(!s)return reply(400,{error:'INVALID_STORY'});if(x.active===false)run('DELETE FROM favorites WHERE user_id=? AND story_id=?',u.id,s.id);else run('INSERT OR IGNORE INTO favorites VALUES(?,?,?)',u.id,s.id,now());reply(200,{items:all('SELECT story_id FROM favorites WHERE user_id=? ORDER BY created_at DESC',u.id).map(r=>r.story_id)})}).catch(()=>reply(400,{error:'BAD_JSON'}));
-let m=p.match(/^\/api\/v1\/stories\/([^/]+)\/chapters\/(\d+)$/);if(m&&req.method==='GET'){const ck=cacheKey(req),hit=cacheGet(ck);if(hit)return reply(200,hit);const r=q('SELECT * FROM chapters WHERE story_id=? AND chapter_index=?',m[1],Number(m[2]));if(!r)return reply(404,{error:'CHAPTER_NOT_FOUND'});const out=chapterRow(r);cacheSet(ck,out);return reply(200,out)}
+let m=p.match(/^\/api\/v1\/stories\/([^/]+)\/chapters\/(\d+)$/);if(m&&req.method==='GET'){const ck=cacheKey(req),hit=cacheGet(ck);if(hit)return reply(200,hit);const r=q('SELECT * FROM chapters WHERE story_id=? AND chapter_index=?',m[1],Number(m[2]));if(!r)return reply(404,{error:'CHAPTER_NOT_FOUND'});const requestedLang=String(u.query.lang||'').trim();const job=requestedLang&&TRANSLATE_LANGS.has(requestedLang)?getTranslatedChapter(r,requestedLang):Promise.resolve({...chapterRow(r),language:null,translated:false});return job.then(out=>{cacheSet(ck,out);return reply(200,out)}).catch(e=>reply(502,{error:'TRANSLATION_FAILED',detail:String(e.message||e)}))}
 m=p.match(/^\/api\/v1\/stories\/([^/]+)\/chapters$/);if(m&&req.method==='GET'){const ck=cacheKey(req),hit=cacheGet(ck);if(hit)return reply(200,hit);if(!getStory(m[1]))return reply(404,{error:'BOOK_NOT_FOUND'});const total=Number(q('SELECT COUNT(*) n FROM chapters WHERE story_id=?',m[1]).n);const hasPaging=u.query.page!=null||u.query.pageSize!=null||u.query.q!=null;const cq=String(u.query.q||'').trim();if(!hasPaging)return reply(200,all('SELECT id,story_id,chapter_index,title,updated_at FROM chapters WHERE story_id=? ORDER BY chapter_index',m[1]).map(chapterRow));const page=Math.max(1,Number(u.query.page||1)),size=Math.max(1,Math.min(100,Number(u.query.pageSize||50))),direction=String(u.query.sort||'asc').toLowerCase()==='desc'?'DESC':'ASC';let rows;if(cq){const needle=norm(cq),like='%'+needle+'%',offset=(page-1)*size;
          const num=Number(cq); let countRow,filtered;
          if(Number.isFinite(num)&&String(num)===cq){
