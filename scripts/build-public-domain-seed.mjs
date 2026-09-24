@@ -219,6 +219,51 @@ async function buildBook(b){
   return {...b,chapters,ttsLang:'zh-CN',chapterCount:chapters.length};
 }
 
+
+const MIRROR_REPO='raylexlee/raylexlee.github.io';
+const MIRROR_REF='master';
+const mirrorBooks=books.map(b=>({
+  ...b,
+  mirrorDir:{'phong-than-dien-nghia':'封神演義','tay-du-ky':'西遊記','hau-tay-du-ky':'後西遊記','dong-du-ky':'東遊記','nam-du-ky':'南遊記','bac-du-ky':'北遊記','bat-tien-dac-dao':'八仙得道','nu-tien-ngoai-su':'女仙外史','luc-da-tien-tung':'綠野仙蹤','tam-toai-binh-yeu-truyen':'三遂平妖傳'}[b.id])
+}));
+async function mirrorJson(url){
+  const r=await fetchJson(url);
+  return r;
+}
+async function buildMirrorBook(b){
+  const dirUrl='https://api.github.com/repos/'+MIRROR_REPO+'/contents/zhtts/text/'+encodeURIComponent(b.mirrorDir)+'?ref='+MIRROR_REF;
+  const listing=await mirrorJson(dirUrl);
+  const files=(Array.isArray(listing)?listing:[]).filter(x=>x.type==='file' && /^\\d+\\.txt$/i.test(x.name) && Number(x.name.replace(/\\D/g,''))>0)
+    .sort((a,z)=>Number(a.name.replace(/\\D/g,''))-Number(z.name.replace(/\\D/g,'')));
+  if(!files.length)throw new Error('MIRROR_EMPTY:'+b.id);
+  const got=new Map();
+  const width=16;
+  for(let i=0;i<files.length;i+=width){
+    const batch=files.slice(i,i+width);
+    const rows=await Promise.all(batch.map(async f=>{
+      const rawUrl='https://raw.githubusercontent.com/'+MIRROR_REPO+'/'+MIRROR_REF+'/'+f.path.split('/').map(encodeURIComponent).join('/');
+      return {f,content:await mirrorJson(rawUrl)};
+    }));
+    for(const row of rows)got.set(row.f.name,String(row.content||'').trim());
+  }
+  const chapters=[];
+  for(const f of files){
+    const content=got.get(f.name)||'';
+    if(content.length<200)continue;
+    chapters.push({
+      index:chapters.length,
+      title:'Chương '+(chapters.length+1),
+      content,
+      sourcePage:'https://github.com/'+MIRROR_REPO+'/blob/'+MIRROR_REF+'/'+f.path
+    });
+  }
+  if(!chapters.length)throw new Error('MIRROR_NO_CONTENT:'+b.id);
+  return {
+    id:b.id,title:b.title,author:b.author,category:'Tiên hiệp / Thần ma',status:'FULL',
+    source:b.source,sourceTitle:b.sourceTitle,mirrorSource:'https://github.com/'+MIRROR_REPO+'/tree/'+MIRROR_REF+'/zhtts/text/'+encodeURIComponent(b.mirrorDir),
+    chapters,ttsLang:'zh-CN',chapterCount:chapters.length
+  };
+}
 async function main(){
   const out={version:3,generatedAt:new Date().toISOString(),licenseNote:'Underlying classic works are public-domain texts on Chinese Wikisource; source pages are retained for attribution. Chapter text remains the source text.',books:[]};
   const results=new Array(books.length);
