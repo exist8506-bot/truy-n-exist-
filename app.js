@@ -265,7 +265,7 @@ async function readChapter(i){
  const n=totalChapterCount();
  if(i<0||i>=n)return;
  const j=await fetchChapterData(i);
- state.chapter=i;state.current=j;show('reader');$('#rbook').textContent=state.book.title;$('#rtitle').textContent=j.title||('Chương '+i);$('#rmeta').textContent='Chương '+(i+1)+' · '+(state.book.author||'');const bookmarkBtn=$('#bookmarkBtn');if(bookmarkBtn)bookmarkBtn.textContent=isBookmarked()?'🔖 Đã đánh dấu':'🔖 Đánh dấu';$('#rtext').innerHTML=String(j.content||'').split(/\n+/).filter(Boolean).map(x=>'<p>'+esc(x)+'</p>').join('');
+ state.chapter=i;state.current=j;show('reader');$('#rbook').textContent=state.book.title;$('#rtitle').textContent=j.title||((T('chapterUnit'))+' '+(i+1));$('#rmeta').textContent=T('chapterUnit')+' '+(i+1)+' · '+(state.book.author||'');const bookmarkBtn=$('#bookmarkBtn');if(bookmarkBtn)bookmarkBtn.textContent=isBookmarked()?T('marked'):T('mark');$('#rtext').innerHTML=String(j.content||'').split(/\n+/).filter(Boolean).map(x=>'<p>'+esc(x)+'</p>').join('');
  applyReader();recordRead();updateReaderProgress();restoreScroll();history.pushState({},'',location.pathname+'#'+encodeURIComponent(state.book.id)+'/chapter/'+i);
  requestAnimationFrame(()=>prefetchChapter(i+1));
 }
