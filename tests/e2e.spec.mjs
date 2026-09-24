@@ -238,6 +238,8 @@ test('mobile responsive: bottom navigation, reader, bookmark and persistence', a
 
   await page.locator('#chapters .chapter').first().click();
   await expect(page.locator('#reader')).toHaveClass(/show/);
+  await expect(page.locator('#library')).toBeHidden();
+  await expect(page.locator('#detail')).toBeHidden();
   await expect(page.locator('#rtext')).not.toBeEmpty();
   const firstTitle=await page.locator('#rtitle').textContent();
   await page.locator('#next').click();
