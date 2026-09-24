@@ -18,11 +18,15 @@ jobs:
           node-version: 22
       - name: Build seed from Wikisource
         run: node scripts/build-public-domain-seed.mjs
+      - name: Prepare static seed
+        run: cp server/public-domain-seed.json public-domain-seed.json
+      - name: Validate generated seed
+        run: node -e "const fs=require('fs'); const d=JSON.parse(fs.readFileSync('server/public-domain-seed.json','utf8')); const b=d.books?.find(x=>x.id==='phong-than-dien-nghia'); if(!b||b.chapters?.length!==100) throw new Error('Invalid real seed'); if(b.chapters.some(c=>String(c.content||'').trim().length<200)) throw new Error('Short chapter'); console.log('validated 100 chapters');"
       - name: Commit generated seed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add server/public-domain-seed.json
+          git add server/public-domain-seed.json public-domain-seed.json
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "data: refresh public-domain Vietnamese books"
+          git commit -m "data: refresh real public-domain story"
           git push

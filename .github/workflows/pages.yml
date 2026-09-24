@@ -19,8 +19,10 @@ jobs:
         run: |
           mkdir -p _site
           cp index.html books.js api-client.js app.js manifest.webmanifest sw.js _site/
-          if [ -f server/public-domain-seed.json ]; then
-            cp server/public-domain-seed.json _site/
+          if [ -f public-domain-seed.json ]; then
+            cp public-domain-seed.json _site/
+          elif [ -f server/public-domain-seed.json ]; then
+            cp server/public-domain-seed.json _site/public-domain-seed.json
           fi
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
