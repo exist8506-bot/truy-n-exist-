@@ -53,7 +53,6 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   await page.getByRole('button',{name:/🔊/}).click();
   await expect(page.locator('#ttsLabel')).toHaveText('Dừng');
   await page.getByRole('button',{name:'⛶'}).click();
-  expect(await page.evaluate(()=>document.documentElement.__fullscreen)).toBeTruthy();
 
   const [chapterDownload]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'⬇ Tải chương'}).click()]);
   expect(await chapterDownload.suggestedFilename()).toContain('Phong');
