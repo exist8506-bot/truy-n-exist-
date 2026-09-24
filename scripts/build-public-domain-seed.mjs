@@ -13,7 +13,6 @@ const books=[
   {id:'nu-tien-ngoai-su',title:'Nữ Tiên Ngoại Sử',author:'Lữ Hùng / 呂熊',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/女仙外史',sourceTitle:'女仙外史',mode:'chapters',expected:100},
   {id:'luc-da-tien-tung',title:'Lục Dã Tiên Tung',author:'Lý Bách Xuyên / 李百川',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/綠野仙蹤',sourceTitle:'綠野仙蹤',mode:'chapters',expected:43},
   {id:'tam-toai-binh-yeu-truyen',title:'Tam Toại Bình Yêu Truyện',author:'La Quán Trung / 羅貫中',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/三遂平妖傳',sourceTitle:'三遂平妖傳',mode:'chapters',expected:20},
-  {id:'kinh-hoa-duyen',title:'Kính Hoa Duyên',author:'Lý Nhữ Trân / 李汝珍',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/鏡花緣',sourceTitle:'鏡花緣',mode:'chapters',expected:100}
 ];
 
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
