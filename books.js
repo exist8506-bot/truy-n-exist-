@@ -29,3 +29,4 @@ let books=[
 ['Người gửi radio','Khang gặp người đã gửi chiếc radio: một bà cụ sống một mình. Bà chỉ muốn biết tuyến đường cũ có còn tồn tại để con trai có thể về nhà. Khang dẫn bà tới bến xe mới.'],
 ['Thành phố sau mưa','Mưa tạnh. Những biển chỉ đường mới xuất hiện trên các con phố. Khang quay lại ứng dụng giao hàng và nhận một đơn rất bình thường: một bó hoa, một địa chỉ, một lời nhắn. Anh mỉm cười rồi lên xe.']]}
 ];
+window.books=books;

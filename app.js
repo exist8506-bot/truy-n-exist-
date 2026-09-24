@@ -19,12 +19,16 @@ window.goNextUnread=()=>{if(!state.book)return;const p=progress()[state.book.id]
 window.showHistory=()=>{show('history');renderHistory()}; window.showBookcase=()=>{show('bookcase');renderBookcase()};window.openAdmin=()=>window.adminStudio?.();
 function normalizeBook(b){const count=Number(b.chapterCount??(Array.isArray(b.chapters)?b.chapters.length:b.chapters??0));return {...b,chapterCount:count,chapters:Array.isArray(b.chapters)?b.chapters:[]}}
 async function loadStaticSeed(){
- try{
-  const r=await fetch('public-domain-seed.json',{cache:'no-store'});
-  if(!r.ok)throw Error('SEED_'+r.status);
-  const d=await r.json();
-  return Array.isArray(d.books)?d.books.map(normalizeBook):[];
- }catch{return[]}
+ const paths=['public-domain-seed.json','server/public-domain-seed.json'];
+ for(const path of paths){
+  try{
+   const r=await fetch(path,{cache:'no-store'});
+   if(!r.ok)continue;
+   const d=await r.json();
+   if(Array.isArray(d.books))return d.books.map(normalizeBook);
+  }catch{}
+ }
+ return[];
 }
 async function loadBooks(){
  try{
