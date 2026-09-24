@@ -1,4 +1,4 @@
-const V='kho-truyen-1.21.0';
+const V='kho-truyen-1.22.0';
 const PRECACHE=['./','./index.html','./app.js','./books.js','./api-client.js','./manifest.webmanifest','./public-domain-seed.json','./sw.js'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(V).then(c=>c.addAll(PRECACHE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(a=>Promise.all(a.filter(x=>x!==V).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
