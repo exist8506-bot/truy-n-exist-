@@ -7,7 +7,7 @@ on:
       - '.github/workflows/build-public-domain-seed.yml'
   workflow_dispatch:
 concurrency:
-  group: build-public-domain-seed
+  group: build-public-domain-seed-v2
   cancel-in-progress: true
 permissions:
   contents: write
