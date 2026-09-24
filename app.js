@@ -213,7 +213,9 @@ async function loadChapterPage(page=1){
 window.loadChapterPage=loadChapterPage;
 async function openBook(id){
  show('detail');let b=state.books.find(x=>x.id===id);
- try{b=normalizeBook(await api('/stories/'+encodeURIComponent(id)))}catch{}
+ if(state.apiAvailable){
+  try{b=normalizeBook(await api('/stories/'+encodeURIComponent(id)))}catch{}
+ }
  state.book=b;chapterPage=1;chapterTotal=Number(b.chapterCount||0);state.chapters=[];
  $('#detailBox').innerHTML='<div class="detailbox"><div class="detailcover" style="background:'+esc(b.tone||'#26324b')+'"><span style="font-size:48px">📚</span><span>'+esc(b.cat||'Truyện')+'</span></div><div><div class="badges"><span class="badge good">'+esc(b.status||'FULL')+'</span><span class="badge">'+esc(b.author||'')+'</span></div><h2>'+esc(b.title)+'</h2><p class="muted">'+esc(b.desc||'')+'</p><div class="settings"><button class="btn primary" onclick="startBook(0)">▶ Đọc từ đầu</button><button class="btn" onclick="continueBook()">↪ Đọc tiếp</button><button class="btn" onclick="toggleFav(\''+esc(b.id)+'\');openBook(\''+esc(b.id)+'\')">'+(favs().includes(b.id)?T('removeShelf'):T('addShelf'))+'</button><button class="btn" onclick="shareCurrent()">↗ Chia sẻ</button><button class="btn good" onclick="downloadBook(\''+esc(b.id)+'\')">⬇ Lưu cả truyện offline</button></div></div></div>';
  await loadChapterPage(1);
@@ -233,7 +235,12 @@ const chapterInflight=new Map();
 async function fetchChapterData(i){
  const key=state.book.id+':'+i;
  if(chapterInflight.has(key))return chapterInflight.get(key);
- const job=(async()=>{try{const j=await api('/stories/'+encodeURIComponent(state.book.id)+'/chapters/'+i);offlinePut(state.book.id,i,j).catch(()=>{});return j}catch{const j=await offlineGet(state.book.id,i).catch(()=>null);if(j)return j;const c=state.chapters.find(x=>(x.index??x.chapter)===i)||state.book.chapters?.[i];return {chapter:c,index:i,title:c?.title||('Chương '+(i+1)),content:c?.content||c?.[1]||''}}})();
+ const fallback=async()=>{const cached=await offlineGet(state.book.id,i).catch(()=>null);if(cached)return cached;const c=state.chapters.find(x=>(x.index??x.chapter)===i)||state.book.chapters?.[i];return {chapter:c,index:i,title:c?.title||('Chương '+(i+1)),content:c?.content||c?.[1]||''}};
+ const job=(async()=>{
+  if(!state.apiAvailable)return fallback();
+  try{const j=await api('/stories/'+encodeURIComponent(state.book.id)+'/chapters/'+i);offlinePut(state.book.id,i,j).catch(()=>{});return j}
+  catch{state.apiAvailable=false;return fallback()}
+ })();
  chapterInflight.set(key,job);try{return await job}finally{chapterInflight.delete(key)}
 }
 async function prefetchChapter(i){if(!state.book||i<0||i>=Number(state.book.chapterCount||state.book.chapters?.length||state.chapters.length||0))return;try{await fetchChapterData(i)}catch{}}
@@ -369,6 +376,10 @@ function localChapterData(bookId,index){
    : {...c,bookId,index:Number(c.index??index),title:c.title||('Chương '+(Number(index)+1)),content:c.content||''};
 }
 async function fetchChapterForOffline(bookId,index){
+ if(!state.apiAvailable){
+  const local=localChapterData(bookId,index);
+  if(local)return local;
+ }
  try{return await api('/stories/'+encodeURIComponent(bookId)+'/chapters/'+Number(index))}
  catch{
   const local=localChapterData(bookId,index);
