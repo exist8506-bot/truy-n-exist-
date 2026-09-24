@@ -1,3 +1,7 @@
+## 1.13.0
+- Paginated remote library results.
+- Search/filter/sort state is preserved between pages.
+
 ## 1.12.0
 - Bookmark filtering.
 - Quick bookmark removal with account synchronization.
