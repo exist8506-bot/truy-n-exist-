@@ -252,31 +252,49 @@ async function fetchMirrorText(u){
   throw new Error(last);
 }
 async function buildMirrorBook(b){
-  const dirUrl='https://api.github.com/repos/'+MIRROR_REPO+'/contents/zhtts/text/'+encodeURIComponent(b.mirrorDir)+'?ref='+MIRROR_REF;
-  const listing=await mirrorJson(dirUrl);
-  const files=(Array.isArray(listing)?listing:[]).filter(x=>x.type==='file' && /^\\d+\\.txt$/i.test(x.name) && Number(x.name.replace(/\\D/g,''))>0)
-    .sort((a,z)=>Number(a.name.replace(/\\D/g,''))-Number(z.name.replace(/\\D/g,'')));
-  if(!files.length)throw new Error('MIRROR_EMPTY:'+b.id);
-  const got=new Map();
-  const width=16;
+  const ranges={
+    'phong-than-dien-nghia':[1,100],
+    'tay-du-ky':[1,100],
+    'hau-tay-du-ky':[1,40],
+    'dong-du-ky':[0,56],
+    'nam-du-ky':[0,3],
+    'bac-du-ky':[0,4],
+    'bat-tien-dac-dao':[1,100],
+    'nu-tien-ngoai-su':[0,100],
+    'luc-da-tien-tung':[1,38],
+    'tam-toai-binh-yeu-truyen':[1,20]
+  };
+  const range=ranges[b.id];
+  if(!range)throw new Error('MIRROR_RANGE_MISSING:'+b.id);
+  const [first,last]=range;
+  const files=[];
+  for(let n=first;n<=last;n++){
+    const name=String(n).padStart(3,'0')+'.txt';
+    files.push({name,path:'zhtts/text/'+b.mirrorDir+'/'+name});
+  }
+  const chapters=[];
+  const width=12;
   for(let i=0;i<files.length;i+=width){
     const batch=files.slice(i,i+width);
     const rows=await Promise.all(batch.map(async f=>{
       const rawUrl='https://raw.githubusercontent.com/'+MIRROR_REPO+'/'+MIRROR_REF+'/'+f.path.split('/').map(encodeURIComponent).join('/');
-      return {f,content:await fetchMirrorText(rawUrl)};
+      try{
+        return {f,content:await fetchMirrorText(rawUrl)};
+      }catch(e){
+        if(first===0 && f.name==='000.txt')return {f,content:''};
+        throw new Error('MIRROR_FETCH_FAILED:'+b.id+':'+f.name+':'+(e?.message||e));
+      }
     }));
-    for(const row of rows)got.set(row.f.name,String(row.content||'').trim());
-  }
-  const chapters=[];
-  for(const f of files){
-    const content=got.get(f.name)||'';
-    if(content.length<200)continue;
-    chapters.push({
-      index:chapters.length,
-      title:'Chương '+(chapters.length+1),
-      content,
-      sourcePage:'https://github.com/'+MIRROR_REPO+'/blob/'+MIRROR_REF+'/'+f.path
-    });
+    for(const row of rows){
+      const content=String(row.content||'').replace(//g,'').trim();
+      if(content.length<200)continue;
+      chapters.push({
+        index:chapters.length,
+        title:'Chương '+(chapters.length+1),
+        content,
+        sourcePage:'https://github.com/'+MIRROR_REPO+'/blob/'+MIRROR_REF+'/'+row.f.path
+      });
+    }
   }
   if(!chapters.length)throw new Error('MIRROR_NO_CONTENT:'+b.id);
   return {
@@ -285,6 +303,7 @@ async function buildMirrorBook(b){
     chapters,ttsLang:'zh-CN',chapterCount:chapters.length
   };
 }
+
 async function main(){
   const out={version:4,generatedAt:new Date().toISOString(),licenseNote:'Underlying classic works are public-domain works; original source pages are retained for attribution, and chapter text is assembled from a public text mirror.',books:[]};
   const results=new Array(mirrorBooks.length);
