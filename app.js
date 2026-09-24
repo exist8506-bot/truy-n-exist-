@@ -1,4 +1,4 @@
-/* Kho Truyen Full 1.6.1 - compact application shell */
+/* Kho Truyen Full 1.6.2 - compact application shell */
 (()=> {
 'use strict';
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -18,8 +18,15 @@ window.showHistory=()=>{show('history');renderHistory()}; window.showBookcase=()
 function normalizeBook(b){const count=Number(b.chapterCount??(Array.isArray(b.chapters)?b.chapters.length:b.chapters??0));return {...b,chapterCount:count,chapters:Array.isArray(b.chapters)?b.chapters:[]}}
 async function loadBooks(){
  try{
-  const out=[];let page=1,total=1;
-  do{const j=await api('/stories?page='+page+'&pageSize=100');const items=j.items||j.books||j.stories||j.data||[];out.push(...items);total=Number(j.total||1);page++;if(!items.length)break}while(out.length<total);
+  const out=[];let page=1,total=0;
+  do{
+   const j=await api('/stories?page='+page+'&pageSize=100');
+   const items=j.items||j.books||j.stories||j.data||[];
+   out.push(...items);
+   total=Number(j.count??j.total??out.length);
+   page++;
+   if(!items.length||items.length<100||out.length>=total)break;
+  }while(page<10000);
   state.books=out.map(normalizeBook);$('#apiStatus').textContent='● SQLite API';
  }catch{state.books=localBooks().map(normalizeBook);$('#apiStatus').textContent='● Dữ liệu local'}
  updateStats(); return state.books;
@@ -72,9 +79,55 @@ window.clearHistory=()=>{setHist([]);renderHistory();toast('Đã xóa lịch s�
 function renderBookcase(){const a=favs();$('#favList').innerHTML=a.length?a.map(id=>{const b=state.books.find(x=>x.id===id);return b?'<div class="histrow"><div><b>'+esc(b.title)+'</b><div class="muted">'+esc(b.author)+'</div></div><button class="btn" onclick="openBook(\''+esc(id)+'\')">Mở</button></div>':''}).join(''):'<div class="empty">Tủ truyện đang trống.</div>';$('#downloadList').innerHTML='<div class="muted">Offline của trình duyệt được lưu trong bộ nhớ cục bộ. Chương hiện tại có thể tải bằng nút trong Reader.</div>'}
 async function syncProgress(){if(!state.token||!state.book)return;const p=progress();await api('/progress',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:state.book.id,chapterIndex:state.chapter,position:p[state.book.id]?.percent||0})})}
 async function restoreAccount(){if(!state.token)return;try{const u=await api('/auth/me');state.user=u;const s=await api('/sync');const p=progress();for(const [id,v] of Object.entries(s.progress||{}))p[id]={chapter:v.chapterIndex,percent:Number(v.position)||0,updated:Date.now()};setProgress(p);if(Array.isArray(s.favorites))setFavs(s.favorites);updateStats()}catch{state.token='';localStorage.removeItem('ktf_token');state.user=null}}
-window.login=async()=>{const username=prompt('Tên đăng nhập');const password=prompt('Mật khẩu');if(!username||!password)return;try{const j=await api('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});state.token=j.token||j.access_token;save('ktf_token',state.token);state.user=j.user||null;toast('Đăng nhập thành công')}catch(e){toast('Đăng nhập thất bại: '+e.message)}};
-window.logout=async()=>{try{await api('/auth/logout',{method:'POST'})}catch{}state.token='';localStorage.removeItem('ktf_token');state.user=null;toast('Đã đăng xuất')};
-window.showAccount=()=>{const name=prompt('Tài khoản: '+(state.user?.username||'chưa đăng nhập')+'\nNhập 1 để đăng nhập, 2 để đăng xuất');if(name==='1')login();if(name==='2')logout()};
+function accountError(e){
+ const map={INVALID_ACCOUNT:'Tên đăng nhập 3–32 ký tự, chỉ dùng a-z, 0-9, dấu chấm, gạch dưới hoặc gạch ngang; mật khẩu tối thiểu 6 ký tự.',USERNAME_EXISTS:'Tên đăng nhập đã tồn tại.',INVALID_CREDENTIALS:'Tên đăng nhập hoặc mật khẩu không đúng.',UNAUTHORIZED:'Phiên đăng nhập đã hết hạn.'};
+ return map[e.message]||('Có lỗi: '+e.message);
+}
+function closeAccount(){document.querySelector('#accountModal')?.remove()}
+function accountModal(){
+ closeAccount();
+ const m=document.createElement('section');m.id='accountModal';m.style.cssText='position:fixed;inset:0;z-index:250;background:#0009;display:grid;place-items:center;padding:18px';
+ m.innerHTML='<div style="width:min(460px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 24px 70px #0008">'+
+ '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><b style="font-size:22px">Tài khoản</b><div class="muted" id="accountHint"></div></div><button class="btn" id="accountClose">Đóng</button></div><div id="accountBody" style="margin-top:16px"></div></div>';
+ document.body.appendChild(m);$('#accountClose').onclick=closeAccount;
+ const bodyEl=$('#accountBody');
+ const render=()=>{
+  if(state.user){
+   bodyEl.innerHTML='<div class="panel" style="padding:14px;border:1px solid var(--line);border-radius:12px"><div class="muted">Tên đăng nhập</div><b>'+esc(state.user.username)+'</b><div class="muted" style="margin-top:12px">Vai trò</div><b>'+esc(state.user.role||'user')+'</b></div>'+
+   '<label style="display:block;margin-top:14px">Tên hiển thị<input id="accountDisplay" value="'+esc(state.user.displayName||state.user.username)+'" style="width:100%;margin-top:6px;padding:11px;border-radius:10px;background:#0d1526;border:1px solid var(--line);color:var(--text)"></label>'+
+   '<div id="accountMsg" class="muted" style="min-height:22px;margin-top:8px"></div>'+
+   '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn primary" id="accountSave">Lưu hồ sơ</button><button class="btn" id="accountLogout">Đăng xuất</button></div>';
+   $('#accountHint').textContent='Bạn đang đăng nhập';
+   $('#accountSave').onclick=async()=>{try{const j=await api('/profile',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({displayName:$('#accountDisplay').value.trim()})});state.user={...state.user,displayName:j.displayName};toast('Đã cập nhật hồ sơ');render()}catch(e){$('#accountMsg').textContent=accountError(e)}};
+   $('#accountLogout').onclick=logout;
+   return;
+  }
+  bodyEl.innerHTML='<div style="display:flex;gap:8px;margin-bottom:14px"><button class="btn primary" id="accountLoginTab">Đăng nhập</button><button class="btn" id="accountRegisterTab">Đăng ký</button></div><div id="accountForm"></div>';
+  $('#accountHint').textContent='Đồng bộ tiến độ, lịch sử và tủ truyện trên máy chủ';
+  const form=(register=false)=>{
+   $('#accountForm').innerHTML='<div style="display:grid;gap:10px">'+(register?'<label>Tên hiển thị<input id="accountDisplay" placeholder="Ví dụ: Nguyễn Văn Hòa" style="width:100%;margin-top:5px;padding:11px;border-radius:10px;background:#0d1526;border:1px solid var(--line);color:var(--text)"></label>':'')+
+   '<label>Tên đăng nhập<input id="accountUser" autocomplete="username" placeholder="hoaxxx_01" style="width:100%;margin-top:5px;padding:11px;border-radius:10px;background:#0d1526;border:1px solid var(--line);color:var(--text)"></label>'+
+   '<label>Mật khẩu<input id="accountPass" type="password" autocomplete="'+(register?'new-password':'current-password')+'" placeholder="Tối thiểu 6 ký tự" style="width:100%;margin-top:5px;padding:11px;border-radius:10px;background:#0d1526;border:1px solid var(--line);color:var(--text)"></label>'+
+   '<div id="accountMsg" class="muted" style="min-height:22px"></div><button class="btn primary" id="accountSubmit">'+(register?'Tạo tài khoản':'Đăng nhập')+'</button></div>';
+   $('#accountSubmit').onclick=async()=>{
+    const username=$('#accountUser').value.trim().toLowerCase(),password=$('#accountPass').value;
+    if(!username||!password)return $('#accountMsg').textContent='Vui lòng nhập đủ thông tin.';
+    try{
+     const payload={username,password};if(register)payload.displayName=$('#accountDisplay').value.trim()||username;
+     const j=await api(register?'/auth/register':'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+     state.token=j.token;save('ktf_token',state.token);state.user=j.user;await restoreAccount();toast(register?'Đăng ký thành công':'Đăng nhập thành công');render();
+    }catch(e){$('#accountMsg').textContent=accountError(e)}
+   };
+  };
+  $('#accountLoginTab').onclick=()=>{render();form(false)};
+  $('#accountRegisterTab').onclick=()=>{form(true)};
+  form(false);
+ };
+ render();return m;
+}
+window.login=async()=>accountModal();
+window.logout=async()=>{try{await api('/auth/logout',{method:'POST'})}catch{}state.token='';localStorage.removeItem('ktf_token');state.user=null;updateStats();toast('Đã đăng xuất');closeAccount()};
+window.showAccount=()=>accountModal();
 window.adminStudio=async()=>{if(!state.token)return toast('Cần đăng nhập tài khoản admin');let stats;try{stats=await api('/admin/stats')}catch(e){return toast('Không có quyền admin')};const s=document.createElement('section');s.className='panel';s.style.cssText='position:fixed;inset:2%;z-index:200;overflow:auto;background:var(--panel,#fff);padding:20px;border-radius:16px;color:var(--text)';s.innerHTML=`
 <button class="btn" id="adClose">Đóng</button> <b>Admin Studio 1.6</b>
 <div class="muted">SQLite · <span id="adStats">${esc(JSON.stringify(stats))}</span></div>
