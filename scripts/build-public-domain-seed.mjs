@@ -224,7 +224,7 @@ const MIRROR_REPO='raylexlee/raylexlee.github.io';
 const MIRROR_REF='master';
 const mirrorBooks=books.map(b=>({
   ...b,
-  mirrorDir:{'phong-than-dien-nghia':'封神演義','tay-du-ky':'西遊記','hau-tay-du-ky':'後西遊記','dong-du-ky':'東遊記','nam-du-ky':'南遊記','bac-du-ky':'北遊記','bat-tien-dac-dao':'八仙得道','nu-tien-ngoai-su':'女仙外史','luc-da-tien-tung':'綠野仙蹤','tam-toai-binh-yeu-truyen':'三遂平妖傳'}[b.id])
+  mirrorDir:{'phong-than-dien-nghia':'封神演義','tay-du-ky':'西遊記','hau-tay-du-ky':'後西遊記','dong-du-ky':'東遊記','nam-du-ky':'南遊記','bac-du-ky':'北遊記','bat-tien-dac-dao':'八仙得道','nu-tien-ngoai-su':'女仙外史','luc-da-tien-tung':'綠野仙蹤','tam-toai-binh-yeu-truyen':'三遂平妖傳'}[b.id]
 }));
 async function mirrorJson(url){
   return fetchJson(url);
