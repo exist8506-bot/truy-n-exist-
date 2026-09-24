@@ -1,4 +1,4 @@
-const fs=require('node:fs');
+import fs from 'node:fs';
 
 const API='https://vi.wikisource.org/w/api.php';
 const books=[
