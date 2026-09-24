@@ -61,7 +61,7 @@ function seed(){
 }
 seed();
 function send(res,status,data,type='application/json; charset=utf-8',req=null){
-  const raw=type.startsWith('application/json')?JSON.stringify(data):Buffer.isBuffer(data)?data:Buffer.from(String(data));
+  const raw=Buffer.isBuffer(data)?data:(type.startsWith('application/json')?JSON.stringify(data):Buffer.from(String(data)));
   const bodyBuf=Buffer.isBuffer(raw)?raw:Buffer.from(raw); const tag=etag(bodyBuf); const headers={'Content-Type':type,'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Content-Type, Authorization, If-None-Match','Access-Control-Allow-Methods':'GET,POST,PUT,DELETE,OPTIONS','ETag':tag,'Vary':'Accept-Encoding','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
   if(req&&req.method==='GET'&&req.headers['if-none-match']===tag){headers['Cache-Control']='private, max-age=5';res.writeHead(304,headers);return res.end()}
   if(req&&req.method==='GET')headers['Cache-Control']='private, max-age=5';
