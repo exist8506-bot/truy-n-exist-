@@ -34,11 +34,20 @@ jobs:
           NODE
       - name: Start API smoke test
         run: |
+          set +e
           node server/server.js > /tmp/kho-api.log 2>&1 &
           pid=$!
-          trap "kill $pid" EXIT
-          for i in $(seq 1 20); do curl -fsS http://127.0.0.1:8787/api/v1/health && break; sleep 1; done
-          curl -fsS http://127.0.0.1:8787/api/v1/stories?page=1\&pageSize=10
-          curl -fsS http://127.0.0.1:8787/api/v1/stories/truyen-thoi-gian
-          echo
-          cat /tmp/kho-api.log
+          ready=0
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8787/api/v1/health; then ready=1; break; fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then
+            echo "API failed to start:"
+            cat /tmp/kho-api.log
+            kill "$pid" 2>/dev/null || true
+            exit 1
+          fi
+          curl -fsS 'http://127.0.0.1:8787/api/v1/stories?page=1&pageSize=10'
+          curl -fsS 'http://127.0.0.1:8787/api/v1/stories/b1'
+          kill "$pid" 2>/dev/null || true
