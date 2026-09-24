@@ -286,7 +286,7 @@ async function buildMirrorBook(b){
       }
     }));
     for(const row of rows){
-      const content=String(row.content||'').replace(//g,'').trim();
+      const content=String(row.content||'').replace(/\r/g,'').trim();
       if(content.length<200)continue;
       chapters.push({
         index:chapters.length,
