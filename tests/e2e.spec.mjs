@@ -183,6 +183,7 @@ test('all ten public stories: first chapter smoke', async ({ browser }) => {
 test('reader language translation stays synchronized with TTS', async ({ browser }) => {
   const context=await browser.newContext();
   await context.addInitScript(() => {
+    localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1');
     window.__ttsLast=null;
     Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{
       speaking:false,
