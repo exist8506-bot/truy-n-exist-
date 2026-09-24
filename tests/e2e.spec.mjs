@@ -30,7 +30,7 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
 
   await page.locator('#grid .card').filter({hasText:'Phong Thần Diễn Nghĩa'}).locator('.info').click();
   await expect(page.locator('#chapterCount')).toContainText('100 chương');
-  await page.selectOption('#langSelect','en');
+  await page.selectOption('#readerLangSelect','en');
   await expect(page.locator('#detailBox .settings .btn').first()).toContainText('Start reading');
   await expect(page.locator('#chapterCount')).toContainText('chapters');
   await page.selectOption('#langSelect','vi');
@@ -210,7 +210,7 @@ test('reader language translation stays synchronized with TTS', async ({ browser
   await page.locator('.readerbar').getByRole('button',{name:/🔊/}).click();
   await expect.poll(()=>page.evaluate(()=>window.__ttsLast?.lang)).toBe('en-US');
 
-  await page.selectOption('#langSelect','zh');
+  await page.selectOption('#readerLangSelect','zh');
   await expect(page.locator('#rtext')).toContainText('[ZH] translated');
   await page.locator('.readerbar').getByRole('button',{name:/🔊/}).click();
   await expect.poll(()=>page.evaluate(()=>window.__ttsLast?.lang)).toBe('zh-CN');
