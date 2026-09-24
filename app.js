@@ -3,7 +3,7 @@
 'use strict';
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const localBooks=()=>Array.isArray(window.books)?window.books:[];
-const state={books:[],book:null,chapter:0,chapters:[],remoteSearch:false,order:'asc',filter:'all',sort:'title',mode:'all',libraryPage:1,libraryPageSize:100,libraryTotal:0,fontSize:+localStorage.getItem('ktf_fs')||19,font:localStorage.getItem('ktf_font')||'Georgia',theme:localStorage.getItem('ktf_theme')||'dark',rate:+localStorage.getItem('ktf_rate')||1,continuous:false,user:null,token:localStorage.getItem('ktf_token')||'',offline:new Set()};
+const state={books:[],book:null,chapter:0,chapters:[],remoteSearch:false,apiAvailable:false,order:'asc',filter:'all',sort:'title',mode:'all',libraryPage:1,libraryPageSize:100,libraryTotal:0,fontSize:+localStorage.getItem('ktf_fs')||19,font:localStorage.getItem('ktf_font')||'Georgia',theme:localStorage.getItem('ktf_theme')||'dark',rate:+localStorage.getItem('ktf_rate')||1,continuous:false,user:null,token:localStorage.getItem('ktf_token')||'',offline:new Set()};
 const apiBase=()=>window.KhoAPI?.base?.()||'/api/v1';
 const api=async(path,opt={})=>{const h={'Accept':'application/json',...(opt.headers||{})};if(state.token)h.Authorization='Bearer '+state.token;const r=await fetch(apiBase()+path,{...opt,headers:h});if(!r.ok){let m='HTTP_'+r.status;try{const j=await r.json();m=j.error||j.message||m}catch{}throw Error(m)}return r.status===204?null:r.json()};
 window.configureApi=()=>{const current=window.KhoAPI?.base?.()||'';const value=prompt('URL API backend (ví dụ: https://api.example.com/api/v1)\\nĐể trống để dùng mặc định của trang.',current);if(value===null)return;const v=value.trim().replace(/\/$/,'');if(v)localStorage.setItem('ktf_api_base',v);else localStorage.removeItem('ktf_api_base');toast(v?'Đã lưu địa chỉ API. Đang tải lại…':'Đã khôi phục API mặc định. Đang tải lại…');setTimeout(()=>location.reload(),350)};
@@ -41,13 +41,14 @@ async function loadBooks(){
    page++;
    if(!items.length||items.length<100||out.length>=total)break;
   }while(page<10000);
-  state.books=out.map(normalizeBook);state.remoteSearch=false;$('#apiStatus').textContent='● SQLite API';renderFilterOptions();
+  state.books=out.map(normalizeBook);state.apiAvailable=true;state.remoteSearch=false;$('#apiStatus').textContent='● SQLite API';renderFilterOptions();
  }catch{
   const local=localBooks().map(normalizeBook);
   const staticBooks=await loadStaticSeed();
   const map=new Map(local.map(b=>[b.id,b]));
   for(const item of staticBooks)if(!map.has(item.id))map.set(item.id,item);
   state.books=[...map.values()];
+  state.apiAvailable=false;
   state.remoteSearch=false;
   $('#apiStatus').textContent=staticBooks.length?'● Dữ liệu tĩnh':'● Dữ liệu local';
   renderFilterOptions();
@@ -109,8 +110,8 @@ function renderLibraryGridOnly(){
  if(state.remoteSearch&&state.libraryTotal>state.libraryPageSize){const pages=Math.ceil(state.libraryTotal/state.libraryPageSize);let h='<div class="row pagerrow"><button class="btn" '+(state.libraryPage<=1?'disabled':'')+' onclick="refreshRemoteSearch('+(state.libraryPage-1)+')">← Trước</button><span class="muted">Trang '+state.libraryPage+'/'+pages+'</span><button class="btn" '+(state.libraryPage>=pages?'disabled':'')+' onclick="refreshRemoteSearch('+(state.libraryPage+1)+')">Sau →</button></div>';$('#pager').innerHTML=h}else $('#pager').innerHTML='';
  renderHomeMode();updateStats()
 }
-window.renderLibrary=()=>{state.remoteSearch=true;state.libraryPage=1;renderLibraryGridOnly();clearTimeout(searchTimer);searchTimer=setTimeout(()=>refreshRemoteSearch(1),180)};
-window.setAdvancedFilter=()=>{state.remoteSearch=true;state.libraryPage=1;renderLibraryGridOnly();refreshRemoteSearch(1)};
+window.renderLibrary=()=>{state.libraryPage=1;renderLibraryGridOnly();clearTimeout(searchTimer);if(!state.apiAvailable)return;state.remoteSearch=true;searchTimer=setTimeout(()=>refreshRemoteSearch(1),180)};
+window.setAdvancedFilter=()=>{state.libraryPage=1;renderLibraryGridOnly();if(!state.apiAvailable)return;state.remoteSearch=true;refreshRemoteSearch(1)};
 
 function renderHomeMode(){
  const c=$('#homeMode');if(!c)return;
@@ -122,7 +123,7 @@ function renderHomeMode(){
   c.innerHTML='<div class="panel"><h3>🆕 Mới cập nhật</h3>'+a.map(b=>'<div class="rankrow"><span class="rankcover">🆕</span><span class="grow"><b>'+esc(b.title)+'</b><div class="muted">'+esc(b.author)+' · '+(b.chapterCount||0)+' chương</div></span><button class="btn" onclick="openBook(\''+esc(b.id)+'\')">Đọc</button></div>').join('')+'</div>';return
  }
 }window.setHomeMode=m=>{state.mode=m;state.remoteSearch=false;document.querySelectorAll('.seg button').forEach(x=>x.classList.remove('active'));$('#seg'+({all:'All',reading:'Reading',rank:'Rank',new:'New'}[m]||'All'))?.classList.add('active');renderLibrary()};
-window.setDataFilter=x=>{state.filter=x;renderLibrary()};window.setDataSort=x=>{state.sort=x;renderLibrary();if(state.remoteSearch)refreshRemoteSearch(1)};
+window.setDataFilter=x=>{state.filter=x;renderLibrary()};window.setDataSort=x=>{state.sort=x;renderLibrary();if(state.apiAvailable&&state.remoteSearch)refreshRemoteSearch(1)};
 window.toggleFav=async id=>{let a=favs();const active=!a.includes(id);a=active?[...a,id]:a.filter(x=>x!==id);setFavs(a);updateStats();renderLibrary();if(state.token)try{await api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active})})}catch{toast('Đã lưu cục bộ, sẽ đồng bộ khi online')}};
 let chapterPage=1,chapterPageSize=100,chapterTotal=0;
 async function loadChapterPage(page=1){
