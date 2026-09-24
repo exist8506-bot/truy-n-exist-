@@ -176,6 +176,7 @@ async function loadChapterPage(page=1){
   renderLocal();
  }
 }
+window.loadChapterPage=loadChapterPage;
 async function openBook(id){
  show('detail');let b=state.books.find(x=>x.id===id);
  try{b=normalizeBook(await api('/stories/'+encodeURIComponent(id)))}catch{}
