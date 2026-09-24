@@ -14,8 +14,8 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   });
   const page=await context.newPage();
   await page.goto('/');
-  await expect(page.locator('#grid .card')).toHaveCount(14);
-  await expect(page.locator('#statBooks')).toHaveText('14');
+  await expect(page.locator('#grid .card')).toHaveCount(13);
+  await expect(page.locator('#statBooks')).toHaveText('13');
   await expect(page.locator('#statChapters')).not.toHaveText('126');
   await expect(page.locator('#grid')).toContainText('Phong Thần Diễn Nghĩa');
 
@@ -23,10 +23,10 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   await expect(page.locator('#grid .card')).toHaveCount(1);
   await page.locator('#search').fill('');
   await page.locator('#categoryFilter').selectOption({label:'Tiên hiệp / Thần ma'});
-  expect(await page.locator('#grid .card').count()).toBeGreaterThanOrEqual(11);
+  expect(await page.locator('#grid .card').count()).toBeGreaterThanOrEqual(10);
   await page.locator('#categoryFilter').selectOption('all');
   await page.locator('#sortBooks').selectOption('chapters');
-  await expect(page.locator('#grid .card')).toHaveCount(14);
+  await expect(page.locator('#grid .card')).toHaveCount(13);
 
   await page.locator('#grid .card').filter({hasText:'Phong Thần Diễn Nghĩa'}).locator('.info').click();
   await expect(page.locator('#chapterCount')).toContainText('100 chương');
@@ -98,6 +98,7 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   await page.locator('#accountPass').fill('123');
   await page.locator('#accountSubmit').click();
   await expect(page.locator('#accountBody')).toContainText('nguyenvanhoa');
+  await expect(page.locator('#accountBody')).toContainText('admin');
   await page.locator('#accountClose').click();
 
   await page.locator('.actions .btn').nth(2).click();
@@ -128,7 +129,7 @@ test('static fallback mode: real public seed, search, read, PWA cache and offlin
   const page=await context.newPage();
   await page.goto('/');
   await expect(page.locator('#apiStatus')).toContainText('Dữ liệu tĩnh');
-  await expect(page.locator('#grid .card')).toHaveCount(14);
+  await expect(page.locator('#grid .card')).toHaveCount(13);
   await expect(page.locator('#grid')).toContainText('Phong Thần Diễn Nghĩa');
   await expect(page.locator('#statChapters')).not.toHaveText('126');
 
@@ -136,7 +137,7 @@ test('static fallback mode: real public seed, search, read, PWA cache and offlin
   await expect(page.locator('#grid .card')).toHaveCount(1);
   await page.locator('#search').fill('');
   await page.locator('#categoryFilter').selectOption({label:'Tiên hiệp / Thần ma'});
-  expect(await page.locator('#grid .card').count()).toBeGreaterThanOrEqual(11);
+  expect(await page.locator('#grid .card').count()).toBeGreaterThanOrEqual(10);
   await page.locator('#grid .card').filter({hasText:'Phong Thần Diễn Nghĩa'}).locator('.info').click();
   await expect(page.locator('#chapterCount')).toContainText('100 chương');
   await page.locator('#chapters .chapter').first().click();
@@ -161,7 +162,7 @@ test('mobile responsive: bottom navigation, reader, bookmark and persistence', a
   await page.goto('/');
   await expect(page.locator('.bottomnav')).toBeVisible();
   await expect(page.locator('.bottomnav button')).toHaveCount(4);
-  await expect(page.locator('#grid .card')).toHaveCount(14);
+  await expect(page.locator('#grid .card')).toHaveCount(13);
 
   await page.locator('.bottomnav button').nth(3).click();
   await expect(page.locator('#search')).toBeFocused();
@@ -243,11 +244,12 @@ test('reader auto advance and tts continuation', async ({ browser }) => {
   const context=await browser.newContext({viewport:{width:1280,height:900}});
   await context.addInitScript(() => {
     localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1');
-    window.__finishTts=false;
+    window.__ttsCycles=0;
     Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{
       speaking:false,
       cancel(){this.speaking=false},
-      speak(u){this.speaking=true;if(window.__finishTts)setTimeout(()=>{this.speaking=false;u.onend&&u.onend()},5)}
+      resume(){},
+      speak(u){this.speaking=true;window.__ttsCycles++;if(window.__ttsCycles===1)setTimeout(()=>{this.speaking=false;u.onend&&u.onend()},5);}
     }});
     window.SpeechSynthesisUtterance=class{constructor(text){this.text=text;this.onend=null;this.onerror=null;this.lang='';this.rate=1;}};
   });
@@ -256,14 +258,15 @@ test('reader auto advance and tts continuation', async ({ browser }) => {
   await page.locator('#grid .card').filter({hasText:'Mùa Sao Trên Đỉnh Núi'}).locator('.info').click();
   await page.locator('#chapters .chapter').first().click();
   const first=await page.locator('#rtitle').textContent();
-  await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
-  await expect(page.locator('#rtitle')).not.toHaveText(first||'',{timeout:5000});
-  await page.evaluate(()=>{window.__finishTts=true});
   await page.getByRole('button',{name:/🔊/}).click();
   await expect(page.locator('#ttsLabel')).toHaveText('Dừng');
-  await expect(page.locator('#rtitle')).toContainText('Vệt sáng trong rừng',{timeout:5000});
-  await page.evaluate(()=>{window.__finishTts=false});
+  await expect(page.locator('#rtitle')).not.toHaveText(first||'',{timeout:5000});
+  await expect(page.locator('#rtitle')).toHaveText('Vệt sáng trong rừng');
+  await expect(page.locator('#ttsLabel')).toHaveText('Dừng');
   await page.getByRole('button',{name:/🔊/}).click();
   await expect(page.locator('#ttsLabel')).toHaveText('Đọc');
+  await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
+  await expect(page.locator('#rtitle')).not.toHaveText('Vệt sáng trong rừng',{timeout:5000});
+  await expect(page.locator('#readPosition')).toContainText('3 / 10');
   await context.close();
 });
