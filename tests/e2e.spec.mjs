@@ -308,7 +308,7 @@ test('reader auto advance and tts continuation', async ({ browser }) => {
       speaking:false,
       cancel(){this.speaking=false},
       resume(){},
-      speak(u){this.speaking=true;window.__ttsCycles++;if(window.__ttsCycles===1)setTimeout(()=>{this.speaking=false;u.onend&&u.onend()},5);}
+      speak(u){this.speaking=true;window.__ttsCycles++;window.__lastUtterance=u;}
     }});
     window.SpeechSynthesisUtterance=class{constructor(text){this.text=text;this.onend=null;this.onerror=null;this.lang='';this.rate=1;}};
   });
@@ -320,9 +320,10 @@ test('reader auto advance and tts continuation', async ({ browser }) => {
   const first=await page.locator('#rtitle').textContent();
   await page.getByRole('button',{name:/🔊/}).click();
   await expect(page.locator('#ttsLabel')).toHaveText('Dừng');
-  await expect(page.locator('#rtitle')).not.toHaveText(first||'',{timeout:5000});
-  await expect(page.locator('#rtitle')).toHaveText('Vệt sáng trong rừng');
+  await page.evaluate(()=>window.__lastUtterance?.onend?.());
+  await expect(page.locator('#rtitle')).toHaveText('Vệt sáng trong rừng',{timeout:5000});
   await expect(page.locator('#ttsLabel')).toHaveText('Dừng');
+  await expect.poll(()=>page.evaluate(()=>window.__ttsCycles)).toBe(2);
   await page.getByRole('button',{name:/🔊/}).click();
   await expect(page.locator('#ttsLabel')).toHaveText('Đọc');
   await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
