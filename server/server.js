@@ -74,7 +74,7 @@ if(p.startsWith('/api/v1/admin/')){const u0=requireAdmin(req,res);if(!u0)return;
  
 if(p==='/api/v1/admin/import/jobs'&&req.method==='GET'){
   const u=requireAdmin(req,res);if(!u)return;
-  const limit=Math.max(1,Math.min(100,Number(u.query?.limit||20)));
+  const limit=Math.max(1,Math.min(100,Number(url.parse(req.url,true).query.limit||20)));
   return reply(200,{jobs:all('SELECT * FROM import_jobs ORDER BY updated_at DESC LIMIT ?',limit)});
 }
 if(p==='/api/v1/admin/import/batch'&&req.method==='POST')return body(req,30*1024*1024).then(x=>{
