@@ -1,4 +1,4 @@
-/* Kho Truyen Full 1.6.4 - compact application shell */
+/* Kho Truyen Full 1.6.5 - compact application shell */
 (()=> {
 'use strict';
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -70,7 +70,7 @@ function renderHomeMode(){
  }
 }window.setHomeMode=m=>{state.mode=m;state.remoteSearch=false;document.querySelectorAll('.seg button').forEach(x=>x.classList.remove('active'));$('#seg'+({all:'All',reading:'Reading',rank:'Rank',new:'New'}[m]||'All'))?.classList.add('active');renderLibrary()};
 window.setDataFilter=x=>{state.filter=x;renderLibrary()};window.setDataSort=x=>{state.sort=x;renderLibrary();if(state.remoteSearch)refreshRemoteSearch()};
-window.toggleFav=async id=>{let a=favs();a=a.includes(id)?a.filter(x=>x!==id):[...a,id];setFavs(a);updateStats();renderLibrary();if(state.token)try{await api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active:a.includes(id)})})}catch{}};
+window.toggleFav=async id=>{let a=favs();const active=!a.includes(id);a=active?[...a,id]:a.filter(x=>x!==id);setFavs(a);updateStats();renderLibrary();if(state.token)try{await api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active})})}catch{toast('Đã lưu cục bộ, sẽ đồng bộ khi online')}};
 async function openBook(id){show('detail');let b=state.books.find(x=>x.id===id);try{b=normalizeBook(await api('/stories/'+encodeURIComponent(id)));}catch{}state.book=b;try{const out=[];let page=1,total=1;do{const j=await api('/stories/'+encodeURIComponent(id)+'/chapters?page='+page+'&pageSize=100');const items=j.items||[];out.push(...items);total=Number(j.count??items.length);if(!j.items)break;page++;if(!items.length)break}while(out.length<total);state.chapters=out}catch{state.chapters=[]}$('#detailBox').innerHTML='<div class="detailbox"><div class="detailcover" style="background:'+esc(b.tone||'#26324b')+'"><span style="font-size:48px">📚</span><span>'+esc(b.cat||'Truyện')+'</span></div><div><div class="badges"><span class="badge good">'+esc(b.status||'FULL')+'</span><span class="badge">'+esc(b.author||'')+'</span></div><h2>'+esc(b.title)+'</h2><p class="muted">'+esc(b.desc||'')+'</p><div class="settings"><button class="btn primary" onclick="startBook(0)">▶ Đọc từ đầu</button><button class="btn" onclick="continueBook()">↪ Đọc tiếp</button><button class="btn" onclick="toggleFav(\''+esc(b.id)+'\');openBook(\''+esc(b.id)+'\')">'+(favs().includes(b.id)?'♥ Bỏ tủ':'♡ Thêm tủ')+'</button><button class="btn" onclick="shareCurrent()">↗ Chia sẻ</button></div></div></div>';b.chapterCount=state.chapters.length;renderChapters()}
 window.openBook=openBook;window.openDetail=()=>state.book&&openBook(state.book.id);
 window.renderChapters=()=>{let a=state.chapters.slice();const norm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('vi');const q=norm($('#chapterSearch')?.value||'');if(q)a=a.filter(c=>norm(c.title||'').includes(q)||String(Number(c.index??c.chapter??0)+1).includes(q));if(state.order==='desc')a.reverse();$('#chapterCount').textContent=state.chapters.length+' chương';$('#chapters').innerHTML=a.map(c=>'<button class="chapter" onclick="readChapter('+(c.index??c.chapter??0)+')">Chương '+(Number(c.index??c.chapter??0)+1)+' · '+esc(c.title||'')+'</button>').join('')||'<div class="empty">Chưa có chương.</div>'};
@@ -101,7 +101,32 @@ function renderHistory(){const h=hist();$('#historyList').innerHTML=h.length?h.m
 window.clearHistory=()=>{setHist([]);renderHistory();toast('Đã xóa lịch sử')};
 function renderBookcase(){const a=favs();$('#favList').innerHTML=a.length?a.map(id=>{const b=state.books.find(x=>x.id===id);return b?'<div class="histrow"><div><b>'+esc(b.title)+'</b><div class="muted">'+esc(b.author)+'</div></div><button class="btn" onclick="openBook(\''+esc(id)+'\')">Mở</button></div>':''}).join(''):'<div class="empty">Tủ truyện đang trống.</div>';$('#downloadList').innerHTML='<div class="muted">Offline của trình duyệt được lưu trong bộ nhớ cục bộ. Chương hiện tại có thể tải bằng nút trong Reader.</div>'}
 async function syncProgress(){if(!state.token||!state.book)return;const p=progress();await api('/progress',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:state.book.id,chapterIndex:state.chapter,position:p[state.book.id]?.percent||0})})}
-async function restoreAccount(){if(!state.token)return;try{const u=await api('/auth/me');state.user=u;const s=await api('/sync');const p=progress();for(const [id,v] of Object.entries(s.progress||{}))p[id]={chapter:v.chapterIndex,percent:Number(v.position)||0,updated:Date.now()};setProgress(p);if(Array.isArray(s.favorites))setFavs(s.favorites);updateStats()}catch{state.token='';localStorage.removeItem('ktf_token');state.user=null}}
+async function pushLocalSync(){
+ if(!state.token)return;
+ const p=progress(), f=favs(), h=hist();
+ const jobs=[];
+ for(const [id,v] of Object.entries(p))jobs.push(api('/progress',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,chapterIndex:Number(v.chapter||0),position:Number(v.percent)||0})}).catch(()=>null));
+ for(const id of f)jobs.push(api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active:true})}).catch(()=>null));
+ return Promise.all(jobs);
+}
+async function restoreAccount(){
+ if(!state.token)return;
+ try{
+  const u=await api('/auth/me');state.user=u;
+  const remote=await api('/sync'), localP=progress(), localF=favs();
+  const remoteP=remote.progress||{};
+  for(const [id,v] of Object.entries(remoteP)){
+   const local=localP[id];
+   if(!local||new Date(v.updatedAt||0)>=new Date(local.updatedAt||0))localP[id]={chapter:Number(v.chapterIndex)||0,percent:Number(v.position)||0,updated:new Date(v.updatedAt||Date.now()).getTime()};
+  }
+  setProgress(localP);
+  const mergedF=[...new Set([...(Array.isArray(remote.favorites)?remote.favorites:[]),...localF])];setFavs(mergedF);
+  await pushLocalSync();
+  updateStats();renderBookcase();
+ }catch{state.token='';localStorage.removeItem('ktf_token');state.user=null}
+}
+window.syncNow=async()=>{if(!state.token)return toast('Hãy đăng nhập trước');try{await pushLocalSync();await restoreAccount();toast('Đã đồng bộ tủ truyện và tiến độ')}catch{toast('Đồng bộ chưa hoàn tất')}}
+window.addEventListener('online',()=>{if(state.token)window.syncNow?.()});
 function accountError(e){
  const map={INVALID_ACCOUNT:'Tên đăng nhập 3–32 ký tự, chỉ dùng a-z, 0-9, dấu chấm, gạch dưới hoặc gạch ngang; mật khẩu tối thiểu 6 ký tự.',USERNAME_EXISTS:'Tên đăng nhập đã tồn tại.',INVALID_CREDENTIALS:'Tên đăng nhập hoặc mật khẩu không đúng.',UNAUTHORIZED:'Phiên đăng nhập đã hết hạn.'};
  return map[e.message]||('Có lỗi: '+e.message);
