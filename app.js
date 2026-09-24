@@ -301,10 +301,12 @@ async function fetchChapterData(i){
  const key=state.book.id+':'+i+':'+lang;
  if(chapterInflight.has(key))return chapterInflight.get(key);
  const fallback=async()=>{
-  const cached=await offlineGet(state.book.id,i).catch(()=>null);
+  const cachedTranslated=lang!=='vi-VN' ? await offlineGet(state.book.id,i,lang).catch(()=>null) : await offlineGet(state.book.id,i,'vi-VN').catch(()=>null);
+  if(cachedTranslated?.language===lang&&cachedTranslated.translated)return cachedTranslated;
+  const cached=await offlineGet(state.book.id,i,'original').catch(()=>null);
   const base=cached||state.chapters.find(x=>(x.index??x.chapter)===i)||state.book.chapters?.[i];
   const original=cached||{bookId:state.book.id,index:i,title:base?.title||('Chương '+(i+1)),content:base?.content||base?.[1]||''};
-  if(original.language===lang&&original.translated)return original;
+  if(lang==='vi-VN'&&!/[\u3400-\u9fff]/.test(String(original.content||'')))return {...original,language:'vi-VN',translated:false};
   try{return await translateChapterFallback(original,lang)}
   catch{return {...original,language:null,translated:false}}
  };
@@ -313,9 +315,13 @@ async function fetchChapterData(i){
   try{
    const j=await api('/stories/'+encodeURIComponent(state.book.id)+'/chapters/'+i+'?lang='+encodeURIComponent(lang));
    if(j?.translated===false){
-    try{return await translateChapterFallback(j,lang)}catch{return j}
+    try{
+     const translated=await translateChapterFallback(j,lang);
+     if(translated?.translated)offlinePut(state.book.id,i,translated,lang).catch(()=>{});
+     return translated;
+    }catch{return j}
    }
-   offlinePut(state.book.id,i,j).catch(()=>{});
+   offlinePut(state.book.id,i,j,lang).catch(()=>{});
    return j;
   }catch{
    try{return await fallback()}catch{state.apiAvailable=false;return fallback()}
@@ -324,7 +330,7 @@ async function fetchChapterData(i){
  chapterInflight.set(key,job);try{return await job}finally{chapterInflight.delete(key)}
 }
 async function prefetchChapter(i){if(!state.book||i<0||i>=Number(state.book.chapterCount||state.book.chapters?.length||state.chapters.length||0))return;try{await fetchChapterData(i)}catch{}}
-let autoAdvanceTimer=0,ttsRunId=0;
+let autoAdvanceTimer=0,ttsRunId=0,readerLoadId=0;
 function totalChapterCount(){return Number(state.book?.chapterCount||state.book?.chapters?.length||state.chapters.length||0)}
 function scheduleAutoAdvance(){
  if(autoAdvanceTimer||!state.book)return;
@@ -344,7 +350,11 @@ async function readChapter(i,options={}){
  if(autoAdvanceTimer){clearTimeout(autoAdvanceTimer);autoAdvanceTimer=0}
  const n=totalChapterCount();
  if(i<0||i>=n)return;
+ const loadId=++readerLoadId;
+ const bookId=state.book.id;
+ const lang=state.lang;
  const j=await fetchChapterData(i);
+ if(loadId!==readerLoadId||bookId!==state.book?.id||lang!==state.lang)return;
  state.chapter=i;state.current=j;show('reader');$('#rbook').textContent=state.book.title;$('#rtitle').textContent=j.title||((T('chapterUnit'))+' '+(i+1));$('#rmeta').textContent=T('chapterUnit')+' '+(i+1)+' · '+(state.book.author||'');const bookmarkBtn=$('#bookmarkBtn');if(bookmarkBtn)bookmarkBtn.textContent=isBookmarked()?T('marked'):T('mark');$('#rtext').innerHTML=String(j.content||'').split(/\n+/).filter(Boolean).map(x=>'<p>'+esc(x)+'</p>').join('');
  applyReader();recordRead();updateReaderProgress();restoreScroll();history.pushState({},'',location.pathname+'#'+encodeURIComponent(state.book.id)+'/chapter/'+i);
  requestAnimationFrame(()=>prefetchChapter(i+1));
@@ -439,8 +449,9 @@ document.addEventListener('touchend',e=>{if(!$('#reader')?.classList.contains('s
 
 const OFFDB='ktf_offline_v2';
 function offlineOpen(){return new Promise((resolve,reject)=>{if(!indexedDB)return reject(Error('NO_INDEXEDDB'));const r=indexedDB.open(OFFDB,2);r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains('chapters'))db.createObjectStore('chapters',{keyPath:'key'});if(!db.objectStoreNames.contains('downloads'))db.createObjectStore('downloads',{keyPath:'bookId'});};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
-async function offlinePut(bookId,index,data){const db=await offlineOpen();return new Promise((res,rej)=>{const tx=db.transaction('chapters','readwrite');tx.objectStore('chapters').put({key:bookId+':'+index,bookId,index,data,at:Date.now()});tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
-async function offlineGet(bookId,index){const db=await offlineOpen();return new Promise((res,rej)=>{const tx=db.transaction('chapters');const r=tx.objectStore('chapters').get(bookId+':'+index);r.onsuccess=()=>res(r.result?.data||null);r.onerror=()=>rej(r.error)})}
+const offlineKey=(bookId,index,lang='original')=>bookId+':'+index+':'+lang;
+async function offlinePut(bookId,index,data,lang='original'){const db=await offlineOpen();return new Promise((res,rej)=>{const tx=db.transaction('chapters','readwrite');tx.objectStore('chapters').put({key:offlineKey(bookId,index,lang),bookId,index,lang,data,at:Date.now()});tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
+async function offlineGet(bookId,index,lang='original'){const db=await offlineOpen();return new Promise((res,rej)=>{const tx=db.transaction('chapters');const r=tx.objectStore('chapters').get(offlineKey(bookId,index,lang));r.onsuccess=()=>res(r.result?.data||null);r.onerror=()=>rej(r.error)})}
 async function offlineListDownloads(){const db=await offlineOpen();return new Promise((res,rej)=>{const tx=db.transaction('downloads');const r=tx.objectStore('downloads').getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
 async function offlineGetDownload(bookId){const db=await offlineOpen();return new Promise((res,rej)=>{const tx=db.transaction('downloads');const r=tx.objectStore('downloads').get(bookId);r.onsuccess=()=>res(r.result||null);r.onerror=()=>rej(r.error)})}
 async function offlineSetDownload(job){const db=await offlineOpen();return new Promise((res,rej)=>{const tx=db.transaction('downloads','readwrite');tx.objectStore('downloads').put(job);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
