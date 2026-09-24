@@ -149,7 +149,7 @@ test('static fallback mode: real public seed, search, read, PWA cache and offlin
   await expect(page.locator('#downloadList')).toContainText('Đã lưu đầy đủ',{timeout:30000});
 
   const cache=await page.evaluate(async()=>{await navigator.serviceWorker.ready;const keys=await caches.keys();return {keys,seed:!!await caches.match('./public-domain-seed.json')};});
-  expect(cache.keys.some(k=>k.includes('kho-truyen-1.21.0'))).toBeTruthy();
+  expect(cache.keys.some(k=>k.includes('kho-truyen-1.22.0'))).toBeTruthy();
   expect(cache.seed).toBeTruthy();
   await context.close();
 });
