@@ -17,7 +17,22 @@ function show(id){['library','detail','reader','history','bookcase'].forEach(x=>
 window.home=()=>{show('library');renderLibrary()}; window.focusSearch=()=>{$('#search')?.focus();show('library')};
 window.goNextUnread=()=>{if(!state.book)return;const p=progress()[state.book.id];const total=Number(state.book.chapterCount||state.book.chapters?.length||state.chapters.length||0);if(!total)return;let start=Number.isFinite(Number(p?.chapter))?Number(p.chapter):0;if(Number(p?.percent||0)>=95)start++;if(start>=total)return toast('Bạn đã đọc đến chương cuối');readChapter(start)};
 window.showHistory=()=>{show('history');renderHistory()}; window.showBookcase=()=>{show('bookcase');renderBookcase()};window.openAdmin=()=>window.adminStudio?.();
-function normalizeBook(b){const count=Number(b.chapterCount??(Array.isArray(b.chapters)?b.chapters.length:b.chapters??0));return {...b,chapterCount:count,chapters:Array.isArray(b.chapters)?b.chapters:[]}}
+function normalizeBook(b){
+ const src=b||{};
+ const count=Number(src.chapterCount??(Array.isArray(src.chapters)?src.chapters.length:src.chapters??0));
+ return {
+  ...src,
+  id:String(src.id??''),
+  title:String(src.title??'Truyện chưa có tên'),
+  author:String(src.author??'Không rõ tác giả'),
+  cat:String(src.cat??src.category??'Khác'),
+  desc:String(src.desc??src.description??''),
+  status:String(src.status??'FULL'),
+  tone:String(src.tone??''),
+  chapterCount:Number.isFinite(count)?Math.max(0,count):0,
+  chapters:Array.isArray(src.chapters)?src.chapters:[]
+ };
+}
 async function loadStaticSeed(){
  const paths=['public-domain-seed.json','server/public-domain-seed.json'];
  for(const path of paths){
