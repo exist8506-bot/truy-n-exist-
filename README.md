@@ -64,3 +64,7 @@ Xem `DEPLOY_BACKEND.md` để triển khai API Docker có persistent SQLite, sau
 ## Dữ liệu thật 1.19.0
 
 Repository có workflow tạo bộ dữ liệu văn học Việt Nam từ Wikisource, ưu tiên các tác phẩm có tình trạng phạm vi công cộng phù hợp. Bộ đầu tiên gồm Hoàng Lê nhất thống chí, Nhị độ mai, Phan Trần và Lục Vân Tiên; mỗi chương được lấy toàn văn từ trang nguồn, kiểm tra độ dài tối thiểu và lưu kèm URL nguồn. File `server/public-domain-seed.json` được GitHub Actions sinh tự động và server sẽ nạp bộ dữ liệu này vào SQLite khi database mới được tạo.
+
+
+## Kiểm thử catalog
+Seed văn học công khai hiện được kiểm tra tự động trước khi phát hành.
