@@ -1,5 +1,8 @@
 # Kho Truyện Full
 
+### 1.13.0
+- Remote library pagination preserves search, category, status, and sort controls.
+
 ### 1.12.0
 - Bookmark management adds filtering and one-tap removal.
 
