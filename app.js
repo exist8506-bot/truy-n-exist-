@@ -130,8 +130,10 @@ window.readChapter=readChapter;
 function recordRead(){const h=hist().filter(x=>!(x.bookId===state.book.id&&x.chapter===state.chapter));h.unshift({bookId:state.book.id,chapter:state.chapter,title:state.current?.title||'',at:Date.now()});setHist(h.slice(0,50));const p=progress();p[state.book.id]={chapter:state.chapter,percent:(p[state.book.id]?.chapter===state.chapter?Number(p[state.book.id]?.percent)||0:0),updated:Date.now()};setProgress(p);if(state.token)syncProgress().catch(()=>{})}
 function updateReaderProgress(){const p=progress()[state.book.id]||{}, n=state.chapters.length||state.book.chapterCount||state.book.chapters?.length||1;const pct=Math.min(100,Math.round(((state.chapter+1)/n)*100));$('#rprogress').style.width=pct+'%';$('#readPosition').textContent='Chương '+(state.chapter+1)+' / '+n+' · '+pct+'%';$('#prev').disabled=state.chapter<=0;$('#autoNext').style.display=state.chapter<n-1?'flex':'none'}
 function bookmarks(){try{return JSON.parse(localStorage.getItem('ktf_bookmarks_v1')||'{}')}catch{return{}}}
+function setBookmarks(v){localStorage.setItem('ktf_bookmarks_v1',JSON.stringify(v||{}))}
 function isBookmarked(){const b=bookmarks();return !!(state.book&&b[state.book.id]&&b[state.book.id][state.chapter])}
-window.toggleBookmark=()=>{if(!state.book)return;const b=bookmarks();b[state.book.id]=b[state.book.id]||{};if(b[state.book.id][state.chapter])delete b[state.book.id][state.chapter];else b[state.book.id][state.chapter]={title:state.current?.title||'',at:Date.now()};localStorage.setItem('ktf_bookmarks_v1',JSON.stringify(b));const el=$('#bookmarkBtn');if(el)el.textContent=isBookmarked()?'🔖 Đã đánh dấu':'🔖 Đánh dấu';toast(isBookmarked()?'Đã đánh dấu chương':'Đã bỏ đánh dấu')}
+window.toggleBookmark=async()=>{if(!state.book)return;const b=bookmarks();b[state.book.id]=b[state.book.id]||{};const active=!!b[state.book.id][state.chapter];if(active)delete b[state.book.id][state.chapter];else b[state.book.id][state.chapter]={title:state.current?.title||'',at:Date.now()};setBookmarks(b);const el=$('#bookmarkBtn');if(el)el.textContent=isBookmarked()?'🔖 Đã đánh dấu':'🔖 Đánh dấu';if(state.token)api('/bookmarks',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:state.book.id,chapterIndex:state.chapter,title:state.current?.title||'',active:!active})}).catch(()=>{});renderBookcase();toast(!active?'Đã đánh dấu chương':'Đã bỏ đánh dấu')}
+function renderBookmarks(){const box=$('#bookmarkList');if(!box)return;const b=bookmarks(),items=[];for(const [storyId,chs] of Object.entries(b)){const story=state.books.find(x=>x.id===storyId);for(const [idx,v] of Object.entries(chs||{}))items.push({storyId,index:Number(idx),title:v?.title||('Chương '+(Number(idx)+1)),at:Number(v?.at||0),storyTitle:story?.title||storyId})}items.sort((a,b)=>b.at-a.at);box.innerHTML=items.length?items.map(x=>'<div class="histrow"><div><b>'+esc(x.storyTitle)+'</b><div class="muted">Chương '+(x.index+1)+' · '+esc(x.title)+'</div></div><button class="btn" onclick="openBook(\''+esc(x.storyId)+'\').then(()=>readChapter('+x.index+'))">Đọc</button></div>').join(''):'<div class="empty">Chưa đánh dấu chương nào.</div>'}
 window.goChapter=d=>{const n=Number(state.book?.chapterCount||state.book?.chapters?.length||state.chapters.length||0);const x=state.chapter+d;if(x>=0&&x<n)readChapter(x);else toast('Đã đến cuối truyện')};
 window.font=d=>{state.fontSize=Math.max(14,Math.min(30,state.fontSize+d));save('ktf_fs',state.fontSize);applyReader()};window.setFont=x=>{state.font=x;save('ktf_font',x);applyReader()};window.setTheme=x=>{state.theme=x;save('ktf_theme',x);applyReader()};window.setTTSRate=x=>{state.rate=+x;save('ktf_rate',state.rate);if(speechSynthesis.speaking)speak()};
 window.toggleSettings=()=>{const x=$('#settings');x.style.display=x.style.display==='none'?'flex':'none'};
@@ -169,27 +171,29 @@ window.downloadChapter=()=>{const text=state.book.title+'\n'+$('#rtitle').textCo
 window.shareCurrent=async()=>{const u=location.href;if(navigator.share)try{await navigator.share({title:state.book?.title||'Kho Truyện Full',url:u})}catch{}else{await navigator.clipboard?.writeText(u);toast('Đã sao chép liên kết')}};
 function renderHistory(){const h=hist();$('#historyList').innerHTML=h.length?h.map(x=>{const b=state.books.find(b=>b.id===x.bookId);return '<div class="histrow"><div><b>'+esc(b?.title||x.bookId)+'</b><div class="muted">Chương '+x.chapter+' · '+esc(x.title)+'</div></div><button class="btn" onclick="openBook(\''+esc(x.bookId)+'\').then(()=>readChapter('+x.chapter+'))">Đọc</button></div>'}).join(''):'<div class="empty">Chưa có lịch sử.</div>'}
 window.clearHistory=()=>{setHist([]);renderHistory();toast('Đã xóa lịch sử')};
-function renderBookcase(){const a=favs();$('#favList').innerHTML=a.length?a.map(id=>{const b=state.books.find(x=>x.id===id);return b?'<div class="histrow"><div><b>'+esc(b.title)+'</b><div class="muted">'+esc(b.author)+'</div></div><button class="btn" onclick="openBook(\''+esc(id)+'\')">Mở</button></div>':''}).join(''):'<div class="empty">Tủ truyện đang trống.</div>';refreshOfflineUI()}
+function renderBookcase(){renderBookmarks();const a=favs();$('#favList').innerHTML=a.length?a.map(id=>{const b=state.books.find(x=>x.id===id);return b?'<div class="histrow"><div><b>'+esc(b.title)+'</b><div class="muted">'+esc(b.author)+'</div></div><button class="btn" onclick="openBook(\''+esc(id)+'\')">Mở</button></div>':''}).join(''):'<div class="empty">Tủ truyện đang trống.</div>';refreshOfflineUI()}
 async function syncProgress(){if(!state.token||!state.book)return;const p=progress();await api('/progress',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:state.book.id,chapterIndex:state.chapter,position:p[state.book.id]?.percent||0})})}
 async function pushLocalSync(){
  if(!state.token)return;
- const p=progress(), f=favs(), h=hist();
+ const p=progress(), f=favs(), h=hist(), b=bookmarks();
  const jobs=[];
  for(const [id,v] of Object.entries(p))jobs.push(api('/progress',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,chapterIndex:Number(v.chapter||0),position:Number(v.percent)||0})}).catch(()=>null));
  for(const id of f)jobs.push(api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active:true})}).catch(()=>null));
+ for(const [storyId,chs] of Object.entries(b))for(const [idx,v] of Object.entries(chs||{}))jobs.push(api('/bookmarks',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId,chapterIndex:Number(idx),title:v?.title||'',active:true})}).catch(()=>null));
  return Promise.all(jobs);
 }
 async function restoreAccount(){
  if(!state.token)return;
  try{
   const u=await api('/auth/me');state.user=u;
-  const remote=await api('/sync'), localP=progress(), localF=favs();
+  const remote=await api('/sync'), localP=progress(), localF=favs(), localB=bookmarks();
   const remoteP=remote.progress||{};
   for(const [id,v] of Object.entries(remoteP)){
    const local=localP[id];
    if(!local||new Date(v.updatedAt||0)>=new Date(local.updatedAt||0))localP[id]={chapter:Number(v.chapterIndex)||0,percent:Number(v.position)||0,updated:new Date(v.updatedAt||Date.now()).getTime()};
   }
   setProgress(localP);
+  const remoteB=remote.bookmarks||{};for(const [id,items] of Object.entries(remoteB)){localB[id]=localB[id]||{};for(const v of (items||[])){const idx=Number(v.chapterIndex||0),cur=localB[id][idx];if(!cur||Number(v.updatedAt||0)>=Number(cur.at||0))localB[id][idx]={title:v.title||'',at:Number(v.updatedAt||Date.now())}}}setBookmarks(localB);
   const mergedF=[...new Set([...(Array.isArray(remote.favorites)?remote.favorites:[]),...localF])];setFavs(mergedF);
   await pushLocalSync();
   updateStats();renderBookcase();
