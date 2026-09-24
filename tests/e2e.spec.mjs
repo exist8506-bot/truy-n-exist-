@@ -30,6 +30,9 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
 
   await page.locator('#grid .card').filter({hasText:'Phong Thần Diễn Nghĩa'}).locator('.info').click();
   await expect(page.locator('#chapterCount')).toContainText('100 chương');
+  await page.selectOption('#langSelect','en');
+  await expect(page.locator('#detailBox .settings .btn').first()).toContainText('Start reading');
+  await expect(page.locator('#chapterCount')).toContainText('chapters');
   await page.locator('#chapters .chapter').first().click();
   await expect(page.locator('#reader')).toHaveClass(/show/);
   await expect(page.locator('#rtitle')).toHaveText('Chương 1');
