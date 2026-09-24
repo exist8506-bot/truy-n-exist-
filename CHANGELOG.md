@@ -1,4 +1,4 @@
-## 1.17.0
+## 1.18.0
 - Added configurable API endpoint for static GitHub Pages deployments.
 - Added browser-local API endpoint persistence and query-string override.
 - Added a visible API connection control to the web app.
