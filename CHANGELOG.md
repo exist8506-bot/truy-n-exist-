@@ -1,3 +1,8 @@
+## 1.15.0
+- Account password management.
+- Other sessions are revoked after password change.
+- GitHub Pages static preview workflow.
+
 ## 1.14.0
 - Reader chapter seek control.
 - Reading progress now preserves chapter-local position while showing overall chapter progress.
