@@ -243,7 +243,7 @@ window.continueBook=()=>readChapter(progress()[state.book.id]?.chapter||0);
 const chapterInflight=new Map();
 const translatedChapterCache=new Map();
 function storyTargetLanguage(){
- return state.lang==='zh'?'zh-CN':state.lang==='en'?'en-US':'vi-VN';
+ return state.lang==='zh'?'zh-CN':state.lang==='en'?'en':'vi';
 }
 function translationCacheKey(bookId,index,lang){return bookId+':'+index+':'+lang}
 async function translateClientText(text,target){
@@ -283,7 +283,7 @@ async function translateChapterFallback(chapter,lang){
  if(lang==='vi-VN'&&/[㐀-鿿]/.test(String(chapter.content||''))===false){
   return {...chapter,language:'vi-VN',translated:false};
  }
- if(lang==='en-US'&&/^[\x00-\x7F\s\p{P}\p{N}]+$/u.test(String(chapter.content||''))){
+ if(lang==='en'&&/^[\x00-\x7F\s\p{P}\p{N}]+$/u.test(String(chapter.content||''))){
   return {...chapter,language:'en-US',translated:false};
  }
  const key=translationCacheKey(state.book.id,chapter.index??state.chapter,lang);
@@ -389,6 +389,10 @@ function splitTTSText(text,limit=1500){
  if(rest)out.push(rest);return out;
 }
 function ttsLanguage(){
+ const current=String(state.current?.language||'').toLowerCase();
+ if(current.startsWith('zh'))return 'zh-CN';
+ if(current.startsWith('vi'))return 'vi-VN';
+ if(current.startsWith('en'))return 'en-US';
  if(state.current?.language&&state.current.language!=='auto')return state.current.language;
  const explicit=String(state.book?.ttsLang||'').trim();
  if(explicit&&!['auto',''].includes(explicit))return explicit;
