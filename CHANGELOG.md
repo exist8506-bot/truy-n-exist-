@@ -1,4 +1,4 @@
-## 1.15.0
+## 1.16.0
 - Account password management.
 - Other sessions are revoked after password change.
 - GitHub Pages static preview workflow.
