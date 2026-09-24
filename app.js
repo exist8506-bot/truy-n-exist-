@@ -50,7 +50,21 @@ async function loadBooks(){
  }
  updateStats(); return state.books;
 }
-async function updateStats(){const n=state.books.reduce((a,b)=>a+(Array.isArray(b.chapters)?b.chapters.length:(b.chapterCount||0)),0);$('#statBooks').textContent=state.books.length;$('#statChapters').textContent=n;$('#statFav').textContent=favs().length;$('#statDownloaded').textContent=state.offline.size;refreshOfflineUI()}
+function getBookChapterCount(b){
+ const value=b?.chapterCount;
+ if(value!=null&&Number.isFinite(Number(value)))return Math.max(0,Number(value));
+ if(typeof b?.chapters==='number'&&Number.isFinite(b.chapters))return Math.max(0,Number(b.chapters));
+ if(Array.isArray(b?.chapters))return b.chapters.length;
+ return 0;
+}
+async function updateStats(){
+ const n=state.books.reduce((a,b)=>a+getBookChapterCount(b),0);
+ $('#statBooks').textContent=String(state.books.length);
+ $('#statChapters').textContent=String(n);
+ $('#statFav').textContent=String(favs().length);
+ $('#statDownloaded').textContent=String(state.offline.size);
+ refreshOfflineUI();
+}
 function filtered(){
  let a=state.books.slice();
  const category=$('#categoryFilter')?.value||'all', status=$('#statusFilter')?.value||'all';
