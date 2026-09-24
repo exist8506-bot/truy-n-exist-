@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.7
+- Stage 2 Part 6: large chapter catalog optimization.
+- Chapter lists now load 100 items per page instead of downloading the entire story chapter index.
+- Chapter search and pagination are handled by the API.
+- Added an indexed normalized chapter search key with startup migration for existing SQLite databases.
+- Reader navigation continues to fetch individual chapter content on demand.
+
+
 ## 1.6.6
 - Stage 2 Part 5: reader navigation and performance improvements.
 - Added in-flight chapter request deduplication and next-chapter prefetch into IndexedDB.
