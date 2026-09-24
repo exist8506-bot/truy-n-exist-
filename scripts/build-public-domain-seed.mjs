@@ -47,7 +47,11 @@ async function fetchJson(u){
   let last='WIKISOURCE_HTTP_ERROR';
   for(let attempt=0;attempt<8;attempt++){
     try{
-      const r=await fetch(u,{headers:{'User-Agent':'KhoTruyenFull/1.21 public-domain importer'}});
+      const controller=new AbortController();
+      const timer=setTimeout(()=>controller.abort(),20000);
+      let r;
+      try{r=await fetch(u,{headers:{'User-Agent':'KhoTruyenFull/1.22 public-domain importer'},signal:controller.signal})}
+      finally{clearTimeout(timer)}
       if(r.ok)return await r.json();
       last='WIKISOURCE_HTTP_'+r.status;
       if(r.status===429||r.status>=500){
