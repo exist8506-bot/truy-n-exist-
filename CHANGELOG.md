@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8.0
+- Stage 2 Part 8: large-catalog performance hardening.
+- Chapter search now uses SQL COUNT/LIMIT/OFFSET instead of loading all matching rows into Node memory.
+- Legacy chapter search indexes are normalized with Vietnamese diacritics removed during migration.
+- Large imports are capped at 50,000 chapters per request to prevent accidental memory exhaustion.
+
 ## 1.7.0
 - Stage 2 Part 7: Admin Studio import hardening.
 - Added persistent import job records with validation/importing/completed/rejected/failed states and progress counts.
