@@ -1,4 +1,4 @@
-/* Kho Truyen Full 1.13.0 - compact application shell */
+/* Kho Truyen Full 1.14.0 - compact application shell */
 (()=> {
 'use strict';
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -132,7 +132,7 @@ async function readChapter(i){
 }
 window.readChapter=readChapter;
 function recordRead(){const h=hist().filter(x=>!(x.bookId===state.book.id&&x.chapter===state.chapter));h.unshift({bookId:state.book.id,chapter:state.chapter,title:state.current?.title||'',at:Date.now()});setHist(h.slice(0,50));const p=progress();p[state.book.id]={chapter:state.chapter,percent:(p[state.book.id]?.chapter===state.chapter?Number(p[state.book.id]?.percent)||0:0),updated:Date.now()};setProgress(p);if(state.token)syncProgress().catch(()=>{})}
-function updateReaderProgress(){const p=progress()[state.book.id]||{}, n=state.chapters.length||state.book.chapterCount||state.book.chapters?.length||1;const pct=Math.min(100,Math.round(((state.chapter+1)/n)*100));$('#rprogress').style.width=pct+'%';$('#readPosition').textContent='Chương '+(state.chapter+1)+' / '+n+' · '+pct+'%';$('#prev').disabled=state.chapter<=0;$('#autoNext').style.display=state.chapter<n-1?'flex':'none'}
+function updateReaderProgress(){const p=progress()[state.book.id]||{}, n=state.book.chapterCount||state.chapters.length||state.book.chapters?.length||1;const chapterPct=Math.min(100,Math.round(((state.chapter+1)/n)*100));const localPct=state.chapter===p.chapter?Number(p.percent)||0:0;$('#rprogress').style.width=Math.max(chapterPct,Math.min(100,localPct))+'%';$('#readPosition').textContent='Chương '+(state.chapter+1)+' / '+n+' · '+Math.round(localPct||chapterPct)+'%';$('#prev').disabled=state.chapter<=0;$('#autoNext').style.display=state.chapter<n-1?'flex':'none';const jump=$('#readerSeek');if(jump){jump.max=String(n-1);jump.value=String(state.chapter)}}
 function bookmarks(){try{return JSON.parse(localStorage.getItem('ktf_bookmarks_v1')||'{}')}catch{return{}}}
 function setBookmarks(v){localStorage.setItem('ktf_bookmarks_v1',JSON.stringify(v||{}))}
 function isBookmarked(){const b=bookmarks();return !!(state.book&&b[state.book.id]&&b[state.book.id][state.chapter])}
@@ -151,7 +151,7 @@ function restoreScroll(){const p=progress()[state.book?.id];if(!p||p.chapter!==s
 function markChapterRead(){const p=progress();const cur=p[state.book?.id];if(!state.book||!cur)return;cur.percent=100;cur.updated=Date.now();setProgress(p);if(state.token)syncProgress().catch(()=>{});updateReaderProgress()}
 window.addEventListener('scroll',()=>{if($('#reader')?.classList.contains('show')){saveScroll();const p=progress()[state.book?.id];if(p&&p.percent>=95&&state.chapter<(state.chapters.length||state.book.chapterCount||1)-1)markChapterRead()}},{passive:true});
 window.addEventListener('pagehide',()=>{if($('#reader')?.classList.contains('show'))saveScroll()});
-window.readerTop=()=>window.scrollTo({top:0,behavior:'smooth'});
+window.readerSeekChapter=async v=>{const i=Number(v);if(Number.isFinite(i)&&state.book){await readChapter(Math.max(0,Math.min(Number(state.book.chapterCount||1)-1,i)))}};window.readerTop=()=>window.scrollTo({top:0,behavior:'smooth'});
 window.readerBottom=()=>window.scrollTo({top:document.documentElement.scrollHeight,behavior:'smooth'});
 window.readerToggleFullscreen=async()=>{try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen();else await document.exitFullscreen()}catch{}};
 let touchStartX=0,touchStartY=0;
