@@ -1,5 +1,9 @@
 # Kho Truyện Full
 
+### 1.17.0
+- GitHub Pages can now connect to a deployed API using the 🌐 API button or `?api=` query parameter.
+- API endpoint can be persisted locally in the browser without changing the source.
+
 ### 1.16.0
 - Account 2.0 adds password change and invalidates other sessions after a successful change.
 - Added a GitHub Pages static preview workflow.
@@ -20,7 +24,7 @@
 Kho Truyện Full is a Vietnamese story-reading web/API application.
 
 ## Current release
-- Baseline: v1.10.0
+- Current: v1.17.0
 - 3 original demo stories / 26 chapters
 - No stress-test stories or runtime SQLite database committed
 
