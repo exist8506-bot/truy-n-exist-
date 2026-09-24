@@ -40,3 +40,14 @@ The SQLite database is created from schema/seed data.
 
 ## Release
 v1.10.0 adds resumable full-book offline downloads with IndexedDB job state, progress, cancel/resume, deletion and storage estimates.
+
+
+## Docker / Docker Compose (1.16.0)
+
+Backend + frontend có thể chạy bằng Node 22 hoặc container. SQLite nằm trong thư mục `server/` để dữ liệu không bị trộn vào source.
+
+```bash
+docker compose up --build
+```
+
+Sau đó mở `http://localhost:8787`. API health: `/api/v1/health`.
