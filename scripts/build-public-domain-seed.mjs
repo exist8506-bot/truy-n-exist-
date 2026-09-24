@@ -3,7 +3,7 @@ import fs from 'node:fs';
 const API='https://zh.wikisource.org/w/api.php';
 
 const books=[
-  {id:'phong-than-dien-nghia',title:'Phong Thần Diễn Nghĩa',author:'Trần Trọng Lâm / 陳仲琳',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/封神演義',sourceTitle:'封神演義',mode:'chapters',expected:100},
+  {id:'phong-than-dien-nghia',title:'Phong Thần Diễn Nghĩa',author:'Trần Trọng Lâm / 陳仲琳',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/封神演義',sourceTitle:'封神演義',mode:'fixed',expected:100,fixedPattern:i=>'卷'+String(i).padStart(3,'0')},
   {id:'tay-du-ky',title:'Tây Du Ký',author:'Ngô Thừa Ân / 吳承恩',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/西遊記',sourceTitle:'西遊記',mode:'chapters',expected:100},
   {id:'hau-tay-du-ky',title:'Hậu Tây Du Ký',author:'Đài Sơn Nhân / 無名氏',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/後西遊記',sourceTitle:'後西遊記',mode:'chapters',expected:40},
   {id:'dong-du-ky',title:'Đông Du Ký',author:'Ngô Nguyên Thái / 吳元泰',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/東遊記',sourceTitle:'東遊記',mode:'chapters',expected:56},
@@ -161,8 +161,11 @@ async function buildBook(b){
       await sleep(800);
     }
   }else{
-    const pageNames=await discoverChapterPages(b.sourceTitle);
+    const pageNames=b.mode==='fixed'
+      ?Array.from({length:b.expected},(_,i)=>b.fixedPattern(i+1))
+      :await discoverChapterPages(b.sourceTitle);
     if(!pageNames.length)throw new Error('NO_CHAPTER_PAGES:'+b.sourceTitle);
+    let added=0;
     for(let start=0;start<pageNames.length;start+=10){
       const batch=pageNames.slice(start,start+10);
       let pages;
@@ -175,10 +178,10 @@ async function buildBook(b){
       for(const pageName of batch){
         const content=cleanWikiText(byTitle.get(pageName)||'');
         const idx=chapterNumber(pageName);
-        if(idx==null||content.length<200)throw new Error('INVALID_CHAPTER:'+pageName+':'+content.length);
-        chapters.push({index:chapters.length,title:'Chương '+(chapters.length+1),content,sourcePage:'https://zh.wikisource.org/wiki/'+encodeURIComponent(pageName)});
+        if(idx==null||content.length<200){console.log('Skipping non-chapter '+pageName+' ('+content.length+' chars)');continue;}
+        chapters.push({index:added++,title:'Chương '+added,content,sourcePage:'https://zh.wikisource.org/wiki/'+encodeURIComponent(pageName)});
       }
-      console.log(b.id+': Fetched '+Math.min(start+10,pageNames.length)+' / '+pageNames.length);
+      console.log(b.id+': Checked '+Math.min(start+10,pageNames.length)+' / '+pageNames.length+'; kept '+chapters.length);
       if(start+10<pageNames.length)await sleep(1200);
     }
   }
