@@ -92,7 +92,7 @@ function publicUser(u){return {id:u.id,username:u.username,displayName:u.display
 function storyRow(r){return {id:r.id,title:r.title,author:r.author,cat:r.category,desc:r.description,tone:r.tone,status:r.status,cover:r.cover_path||'',chapters:Number(r.chapters||0),createdAt:r.created_at,updatedAt:r.updated_at}}
 function getStory(id){return q(`SELECT s.*,COUNT(c.id) chapters FROM stories s LEFT JOIN chapters c ON c.story_id=s.id WHERE s.id=? GROUP BY s.id`,id)}
 function chapterRow(r){return {bookId:r.story_id,index:Number(r.chapter_index),title:r.title,content:r.content,id:r.id,updatedAt:r.updated_at}}
-const TRANSLATE_LANGS=new Set(['vi-VN','en-US','zh-CN']);
+const TRANSLATE_LANGS=new Set(['vi','en','zh-CN']);
 const translationHash=s=>crypto.createHash('sha1').update(String(s||'')).digest('hex');
 function splitTranslationText(text,limit=3200){
  const src=String(text||''),out=[];let rest=src;
