@@ -1,6 +1,6 @@
 # Kho Truyện Full
 
-### 1.15.0
+### 1.16.0
 - Account 2.0 adds password change and invalidates other sessions after a successful change.
 - Added a GitHub Pages static preview workflow.
 
