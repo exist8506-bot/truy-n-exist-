@@ -1,3 +1,7 @@
+## 1.14.0
+- Reader chapter seek control.
+- Reading progress now preserves chapter-local position while showing overall chapter progress.
+
 ## 1.13.0
 - Paginated remote library results.
 - Search/filter/sort state is preserved between pages.
