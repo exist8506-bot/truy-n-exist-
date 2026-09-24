@@ -1,5 +1,8 @@
 # Kho Truyện Full
 
+### 1.12.0
+- Bookmark management adds filtering and one-tap removal.
+
 ### 1.11.0
 - Chapter bookmarks are stored locally and synchronized with the signed-in account.
 - Bookcase includes a dedicated bookmarked-chapter list.
