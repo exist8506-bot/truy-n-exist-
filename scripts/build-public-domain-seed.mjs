@@ -37,6 +37,8 @@ function chapterNumber(title){
   if(m)return Number(m[1]);
   m=suffix.match(/^卷?(\d{1,4})$/);
   if(m)return Number(m[1]);
+  m=suffix.match(/^卷(?:之)?([零〇一二兩两三四五六七八九十百千]+)$/);
+  if(m)return chineseNumber(m[1]);
   m=suffix.match(/^第?([零〇一二兩两三四五六七八九十百千]+)(?:回|章)$/);
   return m?chineseNumber(m[1]):null;
 }
