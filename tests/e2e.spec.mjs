@@ -316,6 +316,7 @@ test('reader auto advance and tts continuation', async ({ browser }) => {
   await page.goto('/');
   await page.locator('#grid .card').filter({hasText:'Mùa Sao Trên Đỉnh Núi'}).locator('.info').click();
   await page.locator('#chapters .chapter').first().click();
+  await expect(page.locator('#rtext')).not.toBeEmpty();
   const first=await page.locator('#rtitle').textContent();
   await page.getByRole('button',{name:/🔊/}).click();
   await expect(page.locator('#ttsLabel')).toHaveText('Dừng');
