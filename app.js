@@ -1,9 +1,9 @@
-/* Kho Truyen Full 1.6.2 - compact application shell */
+/* Kho Truyen Full 1.6.3 - compact application shell */
 (()=> {
 'use strict';
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const localBooks=()=>Array.isArray(window.books)?window.books:[];
-const state={books:[],book:null,chapter:0,chapters:[],order:'asc',filter:'all',sort:'title',mode:'all',fontSize:+localStorage.getItem('ktf_fs')||19,font:localStorage.getItem('ktf_font')||'Georgia',theme:localStorage.getItem('ktf_theme')||'dark',rate:+localStorage.getItem('ktf_rate')||1,continuous:false,user:null,token:localStorage.getItem('ktf_token')||'',offline:new Set()};
+const state={books:[],book:null,chapter:0,chapters:[],remoteSearch:false,order:'asc',filter:'all',sort:'title',mode:'all',fontSize:+localStorage.getItem('ktf_fs')||19,font:localStorage.getItem('ktf_font')||'Georgia',theme:localStorage.getItem('ktf_theme')||'dark',rate:+localStorage.getItem('ktf_rate')||1,continuous:false,user:null,token:localStorage.getItem('ktf_token')||'',offline:new Set()};
 const apiBase=()=>window.KhoAPI?.base?.()||'/api/v1';
 const api=async(path,opt={})=>{const h={'Accept':'application/json',...(opt.headers||{})};if(state.token)h.Authorization='Bearer '+state.token;const r=await fetch(apiBase()+path,{...opt,headers:h});if(!r.ok){let m='HTTP_'+r.status;try{const j=await r.json();m=j.error||j.message||m}catch{}throw Error(m)}return r.status===204?null:r.json()};
 function toast(x){const t=$('#toast');if(!t)return;t.textContent=x;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2200)}
@@ -27,7 +27,7 @@ async function loadBooks(){
    page++;
    if(!items.length||items.length<100||out.length>=total)break;
   }while(page<10000);
-  state.books=out.map(normalizeBook);$('#apiStatus').textContent='● SQLite API';
+  state.books=out.map(normalizeBook);state.remoteSearch=false;$('#apiStatus').textContent='● SQLite API';renderFilterOptions();
  }catch{state.books=localBooks().map(normalizeBook);$('#apiStatus').textContent='● Dữ liệu local'}
  updateStats(); return state.books;
 }
@@ -43,10 +43,25 @@ function filtered(){
  return a;
 }
 function card(b){const on=favs().includes(b.id), p=progress()[b.id]?.percent||0;return '<div class="card"><div class="cover" style="background:'+esc(b.tone||'linear-gradient(145deg,#182848,#4b6cb7)')+'"><span class="book">📖</span><span class="tag">'+esc(b.cat||'Truyện')+'</span><button class="favbtn '+(on?'on':'')+'" onclick="event.stopPropagation();toggleFav(\''+esc(b.id)+'\')">'+(on?'♥':'♡')+'</button><h3>'+esc(b.title)+'</h3></div><div class="info" onclick="openBook(\''+esc(b.id)+'\')" style="cursor:pointer"><b>'+esc(b.title)+'</b><div class="muted">'+esc(b.author||'')+'</div><div class="meta"><span>'+((b.chapterCount||b.chapters?.length||0))+' chương</span><span class="status">'+esc(b.status||'FULL')+'</span></div><div class="mini-progress"><i style="width:'+p+'%"></i></div></div></div>'}
-window.renderLibrary=()=>{const a=filtered();$('#grid').innerHTML=a.length?a.map(card).join(''):'<div class="empty">Không tìm thấy truyện phù hợp.</div>';$('#pager').innerHTML='';renderHomeMode();updateStats()}
+function renderFilterOptions(){
+ const c=$('#categoryFilter');if(c){const current=c.value, cats=[...new Set(state.books.map(b=>b.cat).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'vi'));c.innerHTML='<option value="all">Tất cả thể loại</option>'+cats.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');if(cats.includes(current))c.value=current}
+}
+let searchTimer=0;
+async function refreshRemoteSearch(){
+ if(!state.remoteSearch)return;
+ const q=($('#search')?.value||'').trim(),cat=$('#categoryFilter')?.value||'all',status=$('#statusFilter')?.value||'all',sort=$('#sortBooks')?.value||'title';
+ const params=new URLSearchParams({page:'1',pageSize:'100',sort});if(q)params.set('q',q);if(cat!=='all')params.set('category',cat);if(status!=='all')params.set('status',status);
+ try{
+  const j=await api('/stories?'+params.toString());state.books=(j.items||[]).map(normalizeBook);$('#apiStatus').textContent='● SQLite API · '+Number(j.count||0)+' kết quả';renderFilterOptions();const c=$('#categoryFilter');if(c)c.value=cat;renderLibraryGridOnly();
+ }catch{toast('Không thể tìm kiếm từ máy chủ')}
+}
+function renderLibraryGridOnly(){const a=filtered();$('#grid').innerHTML=a.length?a.map(card).join(''):'<div class="empty">Không tìm thấy truyện phù hợp.</div>';$('#pager').innerHTML='';renderHomeMode();updateStats()}
+window.renderLibrary=()=>{state.remoteSearch=true;renderLibraryGridOnly();clearTimeout(searchTimer);searchTimer=setTimeout(refreshRemoteSearch,180)};
+window.setAdvancedFilter=()=>{state.remoteSearch=true;refreshRemoteSearch()};
+
 function renderHomeMode(){const c=$('#homeMode');if(!c)return;if(state.mode==='rank'){const a=state.books.slice().sort((x,y)=>(y.chapterCount||y.chapters?.length||0)-(x.chapterCount||x.chapters?.length||0)).slice(0,5);c.innerHTML='<div class="panel"><h3>📈 Xếp hạng theo quy mô</h3>'+a.map((b,i)=>'<div class="rankrow"><span class="rankno">'+(i+1)+'</span><span class="rankcover" style="background:'+esc(b.tone||'gray')+'">📖</span><span class="grow"><b>'+esc(b.title)+'</b><div class="muted">'+esc(b.author)+'</div></span><b>'+(b.chapterCount||b.chapters?.length||0)+'</b></div>').join('')+'</div>'}else c.innerHTML='';}
 window.setHomeMode=m=>{state.mode=m;document.querySelectorAll('.seg button').forEach(x=>x.classList.remove('active'));$('#seg'+({all:'All',reading:'Reading',rank:'Rank',new:'New'}[m]||'All'))?.classList.add('active');renderLibrary()};
-window.setDataFilter=x=>{state.filter=x;renderLibrary()};window.setDataSort=x=>{state.sort=x;renderLibrary()};
+window.setDataFilter=x=>{state.filter=x;renderLibrary()};window.setDataSort=x=>{state.sort=x;renderLibrary();if(state.remoteSearch)refreshRemoteSearch()};
 window.toggleFav=async id=>{let a=favs();a=a.includes(id)?a.filter(x=>x!==id):[...a,id];setFavs(a);updateStats();renderLibrary();if(state.token)try{await api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active:a.includes(id)})})}catch{}};
 async function openBook(id){show('detail');let b=state.books.find(x=>x.id===id);try{b=normalizeBook(await api('/stories/'+encodeURIComponent(id)));}catch{}state.book=b;try{const out=[];let page=1,total=1;do{const j=await api('/stories/'+encodeURIComponent(id)+'/chapters?page='+page+'&pageSize=100');const items=j.items||[];out.push(...items);total=Number(j.count??items.length);if(!j.items)break;page++;if(!items.length)break}while(out.length<total);state.chapters=out}catch{state.chapters=[]}$('#detailBox').innerHTML='<div class="detailbox"><div class="detailcover" style="background:'+esc(b.tone||'#26324b')+'"><span style="font-size:48px">📚</span><span>'+esc(b.cat||'Truyện')+'</span></div><div><div class="badges"><span class="badge good">'+esc(b.status||'FULL')+'</span><span class="badge">'+esc(b.author||'')+'</span></div><h2>'+esc(b.title)+'</h2><p class="muted">'+esc(b.desc||'')+'</p><div class="settings"><button class="btn primary" onclick="startBook(0)">▶ Đọc từ đầu</button><button class="btn" onclick="continueBook()">↪ Đọc tiếp</button><button class="btn" onclick="toggleFav(\''+esc(b.id)+'\');openBook(\''+esc(b.id)+'\')">'+(favs().includes(b.id)?'♥ Bỏ tủ':'♡ Thêm tủ')+'</button><button class="btn" onclick="shareCurrent()">↗ Chia sẻ</button></div></div></div>';b.chapterCount=state.chapters.length;renderChapters()}
 window.openBook=openBook;window.openDetail=()=>state.book&&openBook(state.book.id);
