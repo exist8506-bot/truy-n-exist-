@@ -162,7 +162,7 @@ async function buildBook(b){
     }
   }else{
     const pageNames=b.mode==='fixed'
-      ?Array.from({length:b.expected},(_,i)=>b.fixedPattern(i+1))
+      ?Array.from({length:b.expected},(_,i)=>b.sourceTitle+'/'+b.fixedPattern(i+1))
       :await discoverChapterPages(b.sourceTitle);
     if(!pageNames.length)throw new Error('NO_CHAPTER_PAGES:'+b.sourceTitle);
     let added=0;
