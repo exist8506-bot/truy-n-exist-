@@ -40,8 +40,8 @@ function applyLanguage(){
 window.setLanguage=async lang=>{
  if(!I18N[lang])lang='vi';
  const changed=state.lang!==lang;
- state.lang=lang;save('ktf_lang',lang);renderLibrary();applyLanguage();applyReader();
- if(changed&&state.book&&$('#reader')?.classList.contains('show')){
+ state.lang=lang;save('ktf_lang',lang);const reading=$('#reader')?.classList.contains('show');if(!reading)renderLibrary();applyLanguage();applyReader();
+ if(changed&&state.book&&reading){
   const i=state.chapter;
   stopTTS(true);
   await readChapter(i,{languageChange:true});
