@@ -169,6 +169,8 @@ test('all ten public stories: first chapter smoke', async ({ browser }) => {
   test.setTimeout(120000);
   const context=await browser.newContext({viewport:{width:1280,height:900}});
   const page=await context.newPage();
+  const browserErrors=[];page.on('pageerror',e=>browserErrors.push(String(e)));
+  page.on('console',m=>{if(m.type()==='error')browserErrors.push('console:'+m.text())});
   await page.goto('/');
   const cases=[['Phong Thần Diễn Nghĩa','Phong Thần Diễn Nghĩa'],['Ngô Thừa Ân','Tây Du Ký'],['Đài Sơn Nhân','Hậu Tây Du Ký'],['Đông Du Ký','Đông Du Ký'],['Nam Du Ký','Nam Du Ký'],['Bắc Du Ký','Bắc Du Ký'],['Bát Tiên Đắc Đạo','Bát Tiên Đắc Đạo'],['Nữ Tiên Ngoại Sử','Nữ Tiên Ngoại Sử'],['Lục Dã Tiên Tung','Lục Dã Tiên Tung'],['Tam Toại Bình Yêu Truyện','Tam Toại Bình Yêu Truyện']];
   for(const [query,title] of cases){
@@ -176,7 +178,7 @@ test('all ten public stories: first chapter smoke', async ({ browser }) => {
     await expect(page.locator('#grid .card')).toHaveCount(1);
     await page.locator('#grid .card').first().locator('.info').click();
     await page.locator('#chapters .chapter').first().click();
-    await expect(page.locator('#reader')).toHaveClass(/show/);
+    await expect(page.locator('#reader')).toHaveClass(/show/,{message:query+' browserErrors='+JSON.stringify(browserErrors)+' url='+page.url()});
     await expect(page.locator('#rtext')).not.toBeEmpty();
     await page.locator('#reader').getByRole('button',{name:'☰ Mục lục'}).click();
     await expect(page.locator('#detail')).toHaveClass(/show/);
