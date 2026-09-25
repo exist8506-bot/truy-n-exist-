@@ -408,10 +408,13 @@ function ttsLanguage(){
  if(explicit&&!['auto',''].includes(explicit))return explicit;
  return state.lang==='en'?'en-US':'en-US';
 }
-function getTTSVoices(){
- try{const v=window.speechSynthesis?.getVoices?.();return Array.isArray(v)?v:[]}
- catch{return []}
+function getTTSVoiceState(){
+ const hasApi=typeof window.speechSynthesis?.getVoices==='function';
+ if(!hasApi)return {known:false,voices:[]};
+ try{const v=window.speechSynthesis.getVoices();return {known:true,voices:Array.isArray(v)?v:[]}}
+ catch{return {known:true,voices:[]}}
 }
+function getTTSVoices(){return getTTSVoiceState().voices}
 function preferredTTSVoice(lang){
  const voices=getTTSVoices(),want=String(lang||'').toLowerCase();
  return voices.find(v=>String(v.lang||'').toLowerCase()===want)||voices.find(v=>String(v.lang||'').toLowerCase().startsWith(want.split('-')[0]))||null;
@@ -431,7 +434,7 @@ function playTTSAudio(text,lang,runId){
 }
 function startTTSCurrent(){
  const text=$('#rtext')?.innerText?.trim()||'';if(!text)return;
- const key=state.book.id+':'+state.chapter,lang=ttsLanguage(),voice=preferredTTSVoice(lang),voices=getTTSVoices(),nativeUnknown=voices.length===0,limit=(voice||nativeUnknown)?1500:220;
+ const key=state.book.id+':'+state.chapter,lang=ttsLanguage(),voice=preferredTTSVoice(lang),voiceState=getTTSVoiceState(),nativeUnknown=!voiceState.known,limit=(voice||nativeUnknown)?1500:220;
  ttsRunId++;
  ttsState={active:true,chunks:splitTTSText(text,limit),pos:0,chapterKey:key,mode:(voice||nativeUnknown)?'speech':'audio'};
  $('#ttsLabel').textContent=T('stop');
@@ -451,7 +454,7 @@ function speakTTSChunk(runId=ttsRunId){
  }
  const text=ttsState.chunks[ttsState.pos++],lang=ttsLanguage();
  const voice=preferredTTSVoice(lang);
- if(window.SpeechSynthesisUtterance&&((getTTSVoices().length===0)||voice)){
+ if(window.SpeechSynthesisUtterance&&(voice||!voiceState.known)){
   const u=new SpeechSynthesisUtterance(text);u.lang=voice.lang;u.voice=voice;u.rate=state.rate;ttsState.mode='speech';
   u.onend=()=>{if(ttsState.active&&runId===ttsRunId)setTimeout(()=>speakTTSChunk(runId),25)};
   u.onerror=()=>{if(runId===ttsRunId)playTTSAudio(text,lang,runId)};
