@@ -194,7 +194,7 @@ test('real translation provider translates text and reader TTS uses matching loc
   const auth={Authorization:'Bearer '+token};
   const created=await request.post('/api/v1/admin/stories',{headers:auth,data:{title:'__E2E_TRANSLATION__',author:'E2E',cat:'E2E'}});
   expect(created.ok()).toBeTruthy();
-  const story=(await created.json()).story;
+  const story=await created.json();
   try{
     const added=await request.post('/api/v1/admin/stories/'+encodeURIComponent(story.id)+'/chapters',{headers:auth,data:{title:'Đó là văn bản.',content:'Đó là văn bản.'}});
     expect(added.ok()).toBeTruthy();
