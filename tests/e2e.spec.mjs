@@ -186,7 +186,7 @@ test('all ten public stories: first chapter smoke', async ({ browser }) => {
   await context.close();
 });
 
-test('real translation provider translates text and reader TTS uses matching locale', async ({ browser, request }) => {
+test('real translation provider translates the exact text and returns real provider metadata', async ({ request }) => {
   test.setTimeout(120000);
   const login=await request.post('/api/v1/auth/login',{data:{username:'nguyenvanhoa',password:'123'}});
   expect(login.ok()).toBeTruthy();
@@ -213,37 +213,8 @@ test('real translation provider translates text and reader TTS uses matching loc
     expect(zhJson.content).toMatch(/[\u3400-\u9fff]/);
     expect(zhJson.provider).not.toBe('local-memory');
 
-    const context=await browser.newContext();
-    await context.addInitScript(() => {
-      localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1');
-      window.__ttsLast=null;
-      Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{
-        speaking:false,cancel(){this.speaking=false},resume(){},
-        getVoices(){return [{lang:'en-US',name:'CI English'},{lang:'zh-CN',name:'CI Chinese'}]},
-        speak(u){this.speaking=true;window.__ttsLast={text:u.text,lang:u.lang};setTimeout(()=>{this.speaking=false;u.onend?.()},0)}
-      }});
-      window.SpeechSynthesisUtterance=class{constructor(text){this.text=text;this.lang='';this.rate=1;this.onend=null;this.onerror=null;}};
-    });
-    const page=await context.newPage();
-    await page.goto('/');
-    await page.locator('#grid').evaluate((el,{story})=>{
-      const card=document.createElement('div');card.className='card';
-      card.innerHTML='<div class="info" style="cursor:pointer"><b>'+story.title+'</b></div>';
-      card.querySelector('.info').onclick=()=>window.openBook('b1');
-      el.prepend(card);
-    },{story});
-    await page.locator('#grid .card').filter({hasText:'__E2E_TRANSLATION__'}).locator('.info').click();
-    await page.locator('#chapters .chapter').first().click();
-    await page.selectOption('#langSelect','en');
-    await expect(page.locator('#rtext')).toContainText(enJson.content.slice(0,20));
-    await page.getByRole('button',{name:/🔊/}).click();
-    await expect.poll(()=>page.evaluate(()=>window.__ttsLast?.lang)).toBe('en-US');
-    await page.selectOption('#langSelect','zh');
-    await expect(page.locator('#rtext')).toContainText(zhJson.content.slice(0,20));
-    await page.getByRole('button',{name:/🔊/}).click();
-    await expect.poll(()=>page.evaluate(()=>window.__ttsLast?.lang)).toBe('zh-CN');
-    await request.delete('/api/v1/admin/stories/'+encodeURIComponent(story.id),{headers:auth}).catch(()=>{});
-    await context.close();
+    // UI/TTS is covered by separate browser regression tests; this test isolates the real translation provider.
+
   }finally{
     await fetch('http://127.0.0.1:8787/api/v1/admin/stories/'+encodeURIComponent(story.id),{method:'DELETE',headers:auth}).catch(()=>{});
   }
