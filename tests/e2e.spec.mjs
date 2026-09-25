@@ -258,7 +258,7 @@ test('chapter ordering and chapter search', async ({ browser }) => {
   await page.locator('#chapterSearch').fill('');
   await page.locator('#detail .chapterTools button').click();
   await expect(page.locator('#chapters .chapter').first()).toContainText('chương 10');
-  await page.getByRole('button',{name:/Đảo thứ tự|Sắp xếp/}).click();
+  await page.locator('#detail .chapterTools button').click();
   await expect(page.locator('#chapters .chapter').first()).toContainText('chương 1');
   await context.close();
 });
@@ -354,7 +354,7 @@ test('remaining navigation and chapter controls', async ({ browser }) => {
   await page.locator('.chapterTools .btn').click();
   await expect(page.locator('#chapters .chapter').first()).toContainText('Chương 100');
   await page.locator('.chapterTools .btn').click();
-  await expect(page.locator('#chapters .chapter').first()).toContainText('Chương 1');
+  await expect(page.locator('#chapters .chapter').first()).toContainText('chương 1');
 
   await page.locator('#chapters .chapter').first().click();
   await page.locator('#readerSeek').evaluate((el)=>{el.value='5';el.dispatchEvent(new Event('change',{bubbles:true}))});
