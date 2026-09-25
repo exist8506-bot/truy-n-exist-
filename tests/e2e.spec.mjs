@@ -256,10 +256,10 @@ test('chapter ordering and chapter search', async ({ browser }) => {
   await expect(page.locator('#chapters .chapter')).toHaveCount(1);
   await expect(page.locator('#chapters .chapter').first()).toContainText('Vệt sáng trong rừng');
   await page.locator('#chapterSearch').fill('');
+  await page.locator('#detail .chapterTools button').click();
+  await expect(page.locator('#chapters .chapter').first()).toContainText('chương 10');
   await page.getByRole('button',{name:/Đảo thứ tự|Sắp xếp/}).click();
-  await expect(page.locator('#chapters .chapter').first()).toContainText('Chương 10');
-  await page.getByRole('button',{name:/Đảo thứ tự|Sắp xếp/}).click();
-  await expect(page.locator('#chapters .chapter').first()).toContainText('Chương 1');
+  await expect(page.locator('#chapters .chapter').first()).toContainText('chương 1');
   await context.close();
 });
 
