@@ -302,7 +302,7 @@ async function fetchChapterData(i){
  const key=state.book.id+':'+i+':'+lang;
  if(chapterInflight.has(key))return chapterInflight.get(key);
  const fallback=async()=>{
-  const cachedTranslated=lang!=='vi-VN' ? await offlineGet(state.book.id,i,lang).catch(()=>null) : await offlineGet(state.book.id,i,'vi-VN').catch(()=>null);
+  const cachedTranslated=await offlineGet(state.book.id,i,lang).catch(()=>null);
   if(cachedTranslated?.language===lang&&cachedTranslated.translated)return cachedTranslated;
   const cached=await offlineGet(state.book.id,i,'original').catch(()=>null);
   const base=cached||state.chapters.find(x=>(x.index??x.chapter)===i)||state.book.chapters?.[i];
