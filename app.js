@@ -369,7 +369,7 @@ async function readChapter(i,options={}){
  const j=await fetchChapterData(i);
  if(loadId!==readerLoadId||bookId!==state.book?.id||lang!==state.lang)return;
  state.chapter=i;state.current=j;if(j?.translationError&&state.lang!=='vi')toast('Dịch chương này không thành công, đang hiển thị bản gốc');show('reader');$('#rbook').textContent=state.book.title;$('#rtitle').textContent=j.title||((T('chapterUnit'))+' '+(i+1));$('#rmeta').textContent=T('chapterUnit')+' '+(i+1)+' · '+(state.book.author||'');const bookmarkBtn=$('#bookmarkBtn');if(bookmarkBtn)bookmarkBtn.textContent=isBookmarked()?T('marked'):T('mark');$('#rtext').innerHTML=String(j.content||'').split(/\n+/).filter(Boolean).map(x=>'<p>'+esc(x)+'</p>').join('');
- applyReader();recordRead();updateReaderProgress();restoreScroll();history.pushState({},'',location.pathname+'#'+encodeURIComponent(state.book.id)+'/chapter/'+i);
+ applyReader();recordRead();updateReaderProgress();restoreScroll();if(!options.skipHistory)history.pushState({},'',location.pathname+'#'+encodeURIComponent(state.book.id)+'/chapter/'+i);
  requestAnimationFrame(()=>prefetchChapter(i+1));
 }
 window.readChapter=readChapter;
