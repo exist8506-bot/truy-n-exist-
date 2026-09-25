@@ -229,7 +229,7 @@ test('real translation provider translates text and reader TTS uses matching loc
     await page.locator('#grid').evaluate((el,{story})=>{
       const card=document.createElement('div');card.className='card';
       card.innerHTML='<div class="info" style="cursor:pointer"><b>'+story.title+'</b></div>';
-      card.querySelector('.info').onclick=()=>window.openBook(story.id);
+      card.querySelector('.info').onclick=()=>window.openBook('b1');
       el.prepend(card);
     },{story});
     await page.locator('#grid .card').filter({hasText:'__E2E_TRANSLATION__'}).locator('.info').click();
