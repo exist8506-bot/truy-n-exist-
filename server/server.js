@@ -160,11 +160,16 @@ async function translateExternal(text,target){
  }
  return {text:out.join('\n'),provider};
 }
+function looksVietnamese(text){return /[ăâđêôơưĂÂĐÊÔƠƯÀ-ỹ]/.test(String(text||''))}
+function looksChinese(text){return /[\u3400-\u9fff]/.test(String(text||''))}
+function looksEnglish(text){return /^[\x00-\x7F\s\p{P}\p{N}]+$/u.test(String(text||''))}
 async function getTranslatedChapter(row,lang){
  if(!TRANSLATE_LANGS.has(lang))return {...chapterRow(row),language:null,translated:false};
  const sourceHash=translationHash(row.title+'\n'+row.content);
  const cached=q('SELECT * FROM chapter_translations WHERE story_id=? AND chapter_index=? AND lang=?',row.story_id,Number(row.chapter_index),lang);
  if(cached&&cached.source_hash===sourceHash)return {bookId:row.story_id,index:Number(row.chapter_index),title:cached.title||row.title,content:cached.content,id:row.id,updatedAt:cached.updated_at,language:lang,translated:true};
+ const sameLanguage=(lang==='vi'&&looksVietnamese(row.content))||(lang==='en'&&looksEnglish(row.content))||(lang==='zh-CN'&&looksChinese(row.content));
+ if(sameLanguage)return {...chapterRow(row),language:lang,translated:false,provider:'passthrough'};
  try{
   const [titleResult,contentResult]=await Promise.all([translateExternal(row.title,lang),translateExternal(row.content,lang)]);
   const title=titleResult.text,content=contentResult.text,provider=contentResult.provider||titleResult.provider||'unknown',t=now();
