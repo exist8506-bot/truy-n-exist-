@@ -148,13 +148,14 @@ function card(b){const on=favs().includes(b.id), p=progress()[b.id]?.percent||0;
 function renderFilterOptions(){
  const c=$('#categoryFilter');if(c){const current=c.value, cats=[...new Set(state.books.map(b=>b.cat).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'vi'));c.innerHTML='<option value="all">Tất cả thể loại</option>'+cats.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');if(cats.includes(current))c.value=current}
 }
-let searchTimer=0;
+let searchTimer=0,librarySearchId=0,chapterLoadId=0;
 async function refreshRemoteSearch(page=1){
+ const requestId=++librarySearchId;
  if(!state.remoteSearch)return;
  const q=($('#search')?.value||'').trim(),cat=$('#categoryFilter')?.value||'all',status=$('#statusFilter')?.value||'all',sort=$('#sortBooks')?.value||'title';
  const params=new URLSearchParams({page:String(page),pageSize:String(state.libraryPageSize),sort});if(q)params.set('q',q);if(cat!=='all')params.set('category',cat);if(status!=='all')params.set('status',status);
  try{
-  const j=await api('/stories?'+params.toString());state.books=(j.items||[]).map(normalizeBook);state.libraryPage=Number(j.page||page);state.libraryTotal=Number(j.count||state.books.length);$('#apiStatus').textContent='● SQLite API · '+state.libraryTotal+' kết quả';renderFilterOptions();const c=$('#categoryFilter');if(c)c.value=cat;renderLibraryGridOnly();
+  const j=await api('/stories?'+params.toString());if(requestId!==librarySearchId)return;state.books=(j.items||[]).map(normalizeBook);state.libraryPage=Number(j.page||page);state.libraryTotal=Number(j.count||state.books.length);$('#apiStatus').textContent='● SQLite API · '+state.libraryTotal+' kết quả';renderFilterOptions();const c=$('#categoryFilter');if(c)c.value=cat;renderLibraryGridOnly();
  }catch{
   state.remoteSearch=false;
   $('#apiStatus').textContent='● Dữ liệu tĩnh';
@@ -181,10 +182,11 @@ function renderHomeMode(){
   c.innerHTML='<div class="panel"><h3>🆕 Mới cập nhật</h3>'+a.map(b=>'<div class="rankrow"><span class="rankcover">🆕</span><span class="grow"><b>'+esc(b.title)+'</b><div class="muted">'+esc(b.author)+' · '+(b.chapterCount||0)+' chương</div></span><button class="btn" onclick="openBook(\''+esc(b.id)+'\')">Đọc</button></div>').join('')+'</div>';return
  }
 }window.setHomeMode=m=>{state.mode=m;state.remoteSearch=false;document.querySelectorAll('#segAll,#segReading,#segRank,#segNew').forEach(x=>x.classList.remove('active'));$('#seg'+({all:'All',reading:'Reading',rank:'Rank',new:'New'}[m]||'All'))?.classList.add('active');renderLibrary()};
-window.setDataFilter=x=>{state.filter=x;renderLibrary()};window.setDataSort=x=>{state.sort=x;renderLibrary();if(state.apiAvailable&&state.remoteSearch)refreshRemoteSearch(1)};
+window.setDataFilter=x=>{state.filter=x;renderLibrary()};window.setDataSort=x=>{state.sort=x;renderLibrary()};
 window.toggleFav=async id=>{let a=favs();const active=!a.includes(id);a=active?[...a,id]:a.filter(x=>x!==id);setFavs(a);updateStats();renderLibrary();if(state.token)try{await api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active})})}catch{toast('Đã lưu cục bộ, sẽ đồng bộ khi online')}};
 let chapterPage=1,chapterPageSize=100,chapterTotal=0;
 async function loadChapterPage(page=1){
+ const requestId=++chapterLoadId;
  if(!state.book)return;
  const q=($('#chapterSearch')?.value||'').trim();
  const renderLocal=()=>{
@@ -210,7 +212,7 @@ async function loadChapterPage(page=1){
  const params=new URLSearchParams({page:String(page),pageSize:String(chapterPageSize),sort:state.order||'asc'});
  if(q)params.set('q',q);
  try{
-  const j=await api('/stories/'+encodeURIComponent(state.book.id)+'/chapters?'+params);
+  const j=await api('/stories/'+encodeURIComponent(state.book.id)+'/chapters?'+params);if(requestId!==chapterLoadId)return;
   state.chapters=(j.items||[]).map(c=>({...c,index:Number(c.index??c.chapter??0)}));
   chapterPage=Number(j.page||page);chapterTotal=Number(j.count??state.chapters.length);
   state.book.chapterCount=Number(state.book.chapterCount||chapterTotal);
