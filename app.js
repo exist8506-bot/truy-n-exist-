@@ -282,7 +282,7 @@ async function translateClientText(text,target){
  return out.join('\n');
 }
 async function translateChapterFallback(chapter,lang){
- if(lang==='vi-VN'&&/[㐀-鿿]/.test(String(chapter.content||''))===false){
+ if(lang==='vi'&&/[㐀-鿿]/.test(String(chapter.content||''))===false){
   return {...chapter,language:'vi',translated:false};
  }
  if(lang==='en'&&/^[\x00-\x7F\s\p{P}\p{N}]+$/u.test(String(chapter.content||''))){
