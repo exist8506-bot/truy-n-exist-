@@ -151,7 +151,11 @@ async function translateExternal(text,target){
   let result;
   try{result=await translateGoogleCloud(chunk,target)}catch(e){
    try{result=await translateGoogleFallback(chunk,target)}catch(e2){
-    try{result=await translateMyMemory(chunk.slice(0,500),target)}catch(e3){
+    try{
+     const pieces=splitTranslationText(chunk,500),translated=[];
+     for(const piece of pieces){translated.push((await translateMyMemory(piece,target)).text)}
+     result={text:translated.join('\\n'),provider:'mymemory'};
+    }catch(e3){
      result=await translateMemoryFallback(chunk,target);
     }
    }
