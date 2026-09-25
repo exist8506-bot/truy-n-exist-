@@ -396,6 +396,9 @@ function splitTTSText(text,limit=1500){
  if(rest)out.push(rest);return out;
 }
 function ttsLanguage(){
+ const text=$('#rtext')?.innerText||'';
+ if(/[\u3400-\u9fff]/.test(text))return 'zh-CN';
+ if(/[ăâđêôơưĂÂĐÊÔƠƯÀ-ỹ]/.test(text))return 'vi-VN';
  const current=String(state.current?.language||'').toLowerCase();
  if(current.startsWith('zh'))return 'zh-CN';
  if(current.startsWith('vi'))return 'vi-VN';
@@ -403,9 +406,6 @@ function ttsLanguage(){
  if(state.current?.language&&state.current.language!=='auto')return state.current.language;
  const explicit=String(state.book?.ttsLang||'').trim();
  if(explicit&&!['auto',''].includes(explicit))return explicit;
- const text=$('#rtext')?.innerText||'';
- if(/[\u3400-\u9fff]/.test(text))return 'zh-CN';
- if(/[ăâđêôơưĂÂĐÊÔƠƯÀ-ỹ]/.test(text))return 'vi-VN';
  return state.lang==='en'?'en-US':'en-US';
 }
 function preferredTTSVoice(lang){
