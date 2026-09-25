@@ -613,7 +613,13 @@ async function restoreAccount(){
   const mergedF=[...new Set([...(Array.isArray(remote.favorites)?remote.favorites:[]),...localF])];setFavs(mergedF);
   await pushLocalSync();
   updateStats();renderBookcase();
- }catch{state.token='';localStorage.removeItem('ktf_token');state.user=null}
+ }catch(e){
+  if(e?.message==='UNAUTHORIZED'||e?.message==='INVALID_CREDENTIALS'){
+   state.token='';localStorage.removeItem('ktf_token');state.user=null;
+  } else {
+   toast('Chưa đồng bộ được dữ liệu; sẽ thử lại khi online');
+  }
+ }
 }
 window.syncNow=async()=>{if(!state.token)return toast('Hãy đăng nhập trước');try{await pushLocalSync();await restoreAccount();toast('Đã đồng bộ tủ truyện và tiến độ')}catch{toast('Đồng bộ chưa hoàn tất')}}
 window.addEventListener('online',()=>{if(state.token)window.syncNow?.()});
