@@ -260,7 +260,7 @@ test('TTS uses Lingva Chinese audio when system Chinese voice is missing', async
     window.Audio=function(url){window.__audioUrl=url;const a=new RealAudio();a.play=()=>Promise.resolve();return a};
   });
   const page=await context.newPage();
-  await page.route('https://lingva.ml/api/v1/audio/**',async route=>route.fulfill({
+  let audioRequests=0;await page.route('https://lingva.ml/api/v1/audio/**',async route=>{audioRequests++;return route.fulfill({
     status:200,contentType:'application/json',body:JSON.stringify({audio:[73,68,51,3,0,0,0,0]})
   }));
   await page.goto('/');
@@ -268,7 +268,7 @@ test('TTS uses Lingva Chinese audio when system Chinese voice is missing', async
   await page.locator('#chapters .chapter').first().click();
   await page.locator('#rtext').evaluate(el=>{el.textContent=String.fromCharCode(0x90a3,0x662f,0x6587,0x672c,0x3002)});
   await page.getByRole('button',{name:/🔊/}).click();
-  await expect.poll(()=>page.evaluate(()=>String(window.__audioUrl||''))).toContain('/audio/zh/');
+  await expect.poll(()=>audioRequests).toBe(1);await expect.poll(()=>page.evaluate(()=>String(window.__audioUrl||''))).toMatch(/^blob:/);
   await context.close();
 });
 
