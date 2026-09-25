@@ -242,23 +242,14 @@ test('live browser translation provider is reachable without mocks', async ({ br
   await context.close();
 });
 
-test('live Chinese audio provider returns audio bytes without mocks', async ({ browser }) => {
-  const context=await browser.newContext();
-  const page=await context.newPage();
-  await page.goto('/');
-  const result=await page.evaluate(async()=>{
-    const q=encodeURIComponent(String.fromCharCode(0x90a3,0x662f,0x6587,0x672c,0x3002));
-    try{
-      const r=await fetch('https://lingva.ml/api/v1/audio/zh/'+q,{headers:{Accept:'application/json'}});
-      const j=await r.json();
-      return {ok:r.ok,status:r.status,size:Array.isArray(j?.audio)?j.audio.length:0};
-    }catch(e){return {ok:false,status:0,size:0,error:String(e.message||e)}}
-  });
-  expect(result.ok).toBeTruthy();
-  expect(result.size).toBeGreaterThan(100);
-  await context.close();
+test('live Chinese TTS audio endpoint returns playable audio', async ({ request }) => {
+  const text=String.fromCharCode(0x90a3,0x662f,0x6587,0x672c,0x3002);
+  const url='https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=zh-CN&q='+encodeURIComponent(text);
+  const response=await request.get(url,{timeout:15000});
+  expect(response.ok()).toBeTruthy();
+  const body=await response.body();
+  expect(body.length).toBeGreaterThan(1000);
 });
-
 
 test('static reader uses Lingva translation when Google translation is unavailable', async ({ browser }) => {
   const context=await browser.newContext();
