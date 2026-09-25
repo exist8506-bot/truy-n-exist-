@@ -54,6 +54,8 @@ function toast(x){const t=$('#toast');if(!t)return;t.textContent=x;t.classList.a
 function save(k,v){localStorage.setItem(k,typeof v==='string'?v:JSON.stringify(v))}
 function get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return localStorage.getItem(k)??d}}
 function favs(){return get('ktf_favs',[])} function setFavs(v){save('ktf_favs',v)}
+function deletedFavs(){return get('ktf_deleted_favs',[])} function setDeletedFavs(v){save('ktf_deleted_favs',v)}
+function deletedBookmarks(){return get('ktf_deleted_bookmarks',{})} function setDeletedBookmarks(v){save('ktf_deleted_bookmarks',v)}
 function hist(){return get('ktf_hist',[])} function setHist(v){save('ktf_hist',v)}
 function progress(){return get('ktf_prog',{})} function setProgress(v){save('ktf_prog',v)}
 function show(id){['library','detail','reader','history','bookcase'].forEach(x=>$('#'+x)?.classList.remove('show'));$('#'+id)?.classList.add('show');document.body.classList.toggle('reading-mode',id==='reader');scrollTo(0,0)}
@@ -183,7 +185,7 @@ function renderHomeMode(){
  }
 }window.setHomeMode=m=>{state.mode=m;state.remoteSearch=false;document.querySelectorAll('#segAll,#segReading,#segRank,#segNew').forEach(x=>x.classList.remove('active'));$('#seg'+({all:'All',reading:'Reading',rank:'Rank',new:'New'}[m]||'All'))?.classList.add('active');renderLibrary()};
 window.setDataFilter=x=>{state.filter=x;renderLibrary()};window.setDataSort=x=>{state.sort=x;renderLibrary()};
-window.toggleFav=async id=>{let a=favs();const active=!a.includes(id);a=active?[...a,id]:a.filter(x=>x!==id);setFavs(a);updateStats();renderLibrary();if(state.token)try{await api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active})})}catch{toast('Đã lưu cục bộ, sẽ đồng bộ khi online')}};
+window.toggleFav=async id=>{let a=favs(),d=deletedFavs();const active=!a.includes(id);a=active?[...a,id]:a.filter(x=>x!==id);d=active?d.filter(x=>x!==id):[...new Set([...d,id])];setFavs(a);setDeletedFavs(d);updateStats();renderLibrary();if(state.token)try{await api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active})})}catch{toast('Đã lưu cục bộ, sẽ đồng bộ khi online')}};
 let chapterPage=1,chapterPageSize=100,chapterTotal=0;
 async function loadChapterPage(page=1){
  const requestId=++chapterLoadId;
@@ -381,7 +383,7 @@ function updateReaderProgress(){const p=progress()[state.book.id]||{}, n=totalCh
 function bookmarks(){try{return JSON.parse(localStorage.getItem('ktf_bookmarks_v1')||'{}')}catch{return{}}}
 function setBookmarks(v){localStorage.setItem('ktf_bookmarks_v1',JSON.stringify(v||{}))}
 function isBookmarked(){const b=bookmarks();return !!(state.book&&b[state.book.id]&&b[state.book.id][state.chapter])}
-window.toggleBookmark=async()=>{if(!state.book)return;const b=bookmarks();b[state.book.id]=b[state.book.id]||{};const active=!!b[state.book.id][state.chapter];if(active)delete b[state.book.id][state.chapter];else b[state.book.id][state.chapter]={title:state.current?.title||'',at:Date.now()};setBookmarks(b);const el=$('#bookmarkBtn');if(el)el.textContent=isBookmarked()?'🔖 Đã đánh dấu':'🔖 Đánh dấu';if(state.token)api('/bookmarks',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:state.book.id,chapterIndex:state.chapter,title:state.current?.title||'',active:!active})}).catch(()=>{});renderBookcase();toast(!active?'Đã đánh dấu chương':'Đã bỏ đánh dấu')}
+window.toggleBookmark=async()=>{if(!state.book)return;const b=bookmarks(),d=deletedBookmarks();b[state.book.id]=b[state.book.id]||{};d[state.book.id]=d[state.book.id]||{};const active=!!b[state.book.id][state.chapter];if(active){delete b[state.book.id][state.chapter];d[state.book.id][state.chapter]=Date.now()}else{b[state.book.id][state.chapter]={title:state.current?.title||'',at:Date.now()};delete d[state.book.id][state.chapter]}setBookmarks(b);setDeletedBookmarks(d);const el=$('#bookmarkBtn');if(el)el.textContent=isBookmarked()?'🔖 Đã đánh dấu':'🔖 Đánh dấu';if(state.token)api('/bookmarks',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:state.book.id,chapterIndex:state.chapter,title:state.current?.title||'',active:!active})}).catch(()=>{});renderBookcase();toast(!active?'Đã đánh dấu chương':'Đã bỏ đánh dấu')}
 function renderBookmarks(){const box=$('#bookmarkList');if(!box)return;const b=bookmarks(),items=[];for(const [storyId,chs] of Object.entries(b)){const story=state.books.find(x=>x.id===storyId);for(const [idx,v] of Object.entries(chs||{}))items.push({storyId,index:Number(idx),title:v?.title||('Chương '+(Number(idx)+1)),at:Number(v?.at||0),storyTitle:story?.title||storyId})}items.sort((a,b)=>b.at-a.at);box.innerHTML=items.length?items.map(x=>'<div class="histrow"><div><b>'+esc(x.storyTitle)+'</b><div class="muted">'+T('chapterUnit')+' '+(x.index+1)+' · '+esc(x.title)+'</div></div><button class="btn" onclick="openBook(\''+esc(x.storyId)+'\').then(()=>readChapter('+x.index+'))">'+T('read')+'</button></div>').join(''):'<div class="empty">'+T('noBookmarks')+'</div>'}
 window.goChapter=d=>{const n=totalChapterCount(),x=state.chapter+d;if(x<0||x>=n){toast(T('next'));return}const keepTts=ttsState.active,runId=ttsRunId;if(keepTts)try{speechSynthesis?.cancel?.()}catch{}readChapter(x).then(()=>{if(keepTts&&runId===ttsRunId)startTTSCurrent()})};
 window.font=d=>{state.fontSize=Math.max(14,Math.min(30,state.fontSize+d));save('ktf_fs',state.fontSize);applyReader()};window.setFont=x=>{state.font=x;save('ktf_font',x);applyReader()};window.setTheme=x=>{state.theme=x;save('ktf_theme',x);applyReader()};let ttsState={active:false,chunks:[],pos:0,chapterKey:'',mode:''};
@@ -598,7 +600,9 @@ async function pushLocalSync(){
  const jobs=[];
  for(const [id,v] of Object.entries(p))jobs.push(api('/progress',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,chapterIndex:Number(v.chapter||0),position:Number(v.percent)||0})}).catch(()=>null));
  for(const id of f)jobs.push(api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active:true})}).catch(()=>null));
+ for(const id of deletedFavs())jobs.push(api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active:false})}).catch(()=>null));
  for(const [storyId,chs] of Object.entries(b))for(const [idx,v] of Object.entries(chs||{}))jobs.push(api('/bookmarks',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId,chapterIndex:Number(idx),title:v?.title||'',active:true})}).catch(()=>null));
+ const db=deletedBookmarks();for(const [storyId,chs] of Object.entries(db))for(const idx of Object.keys(chs||{}))jobs.push(api('/bookmarks',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId,chapterIndex:Number(idx),active:false})}).catch(()=>null));
  return Promise.all(jobs);
 }
 async function restoreAccount(){
@@ -612,8 +616,8 @@ async function restoreAccount(){
    if(!local||new Date(v.updatedAt||0)>=new Date(local.updatedAt||0))localP[id]={chapter:Number(v.chapterIndex)||0,percent:Number(v.position)||0,updated:new Date(v.updatedAt||Date.now()).getTime()};
   }
   setProgress(localP);
-  const remoteB=remote.bookmarks||{};for(const [id,items] of Object.entries(remoteB)){localB[id]=localB[id]||{};for(const v of (items||[])){const idx=Number(v.chapterIndex||0),cur=localB[id][idx];const remoteTime=Date.parse(v.updatedAt||'')||0;const localTime=Number(cur?.at||0);if(!cur||remoteTime>=localTime)localB[id][idx]={title:v.title||'',at:remoteTime||Date.now()}}}setBookmarks(localB);
-  const mergedF=[...new Set([...(Array.isArray(remote.favorites)?remote.favorites:[]),...localF])];setFavs(mergedF);
+  const remoteB=remote.bookmarks||{},deletedB=deletedBookmarks();for(const [id,items] of Object.entries(remoteB)){localB[id]=localB[id]||{};for(const v of (items||[])){const idx=Number(v.chapterIndex||0);if(deletedB[id]?.[idx])continue;const cur=localB[id][idx];const remoteTime=Date.parse(v.updatedAt||'')||0;const localTime=Number(cur?.at||0);if(!cur||remoteTime>=localTime)localB[id][idx]={title:v.title||'',at:remoteTime||Date.now()}}}setBookmarks(localB);
+  const deletedF=new Set(deletedFavs());const mergedF=[...new Set([...(Array.isArray(remote.favorites)?remote.favorites:[]).filter(id=>!deletedF.has(id)),...localF])];setFavs(mergedF);
   await pushLocalSync();
   updateStats();renderBookcase();
  }catch(e){
