@@ -135,7 +135,7 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
 
 test('static fallback mode: real public seed, search, read, PWA cache and offline full book', async ({ browser }) => {
   const context=await browser.newContext();
-  await context.addInitScript(() => localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1'));
+  await context.addInitScript(() => { localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1'); localStorage.setItem('ktf_lang','zh'); });
   const page=await context.newPage();
   await page.goto('/');
   await expect(page.locator('#apiStatus')).toContainText('Dữ liệu tĩnh');
