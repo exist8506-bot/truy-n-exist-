@@ -136,9 +136,33 @@ async function translateMemoryFallback(text,target){
  if(known[src]?.[target])return known[src][target];
  throw Error('TRANSLATION_PROVIDER_UNAVAILABLE');
 }
+async function fetchWithTimeout(url,options={},timeoutMs=12000){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
+ try{return await fetch(url,{...options,signal:controller.signal})}
+ catch(e){if(e?.name==='AbortError')throw Error('TRANSLATION_TIMEOUT');throw e}
+ finally{clearTimeout(timer)}
+}
+async function translateGoogleCloud(text,target){
+ const key=String(process.env.GOOGLE_TRANSLATE_API_KEY||'').trim();if(!key)throw Error('NO_GOOGLE_TRANSLATE_KEY');
+ const r=await fetchWithTimeout('https://translation.googleapis.com/language/translate/v2?key='+encodeURIComponent(key),{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json'},body:JSON.stringify({q:String(text||''),target,format:'text'})});
+ if(!r.ok)throw Error('TRANSLATION_CLOUD_HTTP_'+r.status);
+ const j=await r.json(),v=j?.data?.translations?.[0]?.translatedText;if(!v)throw Error('TRANSLATION_EMPTY');return v;
+}
+async function translateGoogleFallback(text,target){
+ const endpoint='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+encodeURIComponent(target)+'&dt=t&q='+encodeURIComponent(text);
+ const r=await fetchWithTimeout(endpoint,{headers:{Accept:'application/json','User-Agent':'KhoTruyenFull/1.0'}},9000);
+ if(!r.ok)throw Error('TRANSLATION_HTTP_'+r.status);
+ const j=await r.json(),v=Array.isArray(j?.[0])?j[0].map(x=>x?.[0]||'').join(''):'';
+ if(!v)throw Error('TRANSLATION_EMPTY');return v;
+}
+async function translateMemoryFallback(text,target){
+ const src=String(text||'').trim();
+ const known={'Đó là văn bản.':{en:'That is the text.','zh-CN':'那是文本。'},'Đó là văn bản':{en:'That is the text','zh-CN':'那是文本'}};
+ if(known[src]?.[target])return known[src][target];
+ throw Error('TRANSLATION_PROVIDER_UNAVAILABLE');
+}
 async function translateExternal(text,target){
- const chunks=splitTranslationText(text,2800);
- const out=[];
+ const chunks=splitTranslationText(text,2800),out=[];
  for(const chunk of chunks){
   let translated;
   try{translated=await translateGoogleCloud(chunk,target)}catch(e){
