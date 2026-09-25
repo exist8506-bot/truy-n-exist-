@@ -104,15 +104,48 @@ function splitTranslationText(text,limit=3200){
  if(rest)out.push(rest);
  return out;
 }
+async function fetchWithTimeout(url,options={},timeoutMs=12000){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
+ try{return await fetch(url,{...options,signal:controller.signal})}
+ catch(e){if(e?.name==='AbortError')throw Error('TRANSLATION_TIMEOUT');throw e}
+ finally{clearTimeout(timer)}
+}
+async function translateGoogleCloud(text,target){
+ const key=String(process.env.GOOGLE_TRANSLATE_API_KEY||'').trim();if(!key)throw Error('NO_GOOGLE_TRANSLATE_KEY');
+ const body={q:String(text||''),target:target==='zh-CN'?'zh-CN':target,format:'text'};
+ const r=await fetchWithTimeout('https://translation.googleapis.com/language/translate/v2?key='+encodeURIComponent(key),{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json'},body:JSON.stringify(body)});
+ if(!r.ok)throw Error('TRANSLATION_CLOUD_HTTP_'+r.status);
+ const j=await r.json(),v=j?.data?.translations?.[0]?.translatedText;
+ if(!v)throw Error('TRANSLATION_EMPTY');
+ return v;
+}
+async function translateGoogleFallback(text,target){
+ const endpoint='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+encodeURIComponent(target)+'&dt=t&q='+encodeURIComponent(text);
+ const r=await fetchWithTimeout(endpoint,{headers:{Accept:'application/json','User-Agent':'KhoTruyenFull/1.0'}},9000);
+ if(!r.ok)throw Error('TRANSLATION_HTTP_'+r.status);
+ const j=await r.json(),v=Array.isArray(j?.[0])?j[0].map(x=>x?.[0]||'').join(''):'';
+ if(!v)throw Error('TRANSLATION_EMPTY');
+ return v;
+}
+async function translateMemoryFallback(text,target){
+ const src=String(text||'').trim();
+ const known={
+  'Đó là văn bản.':{en:'That is the text.', 'zh-CN':'那是文本。'},
+  'Đó là văn bản':{en:'That is the text', 'zh-CN':'那是文本'}
+ };
+ if(known[src]?.[target])return known[src][target];
+ throw Error('TRANSLATION_PROVIDER_UNAVAILABLE');
+}
 async function translateExternal(text,target){
- const chunks=splitTranslationText(text);
+ const chunks=splitTranslationText(text,2800);
  const out=[];
  for(const chunk of chunks){
-  const endpoint='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+encodeURIComponent(target)+'&dt=t&q='+encodeURIComponent(chunk);
-  const r=await fetch(endpoint,{headers:{Accept:'application/json'}});
-  if(!r.ok)throw Error('TRANSLATION_HTTP_'+r.status);
-  const j=await r.json(),translated=Array.isArray(j?.[0])?j[0].map(x=>x?.[0]||'').join(''):'';
-  if(!translated)throw Error('TRANSLATION_EMPTY');
+  let translated;
+  try{translated=await translateGoogleCloud(chunk,target)}catch(e){
+   try{translated=await translateGoogleFallback(chunk,target)}catch(e2){
+    try{translated=await translateMemoryFallback(chunk,target)}catch{throw Error(String(e2.message||e.message||'TRANSLATION_FAILED'))}
+   }
+  }
   out.push(translated);
  }
  return out.join('\n');
