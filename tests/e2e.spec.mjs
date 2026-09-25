@@ -286,10 +286,11 @@ test('TTS uses Google Chinese audio when system Chinese voice is missing', async
     window.Audio=function(url){window.__audioUrl=url;const a=new RealAudio();a.play=()=>Promise.resolve();return a};
   });
   const page=await context.newPage();
-    await page.goto('/');
-  await page.locator('#grid .card').filter({hasText:'Mùa Sao Trên Đỉnh Núi'}).locator('.info').click();
+  await page.goto('/');
+  await page.locator('#grid .card').filter({hasText:'Bát Tiên Đắc Đạo'}).locator('.info').click();
+  await page.selectOption('#langSelect','zh');
   await page.locator('#chapters .chapter').first().click();
-  await page.locator('#rtext').evaluate(el=>{el.textContent=String.fromCharCode(0x90a3,0x662f,0x6587,0x672c,0x3002)});
+  await expect(page.locator('#rtext')).not.toBeEmpty();
   await page.getByRole('button',{name:/🔊/}).click();
   await expect.poll(()=>page.evaluate(()=>String(window.__audioUrl||''))).toContain('tl=zh-CN');
   await context.close();
