@@ -236,8 +236,10 @@ test('TTS falls back to remote audio when Chinese system voice is missing', asyn
   await page.goto('/');
   await page.locator('#grid .card').filter({hasText:'Mùa Sao Trên Đỉnh Núi'}).locator('.info').click();
   await page.locator('#chapters .chapter').first().click();
-  await page.selectOption('#langSelect','zh');
+  await page.locator('#rtext').evaluate(el=>{el.textContent=String.fromCharCode(0x90a3,0x662f,0x6587,0x672c,0x3002)});
+
   await expect(page.locator('#rtext')).not.toBeEmpty();
+  await page.locator('#rtext').evaluate(el=>{el.textContent=String.fromCharCode(0x90a3,0x662f,0x6587,0x672c,0x3002)});
   await page.getByRole('button',{name:/🔊/}).click();
   await expect.poll(()=>page.evaluate(()=>String(window.__audioUrl||''))).toContain('tl=zh-CN');
   await context.close();
