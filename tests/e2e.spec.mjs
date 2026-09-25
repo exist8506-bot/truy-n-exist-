@@ -293,6 +293,9 @@ test('TTS uses Google Chinese audio when system Chinese voice is missing', async
   await expect(page.locator('#rtext')).not.toBeEmpty();
   await page.getByRole('button',{name:/🔊/}).click();
   await expect.poll(()=>page.evaluate(()=>String(window.__audioUrl||''))).toContain('tl=zh-CN');
+  await page.evaluate(()=>{window.state.current.language='zh-CN';document.querySelector('#rtext').textContent='English fallback text only.';window.stopTTS?.(true)});
+  await page.getByRole('button',{name:/🔊/}).click();
+  await expect.poll(()=>page.evaluate(()=>String(window.__audioUrl||''))).toContain('tl=zh-CN');
   await context.close();
 });
 
