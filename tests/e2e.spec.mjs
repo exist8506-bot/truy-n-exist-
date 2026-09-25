@@ -204,12 +204,14 @@ test('real translation provider translates text and reader TTS uses matching loc
     expect(enJson.translated).toBeTruthy();
     expect(enJson.content).not.toBe('Đó là văn bản.');
     expect(enJson.content).toMatch(/text/i);
+    expect(enJson.provider).not.toBe('local-memory');
     const zh=await request.get('/api/v1/stories/'+encodeURIComponent(story.id)+'/chapters/0?lang=zh-CN');
     expect(zh.ok()).toBeTruthy();
     const zhJson=await zh.json();
     expect(zhJson.translated).toBeTruthy();
     expect(zhJson.content).not.toBe('Đó là văn bản.');
     expect(zhJson.content).toMatch(/[\u3400-\u9fff]/);
+    expect(zhJson.provider).not.toBe('local-memory');
 
     const context=await browser.newContext();
     await context.addInitScript(() => {
