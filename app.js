@@ -455,7 +455,7 @@ function speakTTSChunk(runId=ttsRunId){
  const text=ttsState.chunks[ttsState.pos++],lang=ttsLanguage();
  const voiceState=getTTSVoiceState(),voice=preferredTTSVoice(lang);
  if(window.SpeechSynthesisUtterance&&(voice||!voiceState.known)){
-  const u=new SpeechSynthesisUtterance(text);u.lang=voice.lang;u.voice=voice;u.rate=state.rate;ttsState.mode='speech';
+  const u=new SpeechSynthesisUtterance(text);u.lang=voice?.lang||lang;if(voice)u.voice=voice;u.rate=state.rate;ttsState.mode='speech';
   u.onend=()=>{if(ttsState.active&&runId===ttsRunId)setTimeout(()=>speakTTSChunk(runId),25)};
   u.onerror=()=>{if(runId===ttsRunId)playTTSAudio(text,lang,runId)};
   try{speechSynthesis.speak(u);speechSynthesis.resume?.();return}catch{}
