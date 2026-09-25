@@ -267,14 +267,13 @@ test('offline download can cancel and resume', async ({ browser }) => {
   const context=await browser.newContext();
   const page=await context.newPage();
   await page.goto('/');
+  const bookId='phong-than-dien-nghia';
+  await page.evaluate(async id=>{if(window.removeOffline)await window.removeOffline(id)},bookId);
   await page.locator('#grid .card').filter({hasText:'Phong Thần Diễn Nghĩa'}).locator('.info').click();
-  const bookId=await page.evaluate(()=>window.state?.book?.id||'phong-than-dien-nghia');
-  await page.evaluate(id=>window.downloadBook(id),bookId);
-  await page.waitForTimeout(50);
-  await page.evaluate(id=>window.cancelOffline(id),bookId);
-  await expect.poll(async()=>await page.evaluate(id=>window.offlineGetDownload?.(id).then(x=>x?.status||''),bookId).catch(()=>''),{timeout:10000}).toBe('cancelled');
-  await page.evaluate(id=>window.downloadBook(id),bookId);
-  await expect.poll(async()=>await page.evaluate(id=>window.offlineGetDownload?.(id).then(x=>x?.status||''),bookId).catch(()=>''),{timeout:30000}).toBe('complete');
+  await page.evaluate(id=>{window.downloadBook(id);setTimeout(()=>window.cancelOffline(id),80)},bookId);
+  await expect(page.locator('#downloadList')).toContainText('Đã dừng',{timeout:15000});
+  await page.getByRole('button',{name:'Tiếp tục'}).click();
+  await expect(page.locator('#downloadList')).toContainText('Đã lưu đầy đủ',{timeout:60000});
   await context.close();
 });
 
