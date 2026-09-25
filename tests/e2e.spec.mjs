@@ -242,9 +242,10 @@ test('real translation provider translates text and reader TTS uses matching loc
     await expect(page.locator('#rtext')).toContainText(zhJson.content.slice(0,20));
     await page.getByRole('button',{name:/🔊/}).click();
     await expect.poll(()=>page.evaluate(()=>window.__ttsLast?.lang)).toBe('zh-CN');
+    await request.delete('/api/v1/admin/stories/'+encodeURIComponent(story.id),{headers:auth}).catch(()=>{});
     await context.close();
   }finally{
-    await request.delete('/api/v1/admin/stories/'+encodeURIComponent(story.id),{headers:auth});
+    await fetch('http://127.0.0.1:8787/api/v1/admin/stories/'+encodeURIComponent(story.id),{method:'DELETE',headers:auth}).catch(()=>{});
   }
 });
 
