@@ -728,7 +728,7 @@ function accountModal(){
      const payload={username,password};if(register)payload.displayName=$('#accountDisplay').value.trim()||username;
      const j=await api(register?'/auth/register':'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
      state.token=j.token;save('ktf_token',state.token);state.user=j.user;await restoreAccount();toast(register?'Đăng ký thành công':'Đăng nhập thành công');render();
-    }catch(e){$('#accountMsg').textContent=accountError(e)}
+    }catch(e){const msg=$('#accountMsg');if(e.message==='API_UNREACHABLE'||e.message==='HTTP_404'){msg.innerHTML=esc(accountError(e))+' <button type="button" class="btn" id="accountApiConfig" style="margin-top:8px">🌐 Cấu hình máy chủ API</button><div class="muted" style="margin-top:5px;font-size:11px">API hiện tại: '+esc(apiBase())+'</div>';$('#accountApiConfig').onclick=configureApi}else msg.textContent=accountError(e)}
    };
   };
   $('#accountLoginTab').onclick=()=>{render();form(false)};
