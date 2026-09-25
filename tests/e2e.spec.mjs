@@ -169,6 +169,7 @@ test('all ten public stories: first chapter smoke', async ({ browser }) => {
   test.setTimeout(120000);
   const context=await browser.newContext({viewport:{width:1280,height:900}});
   const page=await context.newPage();
+  await context.addInitScript(() => { localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1'); localStorage.setItem('ktf_lang','zh'); });
   const browserErrors=[];page.on('pageerror',e=>browserErrors.push(String(e)));
   page.on('console',m=>{if(m.type()==='error')browserErrors.push('console:'+m.text())});
   await page.goto('/');
