@@ -617,6 +617,7 @@ async function restoreAccount(){
   }
   setProgress(localP);
   const remoteB=remote.bookmarks||{},deletedB=deletedBookmarks();for(const [id,items] of Object.entries(remoteB)){localB[id]=localB[id]||{};for(const v of (items||[])){const idx=Number(v.chapterIndex||0);if(deletedB[id]?.[idx])continue;const cur=localB[id][idx];const remoteTime=Date.parse(v.updatedAt||'')||0;const localTime=Number(cur?.at||0);if(!cur||remoteTime>=localTime)localB[id][idx]={title:v.title||'',at:remoteTime||Date.now()}}}setBookmarks(localB);
+  const remoteH=remote.history||{},localH=hist(),historyByKey=new Map(localH.map(x=>[x.bookId+':'+x.chapter,{...x}]));for(const [id,v] of Object.entries(remoteH)){const key=id+':'+Number(v.chapterIndex||0),cur=historyByKey.get(key),rt=Date.parse(v.updatedAt||'')||0,lt=Number(cur?.at||0);if(!cur||rt>=lt)historyByKey.set(key,{bookId:id,chapter:Number(v.chapterIndex||0),title:cur?.title||'',at:rt||Date.now()})}setHist([...historyByKey.values()].sort((a,b)=>Number(b.at||0)-Number(a.at||0)).slice(0,200));
   const deletedF=new Set(deletedFavs());const mergedF=[...new Set([...(Array.isArray(remote.favorites)?remote.favorites:[]).filter(id=>!deletedF.has(id)),...localF])];setFavs(mergedF);
   await pushLocalSync();
   updateStats();renderBookcase();
