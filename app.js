@@ -255,36 +255,54 @@ function storyTargetLanguage(){
  return state.lang==='zh'?'zh-CN':state.lang==='en'?'en':'vi';
 }
 function translationCacheKey(bookId,index,lang){return bookId+':'+index+':'+lang}
+function detectSourceLanguage(text){
+ const s=String(text||'');
+ if(/[\u3400-\u9fff]/.test(s))return 'zh-CN';
+ if(/[ăâđêôơưĂÂĐÊÔƠƯÀ-ỹ]/.test(s))return 'vi';
+ return 'en';
+}
+async function clientProviderGoogle(text,target){
+ const u='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+encodeURIComponent(target)+'&dt=t&q='+encodeURIComponent(text);
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),9000);
+ let r;
+ try{r=await fetch(u,{headers:{Accept:'application/json'},signal:controller.signal})}
+ catch(e){if(e?.name==='AbortError')throw Error('TRANSLATION_TIMEOUT');throw e}
+ finally{clearTimeout(timer)}
+ if(!r.ok)throw Error('TRANSLATION_HTTP_'+r.status);
+ const j=await r.json(),translated=Array.isArray(j?.[0])?j[0].map(x=>x?.[0]||'').join(''):'';
+ if(!translated)throw Error('TRANSLATION_EMPTY');
+ return translated;
+}
+async function clientProviderMyMemory(text,target){
+ const sourceLang=detectSourceLanguage(text);
+ const url='https://api.mymemory.translated.net/get?q='+encodeURIComponent(String(text||''))+'&langpair='+encodeURIComponent(sourceLang+'|'+target);
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),9000);
+ let r;
+ try{r=await fetch(url,{headers:{Accept:'application/json'},signal:controller.signal})}
+ catch(e){if(e?.name==='AbortError')throw Error('TRANSLATION_TIMEOUT');throw e}
+ finally{clearTimeout(timer)}
+ if(!r.ok)throw Error('TRANSLATION_MEMORY_HTTP_'+r.status);
+ const j=await r.json(),translated=String(j?.responseData?.translatedText||'').trim();
+ if(!translated||translated===String(text||'').trim())throw Error('TRANSLATION_EMPTY');
+ return translated;
+}
 async function translateClientText(text,target){
  const source=String(text||'').trim();
  if(!source)return '';
  const chunks=[];
  let rest=source;
- const limit=3200;
+ const limit=1600;
  while(rest.length>limit){
-  let cut=Math.max(
-   rest.lastIndexOf('\n',limit),
-   rest.lastIndexOf('。',limit),
-   rest.lastIndexOf('！',limit),
-   rest.lastIndexOf('？',limit),
-   rest.lastIndexOf('.',limit),
-   rest.lastIndexOf('!',limit),
-   rest.lastIndexOf('?',limit)
-  );
+  let cut=Math.max(rest.lastIndexOf('\n',limit),rest.lastIndexOf('。',limit),rest.lastIndexOf('！',limit),rest.lastIndexOf('？',limit),rest.lastIndexOf('.',limit),rest.lastIndexOf('!',limit),rest.lastIndexOf('?',limit));
   if(cut<Math.floor(limit*.55))cut=limit;
-  chunks.push(rest.slice(0,cut+1).trim());
-  rest=rest.slice(cut+1).trim();
+  chunks.push(rest.slice(0,cut+1).trim());rest=rest.slice(cut+1).trim();
  }
  if(rest)chunks.push(rest);
  const out=[];
  for(const chunk of chunks){
-  const u='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+encodeURIComponent(target)+'&dt=t&q='+encodeURIComponent(chunk);
-  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),9000);
-  let r;try{r=await fetch(u,{headers:{Accept:'application/json'},signal:controller.signal})}catch(e){clearTimeout(timer);if(e?.name==='AbortError')throw Error('TRANSLATION_TIMEOUT');throw e}finally{clearTimeout(timer)}
-  if(!r.ok)throw Error('TRANSLATION_HTTP_'+r.status);
-  const j=await r.json();
-  const translated=Array.isArray(j?.[0])?j[0].map(x=>x?.[0]||'').join(''):'';
-  if(!translated)throw Error('TRANSLATION_EMPTY');
+  let translated;
+  try{translated=await clientProviderGoogle(chunk,target)}
+  catch{translated=await clientProviderMyMemory(chunk.slice(0,500),target)}
   out.push(translated);
  }
  return out.join('\n');
