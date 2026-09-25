@@ -493,7 +493,7 @@ function playGoogleAudio(text,lang,runId){
  audio.onerror=()=>{ttsAudio=null;stopTTS(true);toast(T('ttsError'))};
  audio.play().catch(()=>{ttsAudio=null;stopTTS(true);toast(T('ttsError'))});
 }
-function playTTSAudio(text,lang,runId){playLingvaAudio(text,lang,runId).catch(()=>playGoogleAudio(text,lang,runId))}
+function playTTSAudio(text,lang,runId){playGoogleAudio(text,lang,runId);}
 
 function startTTSCurrent(){
  const text=$('#rtext')?.innerText?.trim()||'';if(!text)return;
