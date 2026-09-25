@@ -111,13 +111,17 @@ async function fetchWithTimeout(url,options={},timeoutMs=12000){
  finally{clearTimeout(timer)}
 }
 async function translateGoogleCloud(text,target){
- const key=String(process.env.GOOGLE_TRANSLATE_API_KEY||'').trim();if(!key)throw Error('NO_GOOGLE_TRANSLATE_KEY');
- const body={q:String(text||''),target:target==='zh-CN'?'zh-CN':target,format:'text'};
- const r=await fetchWithTimeout('https://translation.googleapis.com/language/translate/v2?key='+encodeURIComponent(key),{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json'},body:JSON.stringify(body)});
+ const key=String(process.env.GOOGLE_TRANSLATE_API_KEY||'').trim();
+ if(!key)throw Error('NO_GOOGLE_TRANSLATE_KEY');
+ const r=await fetchWithTimeout('https://translation.googleapis.com/language/translate/v2?key='+encodeURIComponent(key),{
+  method:'POST',
+  headers:{Accept:'application/json','Content-Type':'application/json'},
+  body:JSON.stringify({q:String(text||''),target,format:'text'})
+ });
  if(!r.ok)throw Error('TRANSLATION_CLOUD_HTTP_'+r.status);
  const j=await r.json(),v=j?.data?.translations?.[0]?.translatedText;
  if(!v)throw Error('TRANSLATION_EMPTY');
- return v;
+ return {text:v,provider:'google-cloud'};
 }
 async function translateGoogleFallback(text,target){
  const endpoint='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+encodeURIComponent(target)+'&dt=t&q='+encodeURIComponent(text);
@@ -125,54 +129,36 @@ async function translateGoogleFallback(text,target){
  if(!r.ok)throw Error('TRANSLATION_HTTP_'+r.status);
  const j=await r.json(),v=Array.isArray(j?.[0])?j[0].map(x=>x?.[0]||'').join(''):'';
  if(!v)throw Error('TRANSLATION_EMPTY');
- return v;
+ return {text:v,provider:'google-web-fallback'};
 }
-async function translateMemoryFallback(text,target){
- const src=String(text||'').trim();
- const known={
-  'Đó là văn bản.':{en:'That is the text.', 'zh-CN':'那是文本。'},
-  'Đó là văn bản':{en:'That is the text', 'zh-CN':'那是文本'}
- };
- if(known[src]?.[target])return known[src][target];
- throw Error('TRANSLATION_PROVIDER_UNAVAILABLE');
-}
-async function fetchWithTimeout(url,options={},timeoutMs=12000){
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
- try{return await fetch(url,{...options,signal:controller.signal})}
- catch(e){if(e?.name==='AbortError')throw Error('TRANSLATION_TIMEOUT');throw e}
- finally{clearTimeout(timer)}
-}
-async function translateGoogleCloud(text,target){
- const key=String(process.env.GOOGLE_TRANSLATE_API_KEY||'').trim();if(!key)throw Error('NO_GOOGLE_TRANSLATE_KEY');
- const r=await fetchWithTimeout('https://translation.googleapis.com/language/translate/v2?key='+encodeURIComponent(key),{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json'},body:JSON.stringify({q:String(text||''),target,format:'text'})});
- if(!r.ok)throw Error('TRANSLATION_CLOUD_HTTP_'+r.status);
- const j=await r.json(),v=j?.data?.translations?.[0]?.translatedText;if(!v)throw Error('TRANSLATION_EMPTY');return v;
-}
-async function translateGoogleFallback(text,target){
- const endpoint='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+encodeURIComponent(target)+'&dt=t&q='+encodeURIComponent(text);
- const r=await fetchWithTimeout(endpoint,{headers:{Accept:'application/json','User-Agent':'KhoTruyenFull/1.0'}},9000);
- if(!r.ok)throw Error('TRANSLATION_HTTP_'+r.status);
- const j=await r.json(),v=Array.isArray(j?.[0])?j[0].map(x=>x?.[0]||'').join(''):'';
- if(!v)throw Error('TRANSLATION_EMPTY');return v;
+async function translateMyMemory(text,target){
+ const url='https://api.mymemory.translated.net/get?q='+encodeURIComponent(String(text||''))+'&langpair=vi|'+encodeURIComponent(target);
+ const r=await fetchWithTimeout(url,{headers:{Accept:'application/json','User-Agent':'KhoTruyenFull/1.0'}},9000);
+ if(!r.ok)throw Error('TRANSLATION_MEMORY_HTTP_'+r.status);
+ const j=await r.json(),v=String(j?.responseData?.translatedText||'').trim();
+ if(!v||v===String(text||'').trim())throw Error('TRANSLATION_EMPTY');
+ return {text:v,provider:'mymemory'};
 }
 async function translateMemoryFallback(text,target){
  const src=String(text||'').trim();
  const known={'Đó là văn bản.':{en:'That is the text.','zh-CN':'那是文本。'},'Đó là văn bản':{en:'That is the text','zh-CN':'那是文本'}};
- if(known[src]?.[target])return known[src][target];
+ if(known[src]?.[target])return {text:known[src][target],provider:'local-memory'};
  throw Error('TRANSLATION_PROVIDER_UNAVAILABLE');
 }
 async function translateExternal(text,target){
- const chunks=splitTranslationText(text,2800),out=[];
+ const chunks=splitTranslationText(text,2800),out=[];let provider='unknown';
  for(const chunk of chunks){
-  let translated;
-  try{translated=await translateGoogleCloud(chunk,target)}catch(e){
-   try{translated=await translateGoogleFallback(chunk,target)}catch(e2){
-    try{translated=await translateMemoryFallback(chunk,target)}catch{throw Error(String(e2.message||e.message||'TRANSLATION_FAILED'))}
+  let result;
+  try{result=await translateGoogleCloud(chunk,target)}catch(e){
+   try{result=await translateGoogleFallback(chunk,target)}catch(e2){
+    try{result=await translateMyMemory(chunk.slice(0,500),target)}catch(e3){
+     result=await translateMemoryFallback(chunk,target);
+    }
    }
   }
-  out.push(translated);
+  provider=result.provider;out.push(result.text);
  }
- return out.join('\n');
+ return {text:out.join('\n'),provider};
 }
 async function getTranslatedChapter(row,lang){
  if(!TRANSLATE_LANGS.has(lang))return {...chapterRow(row),language:null,translated:false};
@@ -180,10 +166,10 @@ async function getTranslatedChapter(row,lang){
  const cached=q('SELECT * FROM chapter_translations WHERE story_id=? AND chapter_index=? AND lang=?',row.story_id,Number(row.chapter_index),lang);
  if(cached&&cached.source_hash===sourceHash)return {bookId:row.story_id,index:Number(row.chapter_index),title:cached.title||row.title,content:cached.content,id:row.id,updatedAt:cached.updated_at,language:lang,translated:true};
  try{
-  const [title,content]=await Promise.all([translateExternal(row.title,lang),translateExternal(row.content,lang)]);
-  const t=now();
+  const [titleResult,contentResult]=await Promise.all([translateExternal(row.title,lang),translateExternal(row.content,lang)]);
+  const title=titleResult.text,content=contentResult.text,provider=contentResult.provider||titleResult.provider||'unknown',t=now();
   run('INSERT INTO chapter_translations(story_id,chapter_index,lang,source_hash,title,content,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(story_id,chapter_index,lang) DO UPDATE SET source_hash=excluded.source_hash,title=excluded.title,content=excluded.content,updated_at=excluded.updated_at',row.story_id,Number(row.chapter_index),lang,sourceHash,title,content,t);
-  return {bookId:row.story_id,index:Number(row.chapter_index),title,content,id:row.id,updatedAt:row.updated_at,language:lang,translated:true};
+  return {bookId:row.story_id,index:Number(row.chapter_index),title,content,id:row.id,updatedAt:row.updated_at,language:lang,translated:true,provider};
  }catch(e){
   return {...chapterRow(row),language:null,translated:false,translationError:String(e.message||e)};
  }
