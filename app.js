@@ -283,10 +283,10 @@ async function translateClientText(text,target){
 }
 async function translateChapterFallback(chapter,lang){
  if(lang==='vi-VN'&&/[㐀-鿿]/.test(String(chapter.content||''))===false){
-  return {...chapter,language:'vi-VN',translated:false};
+  return {...chapter,language:'vi',translated:false};
  }
  if(lang==='en'&&/^[\x00-\x7F\s\p{P}\p{N}]+$/u.test(String(chapter.content||''))){
-  return {...chapter,language:'en-US',translated:false};
+  return {...chapter,language:'en',translated:false};
  }
  const key=translationCacheKey(state.book.id,chapter.index??state.chapter,lang);
  if(translatedChapterCache.has(key))return translatedChapterCache.get(key);
@@ -308,7 +308,7 @@ async function fetchChapterData(i){
   const cached=await offlineGet(state.book.id,i,'original').catch(()=>null);
   const base=cached||state.chapters.find(x=>(x.index??x.chapter)===i)||state.book.chapters?.[i];
   const original=cached||{bookId:state.book.id,index:i,title:base?.title||('Chương '+(i+1)),content:base?.content||base?.[1]||''};
-  if(lang==='vi-VN'&&!/[\u3400-\u9fff]/.test(String(original.content||'')))return {...original,language:'vi-VN',translated:false};
+  if(lang==='vi'&&!/[\u3400-\u9fff]/.test(String(original.content||'')))return {...original,language:'vi',translated:false};
   try{
    const translated=await translateChapterFallback(original,lang);
    if(translated?.translated)offlinePut(state.book.id,i,translated,lang).catch(()=>{});
