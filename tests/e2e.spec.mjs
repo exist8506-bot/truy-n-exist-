@@ -272,7 +272,7 @@ test('offline download can cancel and resume', async ({ browser }) => {
   await page.locator('#grid .card').filter({hasText:'Phong Thần Diễn Nghĩa'}).locator('.info').click();
   await page.evaluate(id=>{window.downloadBook(id);setTimeout(()=>window.cancelOffline(id),80)},bookId);
   await expect(page.locator('#downloadList')).toContainText('Đã dừng',{timeout:15000});
-  await page.getByRole('button',{name:'Tiếp tục'}).click();
+  await page.locator('#downloadList .btn').first().click();
   await expect(page.locator('#downloadList')).toContainText('Đã lưu đầy đủ',{timeout:60000});
   await context.close();
 });
