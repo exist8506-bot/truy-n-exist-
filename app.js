@@ -44,7 +44,7 @@ window.setLanguage=async lang=>{
  if(changed&&state.book&&reading){
   const i=state.chapter;
   stopTTS(true);
-  await readChapter(i,{languageChange:true});
+  await readChapter(i,{languageChange:true,skipHistory:true});
  }
 };
 const apiBase=()=>window.KhoAPI?.base?.()||'/api/v1';
