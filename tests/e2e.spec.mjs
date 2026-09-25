@@ -207,6 +207,8 @@ test('real translation provider translates the exact text and returns real provi
     expect(enJson.content).not.toBe('Đó là văn bản.');
     expect(enJson.content).toMatch(/text/i);
     expect(enJson.provider).not.toBe('local-memory');
+    const zhSource=await request.post('/api/v1/admin/stories/'+encodeURIComponent(story.id)+'/chapters',{headers:auth,data:{index:1,title:'中文测试',content:'那是文本。'}});expect(zhSource.ok()).toBeTruthy();
+    const zhFromCn=await request.get('/api/v1/stories/'+encodeURIComponent(story.id)+'/chapters/1?lang=en');expect(zhFromCn.ok()).toBeTruthy();const zhFromCnJson=await zhFromCn.json();expect(zhFromCnJson.translated).toBeTruthy();expect(zhFromCnJson.content).not.toBe('那是文本。');expect(zhFromCnJson.content).toMatch(/text/i);
     const zh=await request.get('/api/v1/stories/'+encodeURIComponent(story.id)+'/chapters/0?lang=zh-CN');
     expect(zh.ok()).toBeTruthy();
     const zhJson=await zh.json();
@@ -220,6 +222,24 @@ test('real translation provider translates the exact text and returns real provi
   }finally{
     await fetch('http://127.0.0.1:8787/api/v1/admin/stories/'+encodeURIComponent(story.id),{method:'DELETE',headers:auth}).catch(()=>{});
   }
+});
+
+test('static reader uses MyMemory fallback when Google translation is unavailable', async ({ browser }) => {
+  const context=await browser.newContext();
+  await context.addInitScript(() => localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1'));
+  const page=await context.newPage();
+  await page.route('https://translate.googleapis.com/**',route=>route.abort());
+  await page.route('https://api.mymemory.translated.net/**',async route=>route.fulfill({
+    status:200,contentType:'application/json',
+    body:JSON.stringify({responseData:{translatedText:'That is the text.'}})
+  }));
+  await page.goto('/');
+  await page.locator('#grid .card').filter({hasText:'Mùa Sao Trên Đỉnh Núi'}).locator('.info').click();
+  await page.locator('#chapters .chapter').first().click();
+  await page.locator('#rtext').evaluate(el=>el.textContent='Đó là văn bản.');
+  await page.selectOption('#langSelect','en');
+  await expect(page.locator('#rtext')).toContainText('That is the text.');
+  await context.close();
 });
 
 test('TTS falls back to remote audio when Chinese system voice is missing', async ({ browser }) => {
