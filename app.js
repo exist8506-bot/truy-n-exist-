@@ -556,15 +556,17 @@ async function downloadBook(bookId){
  job.status='downloading';job.error='';job.updatedAt=new Date().toISOString();await offlineSetDownload(job);refreshOfflineUI();
  try{
   let chapters=[];
-  try{
-   const staticBooks=await loadStaticSeed();
-   const sb=staticBooks.find(x=>x.id===bookId);
-   if(sb&&Array.isArray(sb.chapters)&&sb.chapters.length){
-    chapters=sb.chapters.map((c,i)=>Array.isArray(c)
-      ? {index:i,title:c[0]||('Chương '+(i+1)),content:c[1]||'',bookId}
-      : {...c,index:Number(c?.index??i),title:c?.title||('Chương '+(i+1)),content:c?.content||'',bookId});
-   }
-  }catch{}
+  if(!state.apiAvailable){
+   try{
+    const staticBooks=await loadStaticSeed();
+    const sb=staticBooks.find(x=>x.id===bookId);
+    if(sb&&Array.isArray(sb.chapters)&&sb.chapters.length){
+     chapters=sb.chapters.map((c,i)=>Array.isArray(c)
+       ? {index:i,title:c[0]||('Chương '+(i+1)),content:c[1]||'',bookId}
+       : {...c,index:Number(c?.index??i),title:c?.title||('Chương '+(i+1)),content:c?.content||'',bookId});
+    }
+   }catch{}
+  }
   if(!chapters.length)chapters=await getDownloadChapterMeta(bookId);
   job.total=chapters.length;
   job.done=0;
