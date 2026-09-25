@@ -251,7 +251,7 @@ test('chapter ordering and chapter search', async ({ browser }) => {
   const page=await context.newPage();
   await page.goto('/');
   await page.locator('#grid .card').filter({hasText:'Mùa Sao Trên Đỉnh Núi'}).locator('.info').click();
-  await expect(page.locator('#chapters .chapter').first()).toContainText('Chương 1');
+  await expect(page.locator('#chapters .chapter').first()).toContainText('chương 1');
   await page.locator('#chapterSearch').fill('Vệt sáng trong rừng');
   await expect(page.locator('#chapters .chapter')).toHaveCount(1);
   await expect(page.locator('#chapters .chapter').first()).toContainText('Vệt sáng trong rừng');
