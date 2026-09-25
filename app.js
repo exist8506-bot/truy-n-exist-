@@ -57,6 +57,7 @@ function favs(){return get('ktf_favs',[])} function setFavs(v){save('ktf_favs',v
 function deletedFavs(){return get('ktf_deleted_favs',[])} function setDeletedFavs(v){save('ktf_deleted_favs',v)}
 function deletedBookmarks(){return get('ktf_deleted_bookmarks',{})} function setDeletedBookmarks(v){save('ktf_deleted_bookmarks',v)}
 function hist(){return get('ktf_hist',[])} function setHist(v){save('ktf_hist',v)}
+function historyClearPending(){return get('ktf_history_clear_pending',false)} function setHistoryClearPending(v){save('ktf_history_clear_pending',!!v)}
 function progress(){return get('ktf_prog',{})} function setProgress(v){save('ktf_prog',v)}
 function show(id){['library','detail','reader','history','bookcase'].forEach(x=>$('#'+x)?.classList.remove('show'));$('#'+id)?.classList.add('show');document.body.classList.toggle('reading-mode',id==='reader');scrollTo(0,0)}
 window.home=()=>{show('library');renderLibrary()}; window.focusSearch=()=>{$('#search')?.focus();show('library')};
@@ -186,7 +187,7 @@ function renderHomeMode(){
  }
 }window.setHomeMode=m=>{state.mode=m;state.remoteSearch=false;document.querySelectorAll('#segAll,#segReading,#segRank,#segNew').forEach(x=>x.classList.remove('active'));$('#seg'+({all:'All',reading:'Reading',rank:'Rank',new:'New'}[m]||'All'))?.classList.add('active');renderLibrary()};
 window.setDataFilter=x=>{state.filter=x;renderLibrary()};window.setDataSort=x=>{state.sort=x;renderLibrary()};
-window.toggleFav=async id=>{let a=favs(),d=deletedFavs();const active=!a.includes(id);a=active?[...a,id]:a.filter(x=>x!==id);d=active?d.filter(x=>x!==id):[...new Set([...d,id])];setFavs(a);setDeletedFavs(d);updateStats();renderLibrary();if(state.token)try{await api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active})})}catch{toast('Đã lưu cục bộ, sẽ đồng bộ khi online')}};
+window.toggleFav=async id=>{let a=favs(),d=deletedFavs();const active=!a.includes(id);a=active?[...a,id]:a.filter(x=>x!==id);d=active?d.filter(x=>x!==id):[...new Set([...d,id])];setFavs(a);setDeletedFavs(d);updateStats();renderLibrary();if(state.token)try{await api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active})});if(active)setDeletedFavs(deletedFavs().filter(x=>x!==id));else setDeletedFavs(deletedFavs().filter(x=>x!==id))}catch{toast('Đã lưu cục bộ, sẽ đồng bộ khi online')}};
 let chapterPage=1,chapterPageSize=100,chapterTotal=0;
 async function loadChapterPage(page=1){
  const requestId=++chapterLoadId;
@@ -595,11 +596,12 @@ window.shareCurrent=async()=>{const u=location.href;if(navigator.share)try{await
  try{if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(u);toast('Đã sao chép liên kết');return}}catch{}
  window.prompt('Sao chép liên kết truyện:',u)};
 function renderHistory(){const h=hist();$('#historyList').innerHTML=h.length?h.map(x=>{const b=state.books.find(b=>b.id===x.bookId);return '<div class="histrow"><div><b>'+esc(b?.title||x.bookId)+'</b><div class="muted">'+T('chapterUnit')+' '+(Number(x.chapter)+1)+' · '+esc(x.title)+'</div></div><button class="btn" onclick="openBook(\''+esc(x.bookId)+'\').then(()=>readChapter('+x.chapter+'))">'+T('read')+'</button></div>'}).join(''):'<div class="empty">'+T('noHistory')+'</div>'}
-window.clearHistory=async()=>{setHist([]);renderHistory();if(state.token){try{await api('/history',{method:'DELETE'});toast('Đã xóa lịch sử')}catch{toast('Đã xóa trên máy; máy chủ sẽ thử lại khi online')}}else toast('Đã xóa lịch sử')};
+window.clearHistory=async()=>{setHist([]);setHistoryClearPending(true);renderHistory();if(state.token){try{await api('/history',{method:'DELETE'});setHistoryClearPending(false);toast('Đã xóa lịch sử')}catch{toast('Đã xóa trên máy; sẽ đồng bộ khi online')}}else toast('Đã xóa lịch sử')};
 function renderBookcase(){renderBookmarks();const a=favs();$('#favList').innerHTML=a.length?a.map(id=>{const b=state.books.find(x=>x.id===id);return b?'<div class="histrow"><div><b>'+esc(b.title)+'</b><div class="muted">'+esc(b.author)+'</div></div><button class="btn" onclick="openBook(\''+esc(id)+'\')">Mở</button></div>':''}).join(''):'<div class="empty">Tủ truyện đang trống.</div>';refreshOfflineUI()}
 async function syncProgress(){if(!state.token||!state.book)return;const p=progress();await api('/progress',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:state.book.id,chapterIndex:state.chapter,position:p[state.book.id]?.percent||0})})}
 async function pushLocalSync(){
  if(!state.token)return;
+ if(historyClearPending()){try{await api('/history',{method:'DELETE'});setHistoryClearPending(false)}catch{}}
  const p=progress(),f=favs(),b=bookmarks(),jobs=[],deletedF=deletedFavs(),deletedB=deletedBookmarks(),clearedF=[],clearedB=[];
  for(const [id,v] of Object.entries(p))jobs.push(api('/progress',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,chapterIndex:Number(v.chapter||0),position:Number(v.percent)||0})}).catch(()=>null));
  for(const id of f)jobs.push(api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active:true})}).catch(()=>null));
