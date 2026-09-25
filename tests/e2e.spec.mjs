@@ -224,25 +224,29 @@ test('real translation provider translates the exact text and returns real provi
   }
 });
 
-test('static reader uses MyMemory fallback when Google translation is unavailable', async ({ browser }) => {
+test('static reader uses Lingva translation when Google translation is unavailable', async ({ browser }) => {
   const context=await browser.newContext();
   await context.addInitScript(() => localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1'));
   const page=await context.newPage();
+  await page.route('https://lingva.ml/api/v1/**',async route=>{
+    const u=new URL(route.request().url()),parts=u.pathname.split('/');
+    const target=parts[4]||'en';
+    const body=target==='zh'?String.fromCharCode(0x90a3,0x662f,0x6587,0x672c,0x3002):'That is the text.';
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({translation:body})});
+  });
   await page.route('https://translate.googleapis.com/**',route=>route.abort());
-  await page.route('https://api.mymemory.translated.net/**',async route=>route.fulfill({
-    status:200,contentType:'application/json',
-    body:JSON.stringify({responseData:{translatedText:'That is the text.'}})
-  }));
   await page.goto('/');
   await page.locator('#grid .card').filter({hasText:'Mùa Sao Trên Đỉnh Núi'}).locator('.info').click();
   await page.locator('#chapters .chapter').first().click();
   await page.locator('#rtext').evaluate(el=>el.textContent='Đó là văn bản.');
   await page.selectOption('#langSelect','en');
   await expect(page.locator('#rtext')).toContainText('That is the text.');
+  await page.selectOption('#langSelect','zh');
+  await expect(page.locator('#rtext')).toContainText(String.fromCharCode(0x90a3,0x662f,0x6587,0x672c,0x3002));
   await context.close();
 });
 
-test('TTS falls back to remote audio when Chinese system voice is missing', async ({ browser }) => {
+test('TTS uses Lingva Chinese audio when system Chinese voice is missing', async ({ browser }) => {
   const context=await browser.newContext();
   await context.addInitScript(() => {
     localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1');
@@ -255,14 +259,15 @@ test('TTS falls back to remote audio when Chinese system voice is missing', asyn
     window.Audio=function(url){window.__audioUrl=url;const a=new RealAudio();a.play=()=>Promise.resolve();return a};
   });
   const page=await context.newPage();
+  await page.route('https://lingva.ml/api/v1/audio/**',async route=>route.fulfill({
+    status:200,contentType:'application/json',body:JSON.stringify({audio:[73,68,51,3,0,0,0,0]})
+  }));
   await page.goto('/');
   await page.locator('#grid .card').filter({hasText:'Mùa Sao Trên Đỉnh Núi'}).locator('.info').click();
   await page.locator('#chapters .chapter').first().click();
-
-  await expect(page.locator('#rtext')).not.toBeEmpty();
   await page.locator('#rtext').evaluate(el=>{el.textContent=String.fromCharCode(0x90a3,0x662f,0x6587,0x672c,0x3002)});
   await page.getByRole('button',{name:/🔊/}).click();
-  await expect.poll(()=>page.evaluate(()=>String(window.__audioUrl||''))).toContain('tl=zh-CN');
+  await expect.poll(()=>page.evaluate(()=>String(window.__audioUrl||''))).toContain('/audio/zh/');
   await context.close();
 });
 
