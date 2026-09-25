@@ -159,6 +159,7 @@ async function refreshRemoteSearch(page=1){
  try{
   const j=await api('/stories?'+params.toString());if(requestId!==librarySearchId)return;state.books=(j.items||[]).map(normalizeBook);state.libraryPage=Number(j.page||page);state.libraryTotal=Number(j.count||state.books.length);$('#apiStatus').textContent='● SQLite API · '+state.libraryTotal+' kết quả';renderFilterOptions();const c=$('#categoryFilter');if(c)c.value=cat;renderLibraryGridOnly();
  }catch{
+  if(requestId!==librarySearchId)return;
   state.remoteSearch=false;
   $('#apiStatus').textContent='● Dữ liệu tĩnh';
   renderFilterOptions();
@@ -171,8 +172,8 @@ function renderLibraryGridOnly(){
  if(state.remoteSearch&&state.libraryTotal>state.libraryPageSize){const pages=Math.ceil(state.libraryTotal/state.libraryPageSize);let h='<div class="row pagerrow"><button class="btn" '+(state.libraryPage<=1?'disabled':'')+' onclick="refreshRemoteSearch('+(state.libraryPage-1)+')">← Trước</button><span class="muted">Trang '+state.libraryPage+'/'+pages+'</span><button class="btn" '+(state.libraryPage>=pages?'disabled':'')+' onclick="refreshRemoteSearch('+(state.libraryPage+1)+')">Sau →</button></div>';$('#pager').innerHTML=h}else $('#pager').innerHTML='';
  renderHomeMode();updateStats()
 }
-window.renderLibrary=()=>{state.libraryPage=1;renderLibraryGridOnly();clearTimeout(searchTimer);if(!state.apiAvailable)return;state.remoteSearch=true;searchTimer=setTimeout(()=>refreshRemoteSearch(1),180)};
-window.setAdvancedFilter=()=>{state.libraryPage=1;renderLibraryGridOnly();if(!state.apiAvailable)return;state.remoteSearch=true;refreshRemoteSearch(1)};
+window.renderLibrary=()=>{state.libraryPage=1;librarySearchId++;renderLibraryGridOnly();clearTimeout(searchTimer);if(!state.apiAvailable)return;state.remoteSearch=true;const requestId=librarySearchId;searchTimer=setTimeout(()=>{if(requestId===librarySearchId)refreshRemoteSearch(1)},180)};
+window.setAdvancedFilter=()=>{state.libraryPage=1;librarySearchId++;renderLibraryGridOnly();if(!state.apiAvailable)return;state.remoteSearch=true;refreshRemoteSearch(1)};
 
 function renderHomeMode(){
  const c=$('#homeMode');if(!c)return;
@@ -220,6 +221,7 @@ async function loadChapterPage(page=1){
   state.book.chapterCount=Number(state.book.chapterCount||chapterTotal);
   renderChapters();
  }catch{
+  if(requestId!==chapterLoadId)return;
   state.apiAvailable=false;
   renderLocal();
  }
