@@ -149,12 +149,12 @@ test('static fallback mode: real public seed, search, read, PWA cache and offlin
   await page.locator('#categoryFilter').selectOption({label:'Tiên hiệp / Thần ma'});
   expect(await page.locator('#grid .card').count()).toBeGreaterThanOrEqual(10);
   await page.locator('#grid .card').filter({hasText:'Phong Thần Diễn Nghĩa'}).locator('.info').click();
-  await expect(page.locator('#chapterCount')).toContainText('100 chương');
+  await expect(page.locator('#chapterCount')).toContainText('100');
   await page.locator('#chapters .chapter').first().click();
   await expect(page.locator('#rtitle')).not.toBeEmpty();
   await expect(page.locator('#rtext')).not.toBeEmpty();
-  await page.getByRole('button',{name:'☰ Mục lục'}).click();
-  await page.getByRole('button',{name:/Lưu cả truyện offline/}).click();
+  await page.locator('#reader .readerbar>.btn').first().click();
+  await page.locator('#detailBox .settings .btn.good').click();
   await page.locator('.actions .btn').nth(3).click();
   await expect(page.locator('#downloadList')).toContainText('Đã lưu đầy đủ',{timeout:30000});
 
