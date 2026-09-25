@@ -181,7 +181,7 @@ test('all ten public stories: first chapter smoke', async ({ browser }) => {
     await page.locator('#chapters .chapter').first().click();
     await expect(page.locator('#reader')).toHaveClass(/show/,{message:query+' browserErrors='+JSON.stringify(browserErrors)+' url='+page.url()});
     await expect(page.locator('#rtext')).not.toBeEmpty();
-    await page.locator('#reader').getByRole('button',{name:'☰ Mục lục'}).click();
+    await page.locator('#reader .readerbar>.btn').first().click();
     await expect(page.locator('#detail')).toHaveClass(/show/);
     await page.locator('#detail .back').click();
     await expect(page.locator('#library')).toHaveClass(/show/);
