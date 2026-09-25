@@ -428,9 +428,9 @@ function playTTSAudio(text,lang,runId){
 }
 function startTTSCurrent(){
  const text=$('#rtext')?.innerText?.trim()||'';if(!text)return;
- const key=state.book.id+':'+state.chapter;
+ const key=state.book.id+':'+state.chapter,lang=ttsLanguage(),voice=preferredTTSVoice(lang),limit=voice?1500:220;
  ttsRunId++;
- ttsState={active:true,chunks:splitTTSText(text,220),pos:0,chapterKey:key,mode:''};
+ ttsState={active:true,chunks:splitTTSText(text,limit),pos:0,chapterKey:key,mode:voice?'speech':'audio'};
  $('#ttsLabel').textContent=T('stop');
  speakTTSChunk(ttsRunId);
 }
