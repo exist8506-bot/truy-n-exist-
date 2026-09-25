@@ -282,15 +282,21 @@ if((m=p.match(/^\/api\/v1\/admin\/stories\/([^/]+)\/renumber$/))&&req.method==='
  const rows=all('SELECT * FROM chapters WHERE story_id=? ORDER BY chapter_index',story.id);
  db.exec('BEGIN IMMEDIATE');
  try{
-   const t=now();
+   const t=now(),tmpBase=1000000;
    run('DELETE FROM chapter_translations WHERE story_id=?',story.id);
-   for(let i=0;i<rows.length;i++)run('UPDATE chapters SET chapter_index=?,id=?,updated_at=? WHERE story_id=? AND chapter_index=?',1000000+i,story.id+':tmp:'+i,t,story.id,rows[i].chapter_index);
    for(let i=0;i<rows.length;i++){
-     const oldIndex=Number(rows[i].chapter_index),nextIndex=start+i,tmpId=story.id+':tmp:'+i;
-     run('UPDATE chapters SET chapter_index=?,id=?,updated_at=? WHERE story_id=? AND id=?',nextIndex,story.id+':'+nextIndex,t,story.id,tmpId);
-     run('UPDATE bookmarks SET chapter_index=?,updated_at=? WHERE story_id=? AND chapter_index=?',nextIndex,t,story.id,oldIndex);
-     run('UPDATE reading_progress SET chapter_index=?,updated_at=? WHERE story_id=? AND chapter_index=?',nextIndex,t,story.id,oldIndex);
-     run('UPDATE reading_history SET chapter_index=?,updated_at=? WHERE story_id=? AND chapter_index=?',nextIndex,t,story.id,oldIndex);
+     const oldIndex=Number(rows[i].chapter_index),tmpIndex=tmpBase+i;
+     run('UPDATE chapters SET chapter_index=?,id=?,updated_at=? WHERE story_id=? AND chapter_index=?',tmpIndex,story.id+':tmp:'+i,t,story.id,oldIndex);
+     run('UPDATE bookmarks SET chapter_index=?,updated_at=? WHERE story_id=? AND chapter_index=?',tmpIndex,t,story.id,oldIndex);
+     run('UPDATE reading_progress SET chapter_index=?,updated_at=? WHERE story_id=? AND chapter_index=?',tmpIndex,t,story.id,oldIndex);
+     run('UPDATE reading_history SET chapter_index=?,updated_at=? WHERE story_id=? AND chapter_index=?',tmpIndex,t,story.id,oldIndex);
+   }
+   for(let i=0;i<rows.length;i++){
+     const nextIndex=start+i,tmpIndex=tmpBase+i;
+     run('UPDATE chapters SET chapter_index=?,id=?,updated_at=? WHERE story_id=? AND id=?',nextIndex,story.id+':'+nextIndex,t,story.id,story.id+':tmp:'+i);
+     run('UPDATE bookmarks SET chapter_index=?,updated_at=? WHERE story_id=? AND chapter_index=?',nextIndex,t,story.id,tmpIndex);
+     run('UPDATE reading_progress SET chapter_index=?,updated_at=? WHERE story_id=? AND chapter_index=?',nextIndex,t,story.id,tmpIndex);
+     run('UPDATE reading_history SET chapter_index=?,updated_at=? WHERE story_id=? AND chapter_index=?',nextIndex,t,story.id,tmpIndex);
    }
    run('UPDATE stories SET updated_at=? WHERE id=?',t,story.id);
    db.exec('COMMIT');cacheClear('/api/v1/stories');return reply(200,{ok:true,count:rows.length,start});
