@@ -246,6 +246,38 @@ test('TTS falls back to remote audio when Chinese system voice is missing', asyn
   await context.close();
 });
 
+test('chapter ordering and chapter search', async ({ browser }) => {
+  const context=await browser.newContext();
+  const page=await context.newPage();
+  await page.goto('/');
+  await page.locator('#grid .card').filter({hasText:'Mùa Sao Trên Đỉnh Núi'}).locator('.info').click();
+  await expect(page.locator('#chapters .chapter').first()).toContainText('Chương 1');
+  await page.locator('#chapterSearch').fill('Vệt sáng trong rừng');
+  await expect(page.locator('#chapters .chapter')).toHaveCount(1);
+  await expect(page.locator('#chapters .chapter').first()).toContainText('Vệt sáng trong rừng');
+  await page.locator('#chapterSearch').fill('');
+  await page.getByRole('button',{name:/Đảo thứ tự|Sắp xếp/}).click();
+  await expect(page.locator('#chapters .chapter').first()).toContainText('Chương 10');
+  await page.getByRole('button',{name:/Đảo thứ tự|Sắp xếp/}).click();
+  await expect(page.locator('#chapters .chapter').first()).toContainText('Chương 1');
+  await context.close();
+});
+
+test('offline download can cancel and resume', async ({ browser }) => {
+  const context=await browser.newContext();
+  const page=await context.newPage();
+  await page.goto('/');
+  await page.locator('#grid .card').filter({hasText:'Phong Thần Diễn Nghĩa'}).locator('.info').click();
+  const bookId=await page.evaluate(()=>window.state?.book?.id||'phong-than-dien-nghia');
+  await page.evaluate(id=>window.downloadBook(id),bookId);
+  await page.waitForTimeout(50);
+  await page.evaluate(id=>window.cancelOffline(id),bookId);
+  await expect.poll(async()=>await page.evaluate(id=>window.offlineGetDownload?.(id).then(x=>x?.status||''),bookId).catch(()=>''),{timeout:10000}).toBe('cancelled');
+  await page.evaluate(id=>window.downloadBook(id),bookId);
+  await expect.poll(async()=>await page.evaluate(id=>window.offlineGetDownload?.(id).then(x=>x?.status||''),bookId).catch(()=>''),{timeout:30000}).toBe('complete');
+  await context.close();
+});
+
 test('mobile responsive: bottom navigation, reader, bookmark and persistence', async ({ browser }) => {
   const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true});
   await context.addInitScript(() => localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1'));
