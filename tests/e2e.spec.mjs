@@ -262,7 +262,7 @@ test('TTS uses Lingva Chinese audio when system Chinese voice is missing', async
   const page=await context.newPage();
   let audioRequests=0;await page.route('https://lingva.ml/api/v1/audio/**',async route=>{audioRequests++;return route.fulfill({
     status:200,contentType:'application/json',body:JSON.stringify({audio:[73,68,51,3,0,0,0,0]})
-  }));
+  });});
   await page.goto('/');
   await page.locator('#grid .card').filter({hasText:'Mùa Sao Trên Đỉnh Núi'}).locator('.info').click();
   await page.locator('#chapters .chapter').first().click();
