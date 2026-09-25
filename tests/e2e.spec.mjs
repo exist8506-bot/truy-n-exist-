@@ -224,6 +224,41 @@ test('real translation provider translates the exact text and returns real provi
     await fetch('http://127.0.0.1:8787/api/v1/admin/stories/'+encodeURIComponent(story.id),{method:'DELETE',headers:auth}).catch(()=>{});
   }
 });
+test('live browser translation provider is reachable without mocks', async ({ browser }) => {
+  const context=await browser.newContext();
+  const page=await context.newPage();
+  await page.goto('/');
+  const result=await page.evaluate(async()=>{
+    const q=encodeURIComponent('Đó là văn bản.');
+    const u='https://api.mymemory.translated.net/get?q='+q+'&langpair=vi%7Cen';
+    const r=await fetch(u,{headers:{Accept:'application/json'}});
+    const j=await r.json();
+    return {ok:r.ok,status:r.status,text:String(j?.responseData?.translatedText||'')};
+  });
+  expect(result.ok).toBeTruthy();
+  expect(result.status).toBe(200);
+  expect(result.text).not.toBe('Đó là văn bản.');
+  expect(result.text).toMatch(/[A-Za-z]/);
+  await context.close();
+});
+
+test('live Chinese audio provider returns audio bytes without mocks', async ({ browser }) => {
+  const context=await browser.newContext();
+  const page=await context.newPage();
+  await page.goto('/');
+  const result=await page.evaluate(async()=>{
+    const q=encodeURIComponent(String.fromCharCode(0x90a3,0x662f,0x6587,0x672c,0x3002));
+    try{
+      const r=await fetch('https://lingva.ml/api/v1/audio/zh/'+q,{headers:{Accept:'application/json'}});
+      const j=await r.json();
+      return {ok:r.ok,status:r.status,size:Array.isArray(j?.audio)?j.audio.length:0};
+    }catch(e){return {ok:false,status:0,size:0,error:String(e.message||e)}}
+  });
+  expect(result.ok).toBeTruthy();
+  expect(result.size).toBeGreaterThan(100);
+  await context.close();
+});
+
 
 test('static reader uses Lingva translation when Google translation is unavailable', async ({ browser }) => {
   const context=await browser.newContext();
