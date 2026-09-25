@@ -288,6 +288,9 @@ async function translateChapterFallback(chapter,lang){
  if(lang==='en'&&/^[\x00-\x7F\s\p{P}\p{N}]+$/u.test(String(chapter.content||''))){
   return {...chapter,language:'en',translated:false};
  }
+ if(lang==='zh-CN'&&/[\u3400-\u9fff]/.test(String(chapter.content||''))){
+  return {...chapter,language:'zh-CN',translated:false};
+ }
  const key=translationCacheKey(state.book.id,chapter.index??state.chapter,lang);
  if(translatedChapterCache.has(key))return translatedChapterCache.get(key);
  const [content,title]=await Promise.all([
