@@ -270,7 +270,8 @@ async function translateClientText(text,target){
  const out=[];
  for(const chunk of chunks){
   const u='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+encodeURIComponent(target)+'&dt=t&q='+encodeURIComponent(chunk);
-  const r=await fetch(u,{headers:{Accept:'application/json'}});
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),9000);
+  let r;try{r=await fetch(u,{headers:{Accept:'application/json'},signal:controller.signal})}catch(e){clearTimeout(timer);if(e?.name==='AbortError')throw Error('TRANSLATION_TIMEOUT');throw e}finally{clearTimeout(timer)}
   if(!r.ok)throw Error('TRANSLATION_HTTP_'+r.status);
   const j=await r.json();
   const translated=Array.isArray(j?.[0])?j[0].map(x=>x?.[0]||'').join(''):'';
