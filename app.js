@@ -591,19 +591,21 @@ window.shareCurrent=async()=>{const u=location.href;if(navigator.share)try{await
  try{if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(u);toast('Đã sao chép liên kết');return}}catch{}
  window.prompt('Sao chép liên kết truyện:',u)};
 function renderHistory(){const h=hist();$('#historyList').innerHTML=h.length?h.map(x=>{const b=state.books.find(b=>b.id===x.bookId);return '<div class="histrow"><div><b>'+esc(b?.title||x.bookId)+'</b><div class="muted">'+T('chapterUnit')+' '+(Number(x.chapter)+1)+' · '+esc(x.title)+'</div></div><button class="btn" onclick="openBook(\''+esc(x.bookId)+'\').then(()=>readChapter('+x.chapter+'))">'+T('read')+'</button></div>'}).join(''):'<div class="empty">'+T('noHistory')+'</div>'}
-window.clearHistory=()=>{setHist([]);renderHistory();toast('Đã xóa lịch sử')};
+window.clearHistory=async()=>{setHist([]);renderHistory();if(state.token){try{await api('/history',{method:'DELETE'});toast('Đã xóa lịch sử')}catch{toast('Đã xóa trên máy; máy chủ sẽ thử lại khi online')}}else toast('Đã xóa lịch sử')};
 function renderBookcase(){renderBookmarks();const a=favs();$('#favList').innerHTML=a.length?a.map(id=>{const b=state.books.find(x=>x.id===id);return b?'<div class="histrow"><div><b>'+esc(b.title)+'</b><div class="muted">'+esc(b.author)+'</div></div><button class="btn" onclick="openBook(\''+esc(id)+'\')">Mở</button></div>':''}).join(''):'<div class="empty">Tủ truyện đang trống.</div>';refreshOfflineUI()}
 async function syncProgress(){if(!state.token||!state.book)return;const p=progress();await api('/progress',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:state.book.id,chapterIndex:state.chapter,position:p[state.book.id]?.percent||0})})}
 async function pushLocalSync(){
  if(!state.token)return;
- const p=progress(), f=favs(), h=hist(), b=bookmarks();
- const jobs=[];
+ const p=progress(),f=favs(),b=bookmarks(),jobs=[],deletedF=deletedFavs(),deletedB=deletedBookmarks(),clearedF=[],clearedB=[];
  for(const [id,v] of Object.entries(p))jobs.push(api('/progress',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,chapterIndex:Number(v.chapter||0),position:Number(v.percent)||0})}).catch(()=>null));
  for(const id of f)jobs.push(api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active:true})}).catch(()=>null));
- for(const id of deletedFavs())jobs.push(api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active:false})}).catch(()=>null));
+ for(const id of deletedF)jobs.push(api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active:false})}).then(()=>clearedF.push(id)).catch(()=>null));
  for(const [storyId,chs] of Object.entries(b))for(const [idx,v] of Object.entries(chs||{}))jobs.push(api('/bookmarks',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId,chapterIndex:Number(idx),title:v?.title||'',active:true})}).catch(()=>null));
- const db=deletedBookmarks();for(const [storyId,chs] of Object.entries(db))for(const idx of Object.keys(chs||{}))jobs.push(api('/bookmarks',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId,chapterIndex:Number(idx),active:false})}).catch(()=>null));
- return Promise.all(jobs);
+ for(const [storyId,chs] of Object.entries(deletedB))for(const idx of Object.keys(chs||{}))jobs.push(api('/bookmarks',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId,chapterIndex:Number(idx),active:false})}).then(()=>{clearedB.push([storyId,idx])}).catch(()=>null));
+ const result=await Promise.all(jobs);
+ if(clearedF.length){const remain=deletedFavs().filter(id=>!clearedF.includes(id));setDeletedFavs(remain)}
+ if(clearedB.length){const cur=deletedBookmarks();for(const [storyId,idx] of clearedB)if(cur[storyId]){delete cur[storyId][idx];if(!Object.keys(cur[storyId]).length)delete cur[storyId]}setDeletedBookmarks(cur)}
+ return result;
 }
 async function restoreAccount(){
  if(!state.token)return;
