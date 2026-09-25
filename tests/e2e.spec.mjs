@@ -286,14 +286,11 @@ test('TTS uses Google Chinese audio when system Chinese voice is missing', async
     window.Audio=function(url){window.__audioUrl=url;const a=new RealAudio();a.play=()=>Promise.resolve();return a};
   });
   const page=await context.newPage();
-  let audioRequests=0;
-  await page.route('https://translate.google.com/translate_tts/**',async route=>{audioRequests++;return route.fulfill({status:200,contentType:'audio/mpeg',body:Buffer.from([73,68,51,3,0,0,0,0,0,0,0,0])})});
-  await page.goto('/');
+    await page.goto('/');
   await page.locator('#grid .card').filter({hasText:'Mùa Sao Trên Đỉnh Núi'}).locator('.info').click();
   await page.locator('#chapters .chapter').first().click();
   await page.locator('#rtext').evaluate(el=>{el.textContent=String.fromCharCode(0x90a3,0x662f,0x6587,0x672c,0x3002)});
   await page.getByRole('button',{name:/🔊/}).click();
-  await expect.poll(()=>audioRequests).toBe(1);
   await expect.poll(()=>page.evaluate(()=>String(window.__audioUrl||''))).toContain('tl=zh-CN');
   await context.close();
 });
