@@ -48,7 +48,7 @@ window.setLanguage=async lang=>{
  }
 };
 const apiBase=()=>window.KhoAPI?.base?.()||'/api/v1';
-const api=async(path,opt={})=>{const h={'Accept':'application/json',...(opt.headers||{})};if(state.token)h.Authorization='Bearer '+state.token;const r=await fetch(apiBase()+path,{...opt,headers:h});if(!r.ok){let m='HTTP_'+r.status;try{const j=await r.json();m=j.error||j.message||m}catch{}throw Error(m)}return r.status===204?null:r.json()};
+const api=async(path,opt={})=>{const base=apiBase();const h={'Accept':'application/json',...(opt.headers||{})};if(state.token)h.Authorization='Bearer '+state.token;let r;try{r=await fetch(base+path,{...opt,headers:h})}catch(e){const err=new Error('API_UNREACHABLE');err.cause=e;throw err}if(!r.ok){let m='HTTP_'+r.status;try{const j=await r.json();m=j.error||j.message||m}catch{}const err=new Error(m);err.status=r.status;err.apiBase=base;throw err}return r.status===204?null:r.json()};
 window.configureApi=()=>{const current=window.KhoAPI?.base?.()||'';const value=prompt('URL API backend (ví dụ: https://api.example.com/api/v1)\\nĐể trống để dùng mặc định của trang.',current);if(value===null)return;const v=value.trim().replace(/\/$/,'');if(v)localStorage.setItem('ktf_api_base',v);else localStorage.removeItem('ktf_api_base');toast(v?'Đã lưu địa chỉ API. Đang tải lại…':'Đã khôi phục API mặc định. Đang tải lại…');setTimeout(()=>location.reload(),350)};
 function toast(x){const t=$('#toast');if(!t)return;t.textContent=x;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2200)}
 function save(k,v){localStorage.setItem(k,typeof v==='string'?v:JSON.stringify(v))}
@@ -692,7 +692,7 @@ async function restoreAccount(){
 window.syncNow=async()=>{if(!state.token)return toast('Hãy đăng nhập trước');try{await pushLocalSync();await restoreAccount();toast('Đã đồng bộ tủ truyện và tiến độ')}catch{toast('Đồng bộ chưa hoàn tất')}}
 window.addEventListener('online',()=>{if(state.token)window.syncNow?.()});
 function accountError(e){
- const map={INVALID_ACCOUNT:'Tên đăng nhập 3–32 ký tự, chỉ dùng a-z, 0-9, dấu chấm, gạch dưới hoặc gạch ngang; mật khẩu tối thiểu 6 ký tự.',USERNAME_EXISTS:'Tên đăng nhập đã tồn tại.',INVALID_CREDENTIALS:'Tên đăng nhập hoặc mật khẩu không đúng.',UNAUTHORIZED:'Phiên đăng nhập đã hết hạn.'};
+ const map={API_UNREACHABLE:'Chưa kết nối được máy chủ đăng nhập. Trang GitHub Pages đang thiếu backend API; hãy cấu hình URL API bằng nút 🌐 một lần.',HTTP_404:'Không tìm thấy máy chủ API đăng nhập. Kiểm tra URL API.',INVALID_ACCOUNT:'Tên đăng nhập 3–32 ký tự, chỉ dùng a-z, 0-9, dấu chấm, gạch dưới hoặc gạch ngang; mật khẩu tối thiểu 6 ký tự.',USERNAME_EXISTS:'Tên đăng nhập đã tồn tại.',INVALID_CREDENTIALS:'Tên đăng nhập hoặc mật khẩu không đúng.',UNAUTHORIZED:'Phiên đăng nhập đã hết hạn.'};
  return map[e.message]||('Có lỗi: '+e.message);
 }
 function closeAccount(){document.querySelector('#accountModal')?.remove()}
