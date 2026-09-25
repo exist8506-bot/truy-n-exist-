@@ -5,9 +5,9 @@ const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"]/g,c=>
 const localBooks=()=>Array.isArray(window.books)?window.books:[];
 const state={books:[],book:null,chapter:0,chapters:[],remoteSearch:false,apiAvailable:false,order:'asc',filter:'all',sort:'title',mode:'all',libraryPage:1,libraryPageSize:100,libraryTotal:0,fontSize:+localStorage.getItem('ktf_fs')||19,font:localStorage.getItem('ktf_font')||'Georgia',theme:localStorage.getItem('ktf_theme')||'dark',rate:+localStorage.getItem('ktf_rate')||1,continuous:false,lang:localStorage.getItem('ktf_lang')||'vi',user:null,token:localStorage.getItem('ktf_token')||'',offline:new Set()};
 const I18N={
- vi:{title:'Kho Truyện Full',story:'Truyện',chapterUnit:'chương',page:'trang',open:'Mở',noHistory:'Chưa có lịch sử.',noBookmarks:'Chưa đánh dấu chương nào.',noReading:'Chưa có truyện đang đọc.',searchBooks:'Tìm truyện, tác giả, thể loại…',tagline:'Demo offline • đọc liền mạch',status:'Đọc liền mạch từ chương đầu đến chương cuối. Dữ liệu được tách khỏi giao diện để dễ mở rộng kho truyện về sau.',books:'Bộ truyện FULL',chapters:'Tổng chương',shelf:'Trong tủ',offline:'Đã lưu offline',explore:'Khám phá',reading:'Đang đọc',history:'Lịch sử',search:'Tìm kiếm',rank:'Xếp hạng',new:'Mới cập nhật',all:'Tất cả',full:'FULL',anyStatus:'Mọi trạng thái',byTitle:'Tên A–Z',byChapters:'Nhiều chương',byAuthor:'Tác giả',updated:'Mới cập nhật',chapterList:'Danh sách chương',searchChapter:'Tìm chương…',contents:'☰ Mục lục',read:'Đọc',stop:'Dừng',mark:'🔖 Đánh dấu',marked:'🔖 Đã đánh dấu',top:'↑',bottom:'↓',fullscreen:'⛶',settings:'⚙',prev:'← Chương trước',next:'Chương sau →',downloadChapter:'⬇ Tải chương',back:'← Thư viện',offlineAll:'⬇ Lưu cả truyện offline',readFromStart:'▶ Đọc từ đầu',continue:'↪ Đọc tiếp',addShelf:'♡ Thêm tủ',removeShelf:'♥ Bỏ tủ',share:'↗ Chia sẻ',autoNear:'Đã gần cuối chương',autoNext:'Chương sau →',lang:'Ngôn ngữ',ttsError:'Âm thanh gặp lỗi, đã dừng.'},
- en:{title:'Full Story Library',story:'Story',chapterUnit:'chapters',page:'page',open:'Open',noHistory:'No reading history.',noBookmarks:'No bookmarked chapters.',noReading:'Nothing is being read.',searchBooks:'Search stories, authors, categories…',tagline:'Offline demo • continuous reading',status:'Read continuously from the first chapter to the last. Data is separated from the UI for easy expansion.',books:'FULL books',chapters:'Total chapters',shelf:'In shelf',offline:'Saved offline',explore:'Explore',reading:'Reading',history:'History',search:'Search',rank:'Ranking',new:'Recently updated',all:'All',full:'FULL',anyStatus:'Any status',byTitle:'Title A–Z',byChapters:'Most chapters',byAuthor:'Author',updated:'Recently updated',chapterList:'Chapter list',searchChapter:'Search chapters…',contents:'☰ Contents',read:'Read',stop:'Stop',mark:'🔖 Bookmark',marked:'🔖 Bookmarked',top:'↑',bottom:'↓',fullscreen:'⛶',settings:'⚙',prev:'← Previous chapter',next:'Next chapter →',downloadChapter:'⬇ Download chapter',back:'← Library',offlineAll:'⬇ Save whole book offline',readFromStart:'▶ Start reading',continue:'↪ Continue',addShelf:'♡ Add to shelf',removeShelf:'♥ Remove from shelf',share:'↗ Share',autoNear:'Near the end of this chapter',autoNext:'Next chapter →',lang:'Language',ttsError:'Audio error, reading stopped.'},
- zh:{title:'完本书库',story:'小说',chapterUnit:'章',page:'页',open:'打开',noHistory:'暂无阅读历史。',noBookmarks:'暂无收藏章节。',noReading:'暂无正在阅读的小说。',searchBooks:'搜索小说、作者、分类…',tagline:'离线演示 • 连续阅读',status:'从第一章连续阅读到最后一章。数据与界面分离，方便继续扩充书库。',books:'完本小说',chapters:'总章节',shelf:'书架',offline:'已离线保存',explore:'发现',reading:'正在阅读',history:'阅读历史',search:'搜索',rank:'排行',new:'最近更新',all:'全部',full:'完本',anyStatus:'全部状态',byTitle:'书名 A–Z',byChapters:'章节最多',byAuthor:'作者',updated:'最近更新',chapterList:'章节目录',searchChapter:'搜索章节…',contents:'☰ 目录',read:'朗读',stop:'停止',mark:'🔖 收藏章节',marked:'🔖 已收藏',top:'↑',bottom:'↓',fullscreen:'⛶',settings:'⚙',prev:'← 上一章',next:'下一章 →',downloadChapter:'⬇ 下载本章',back:'← 书库',offlineAll:'⬇ 整本离线保存',readFromStart:'▶ 从头阅读',continue:'↪ 继续阅读',addShelf:'♡ 加入书架',removeShelf:'♥ 移出书架',share:'↗ 分享',autoNear:'本章即将结束',autoNext:'下一章 →',lang:'语言',ttsError:'朗读出错，已停止。'}
+ vi:{title:'Kho Truyện Full',story:'Truyện',chapterUnit:'chương',page:'trang',open:'Mở',noHistory:'Chưa có lịch sử.',noBookmarks:'Chưa đánh dấu chương nào.',noReading:'Chưa có truyện đang đọc.',searchBooks:'Tìm truyện, tác giả, thể loại…',tagline:'Demo offline • đọc liền mạch',status:'Đọc liền mạch từ chương đầu đến chương cuối. Dữ liệu được tách khỏi giao diện để dễ mở rộng kho truyện về sau.',books:'Bộ truyện FULL',chapters:'Tổng chương',shelf:'Trong tủ',offline:'Đã lưu offline',explore:'Khám phá',reading:'Đang đọc',history:'Lịch sử',search:'Tìm kiếm',rank:'Xếp hạng',new:'Mới cập nhật',all:'Tất cả',full:'FULL',anyStatus:'Mọi trạng thái',byTitle:'Tên A–Z',byChapters:'Nhiều chương',byAuthor:'Tác giả',updated:'Mới cập nhật',chapterList:'Danh sách chương',searchChapter:'Tìm chương…',contents:'☰ Mục lục',read:'Đọc',stop:'Dừng',mark:'🔖 Đánh dấu',marked:'🔖 Đã đánh dấu',top:'↑',bottom:'↓',fullscreen:'⛶',settings:'⚙',prev:'← Chương trước',next:'Chương sau →',downloadChapter:'⬇ Tải chương',back:'← Thư viện',offlineAll:'⬇ Lưu cả truyện offline',readFromStart:'▶ Đọc từ đầu',continue:'↪ Đọc tiếp',addShelf:'♡ Thêm tủ',removeShelf:'♥ Bỏ tủ',share:'↗ Chia sẻ',autoNear:'Đã gần cuối chương',autoNext:'Chương sau →',lang:'Ngôn ngữ',ttsError:'Âm thanh gặp lỗi, đã dừng.',translationError:'Không dịch được chương; đang hiển thị bản gốc.'},
+ en:{title:'Full Story Library',story:'Story',chapterUnit:'chapters',page:'page',open:'Open',noHistory:'No reading history.',noBookmarks:'No bookmarked chapters.',noReading:'Nothing is being read.',searchBooks:'Search stories, authors, categories…',tagline:'Offline demo • continuous reading',status:'Read continuously from the first chapter to the last. Data is separated from the UI for easy expansion.',books:'FULL books',chapters:'Total chapters',shelf:'In shelf',offline:'Saved offline',explore:'Explore',reading:'Reading',history:'History',search:'Search',rank:'Ranking',new:'Recently updated',all:'All',full:'FULL',anyStatus:'Any status',byTitle:'Title A–Z',byChapters:'Most chapters',byAuthor:'Author',updated:'Recently updated',chapterList:'Chapter list',searchChapter:'Search chapters…',contents:'☰ Contents',read:'Read',stop:'Stop',mark:'🔖 Bookmark',marked:'🔖 Bookmarked',top:'↑',bottom:'↓',fullscreen:'⛶',settings:'⚙',prev:'← Previous chapter',next:'Next chapter →',downloadChapter:'⬇ Download chapter',back:'← Library',offlineAll:'⬇ Save whole book offline',readFromStart:'▶ Start reading',continue:'↪ Continue',addShelf:'♡ Add to shelf',removeShelf:'♥ Remove from shelf',share:'↗ Share',autoNear:'Near the end of this chapter',autoNext:'Next chapter →',lang:'Language',ttsError:'Audio error, reading stopped.',translationError:'Chapter translation failed; showing original text.'},
+ zh:{title:'完本书库',story:'小说',chapterUnit:'章',page:'页',open:'打开',noHistory:'暂无阅读历史。',noBookmarks:'暂无收藏章节。',noReading:'暂无正在阅读的小说。',searchBooks:'搜索小说、作者、分类…',tagline:'离线演示 • 连续阅读',status:'从第一章连续阅读到最后一章。数据与界面分离，方便继续扩充书库。',books:'完本小说',chapters:'总章节',shelf:'书架',offline:'已离线保存',explore:'发现',reading:'正在阅读',history:'阅读历史',search:'搜索',rank:'排行',new:'最近更新',all:'全部',full:'完本',anyStatus:'全部状态',byTitle:'书名 A–Z',byChapters:'章节最多',byAuthor:'作者',updated:'最近更新',chapterList:'章节目录',searchChapter:'搜索章节…',contents:'☰ 目录',read:'朗读',stop:'停止',mark:'🔖 收藏章节',marked:'🔖 已收藏',top:'↑',bottom:'↓',fullscreen:'⛶',settings:'⚙',prev:'← 上一章',next:'下一章 →',downloadChapter:'⬇ 下载本章',back:'← 书库',offlineAll:'⬇ 整本离线保存',readFromStart:'▶ 从头阅读',continue:'↪ 继续阅读',addShelf:'♡ 加入书架',removeShelf:'♥ 移出书架',share:'↗ 分享',autoNear:'本章即将结束',autoNext:'下一章 →',lang:'语言',ttsError:'朗读出错，已停止。',translationError:'章节翻译失败，正在显示原文。'}
 };
 const T=k=>I18N[state.lang]?.[k]??I18N.vi[k]??k;
 function applyLanguage(){
@@ -257,9 +257,24 @@ function storyTargetLanguage(){
 function translationCacheKey(bookId,index,lang){return bookId+':'+index+':'+lang}
 function detectSourceLanguage(text){
  const s=String(text||'');
- if(/[\u3400-\u9fff]/.test(s))return 'zh-CN';
+ if(/[\u3400-\u9fff]/.test(s))return 'zh';
  if(/[ăâđêôơưĂÂĐÊÔƠƯÀ-ỹ]/.test(s))return 'vi';
  return 'en';
+}
+function targetTranslationCode(target){return target==='zh-CN'?'zh':target==='en'?'en':'vi'}
+async function clientProviderLingva(text,target){
+ const source=detectSourceLanguage(text),dst=targetTranslationCode(target);
+ if(source===dst)return String(text||'');
+ const url='https://lingva.ml/api/v1/'+encodeURIComponent(source)+'/'+encodeURIComponent(dst)+'/'+encodeURIComponent(String(text||''));
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
+ let r;
+ try{r=await fetch(url,{headers:{Accept:'application/json'},signal:controller.signal})}
+ catch(e){if(e?.name==='AbortError')throw Error('TRANSLATION_TIMEOUT');throw e}
+ finally{clearTimeout(timer)}
+ if(!r.ok)throw Error('LINGVA_HTTP_'+r.status);
+ const j=await r.json(),v=String(j?.translation||'').trim();
+ if(!v||v===String(text||'').trim())throw Error('TRANSLATION_EMPTY');
+ return v;
 }
 async function clientProviderGoogle(text,target){
  const u='https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+encodeURIComponent(target)+'&dt=t&q='+encodeURIComponent(text);
@@ -273,9 +288,19 @@ async function clientProviderGoogle(text,target){
  if(!translated)throw Error('TRANSLATION_EMPTY');
  return translated;
 }
+function utf8Chunks(text,maxBytes=500){
+ const out=[],chars=[...String(text||'')];let cur='',bytes=0;
+ for(const ch of chars){
+  const n=new TextEncoder().encode(ch).length;
+  if(cur&&bytes+n>maxBytes){out.push(cur);cur='';bytes=0}
+  cur+=ch;bytes+=n;
+ }
+ if(cur)out.push(cur);return out;
+}
 async function clientProviderMyMemory(text,target){
- const sourceLang=detectSourceLanguage(text);
- const url='https://api.mymemory.translated.net/get?q='+encodeURIComponent(String(text||''))+'&langpair='+encodeURIComponent(sourceLang+'|'+target);
+ const sourceLang=detectSourceLanguage(text),dst=targetTranslationCode(target);
+ if(sourceLang===dst)return String(text||'');
+ const url='https://api.mymemory.translated.net/get?q='+encodeURIComponent(String(text||''))+'&langpair='+encodeURIComponent(sourceLang+'|'+dst);
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),9000);
  let r;
  try{r=await fetch(url,{headers:{Accept:'application/json'},signal:controller.signal})}
@@ -289,20 +314,17 @@ async function clientProviderMyMemory(text,target){
 async function translateClientText(text,target){
  const source=String(text||'').trim();
  if(!source)return '';
- const chunks=[];
- let rest=source;
- const limit=1600;
- while(rest.length>limit){
-  let cut=Math.max(rest.lastIndexOf('\n',limit),rest.lastIndexOf('。',limit),rest.lastIndexOf('！',limit),rest.lastIndexOf('？',limit),rest.lastIndexOf('.',limit),rest.lastIndexOf('!',limit),rest.lastIndexOf('?',limit));
-  if(cut<Math.floor(limit*.55))cut=limit;
-  chunks.push(rest.slice(0,cut+1).trim());rest=rest.slice(cut+1).trim();
- }
- if(rest)chunks.push(rest);
- const out=[];
+ if(detectSourceLanguage(source)===targetTranslationCode(target))return source;
+ const chunks=splitTTSText(source,1600),out=[];
  for(const chunk of chunks){
   let translated;
-  try{translated=await clientProviderGoogle(chunk,target)}
-  catch{translated=await clientProviderMyMemory(chunk.slice(0,500),target)}
+  try{translated=await clientProviderLingva(chunk,target)}
+  catch{try{translated=await clientProviderGoogle(chunk,target)}catch{
+    const pieces=utf8Chunks(chunk,500),translatedPieces=[];
+    for(const piece of pieces)translatedPieces.push(await clientProviderMyMemory(piece,target));
+    translated=translatedPieces.join('');
+  }}
+  if(!translated)throw Error('TRANSLATION_EMPTY');
   out.push(translated);
  }
  return out.join('\n');
@@ -389,7 +411,7 @@ async function readChapter(i,options={}){
  const lang=state.lang;
  const j=await fetchChapterData(i);
  if(loadId!==readerLoadId||bookId!==state.book?.id||lang!==state.lang)return;
- state.chapter=i;state.current=j;if(j?.translationError&&state.lang!=='vi')toast('Dịch chương này không thành công, đang hiển thị bản gốc');show('reader');$('#rbook').textContent=state.book.title;$('#rtitle').textContent=j.title||((T('chapterUnit'))+' '+(i+1));$('#rmeta').textContent=T('chapterUnit')+' '+(i+1)+' · '+(state.book.author||'');const bookmarkBtn=$('#bookmarkBtn');if(bookmarkBtn)bookmarkBtn.textContent=isBookmarked()?T('marked'):T('mark');$('#rtext').innerHTML=String(j.content||'').split(/\n+/).filter(Boolean).map(x=>'<p>'+esc(x)+'</p>').join('');
+ state.chapter=i;state.current=j;if(j?.translationError&&state.lang!=='vi')toast(T('translationError'));show('reader');$('#rbook').textContent=state.book.title;$('#rtitle').textContent=j.title||((T('chapterUnit'))+' '+(i+1));$('#rmeta').textContent=T('chapterUnit')+' '+(i+1)+' · '+(state.book.author||'');const bookmarkBtn=$('#bookmarkBtn');if(bookmarkBtn)bookmarkBtn.textContent=isBookmarked()?T('marked'):T('mark');$('#rtext').innerHTML=String(j.content||'').split(/\n+/).filter(Boolean).map(x=>'<p>'+esc(x)+'</p>').join('');
  applyReader();recordRead();updateReaderProgress();restoreScroll();if(!options.skipHistory)history.pushState({},'',location.pathname+'#'+encodeURIComponent(state.book.id)+'/chapter/'+i);
  requestAnimationFrame(()=>prefetchChapter(i+1));
 }
@@ -453,15 +475,26 @@ function remoteTTSUrl(text,lang){
  const q=encodeURIComponent(String(text||'').slice(0,220));
  return 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl='+encodeURIComponent(lang)+'&q='+q;
 }
-function playTTSAudio(text,lang,runId){
- toast('Thiết bị chưa có giọng '+lang+', đang dùng âm thanh trực tuyến');
- const audio=new Audio(remoteTTSUrl(text,lang));
- audio.preload='auto';
- ttsAudio=audio;ttsState.mode='audio';
+function lingvaAudioLang(lang){return String(lang||'').toLowerCase().startsWith('zh')?'zh':String(lang||'').toLowerCase().startsWith('vi')?'vi':'en'}
+async function playLingvaAudio(text,lang,runId){
+ const code=lingvaAudioLang(lang),url='https://lingva.ml/api/v1/audio/'+code+'/'+encodeURIComponent(String(text||''));
+ const r=await fetch(url,{headers:{Accept:'application/json'}});if(!r.ok)throw Error('LINGVA_AUDIO_HTTP_'+r.status);
+ const j=await r.json(),bytes=Array.isArray(j?.audio)?new Uint8Array(j.audio):null;if(!bytes?.length)throw Error('LINGVA_AUDIO_EMPTY');
+ const blobUrl=URL.createObjectURL(new Blob([bytes],{type:'audio/mpeg'})),audio=new Audio(blobUrl);audio.preload='auto';ttsAudio=audio;ttsState.mode='audio';
+ const cleanup=()=>{try{URL.revokeObjectURL(blobUrl)}catch{}};
+ audio.onended=()=>{cleanup();if(ttsState.active&&runId===ttsRunId){ttsAudio=null;setTimeout(()=>speakTTSChunk(runId),25)}};
+ audio.onerror=()=>{cleanup();ttsAudio=null;playGoogleAudio(text,lang,runId)};
+ try{await audio.play()}catch{cleanup();ttsAudio=null;playGoogleAudio(text,lang,runId)}
+}
+function playGoogleAudio(text,lang,runId){
+ toast('Đang dùng âm thanh dự phòng '+lang);
+ const audio=new Audio(remoteTTSUrl(text,lang));audio.preload='auto';ttsAudio=audio;ttsState.mode='audio';
  audio.onended=()=>{if(ttsState.active&&runId===ttsRunId){ttsAudio=null;setTimeout(()=>speakTTSChunk(runId),25)}};
  audio.onerror=()=>{ttsAudio=null;stopTTS(true);toast(T('ttsError'))};
  audio.play().catch(()=>{ttsAudio=null;stopTTS(true);toast(T('ttsError'))});
 }
+function playTTSAudio(text,lang,runId){playLingvaAudio(text,lang,runId).catch(()=>playGoogleAudio(text,lang,runId))}
+
 function startTTSCurrent(){
  const text=$('#rtext')?.innerText?.trim()||'';if(!text)return;
  const key=state.book.id+':'+state.chapter,lang=ttsLanguage(),voice=preferredTTSVoice(lang),voiceState=getTTSVoiceState(),nativeUnknown=!voiceState.known,limit=(voice||nativeUnknown)?1500:220;
