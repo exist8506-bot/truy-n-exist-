@@ -199,7 +199,8 @@ async function loadChapterPage(page=1){
     return title.includes(nq)||content.includes(nq);
   }):normalized;
   const startIndex=(Math.max(1,page)-1)*chapterPageSize;
-  state.chapters=filteredLocal.slice(startIndex,startIndex+chapterPageSize);
+  const orderedLocal=state.order==='desc'?filteredLocal.slice().reverse():filteredLocal;
+  state.chapters=orderedLocal.slice(startIndex,startIndex+chapterPageSize);
   chapterPage=Math.max(1,page);
   chapterTotal=filteredLocal.length;
   state.book.chapterCount=normalized.length;
@@ -231,7 +232,7 @@ async function openBook(id){
 }
 window.openBook=openBook;window.openDetail=()=>state.book&&openBook(state.book.id);
 window.renderChapters=()=>{
- const a=state.chapters.slice();const order=state.order==='desc'?a.reverse():a;
+ const order=state.chapters.slice();
  $('#chapterCount').textContent=(chapterTotal||order.length)+' '+T('chapterUnit')+' · '+T('page')+' '+chapterPage;
  $('#chapters').innerHTML=order.map(c=>'<button class="chapter" onclick="readChapter('+(c.index??c.chapter??0)+')">'+T('chapterUnit')+' '+(Number(c.index??c.chapter??0)+1)+' · '+esc(c.title||'')+'</button>').join('')||'<div class="empty">Không tìm thấy chương.</div>';
  const pages=Math.max(1,Math.ceil((chapterTotal||0)/chapterPageSize));
@@ -462,7 +463,7 @@ function speakTTSChunk(runId=ttsRunId){
  }
  playTTSAudio(text,lang,runId)
 }
-window.speak=()=>{if(!window.speechSynthesis)return toast('Thiết bị không hỗ trợ TTS');if(ttsState.active){stopTTS(true);return}startTTSCurrent()};
+window.speak=()=>{if(ttsState.active){stopTTS(true);return}startTTSCurrent()};
 window.setTTSRate=x=>{state.rate=+x;save('ktf_rate',state.rate);if(ttsState.active){stopTTS(true);startTTSCurrent()}};
 window.toggleSettings=()=>{const x=$('#settings');x.style.display=x.style.display==='none'?'flex':'none'};
 function applyReader(){const r=$('#reader'),a=$('#rtext');if(!a)return;const readerLang=$('#readerLangSelect');if(readerLang)readerLang.value=state.lang;a.style.fontSize=state.fontSize+'px';a.style.fontFamily=state.font;r.classList.toggle('continuous',state.continuous);if(state.theme==='light'){r.style.background='#fff';r.style.color='#172033';a.style.color='#263241'}else if(state.theme==='sepia'){r.style.background='#f3ead7';r.style.color='#4b3a28';a.style.color='#4b3a28'}else{r.style.background='var(--reader)';r.style.color='var(--text)';a.style.color='var(--readerText)'}$('#themeSelect').value=state.theme;$('#fontSelect').value=state.font;$('#ttsRate').value=String(state.rate)}
