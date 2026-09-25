@@ -448,17 +448,18 @@ function splitTTSText(text,limit=1500){
  if(rest)out.push(rest);return out;
 }
 function ttsLanguage(){
+ const explicit=String(state.current?.language||'').trim();
+ if(explicit){
+  const e=explicit.toLowerCase();
+  if(e.startsWith('zh'))return 'zh-CN';
+  if(e.startsWith('vi'))return 'vi-VN';
+  if(e.startsWith('en'))return 'en-US';
+  if(e!=='auto')return explicit;
+ }
  const text=$('#rtext')?.innerText||'';
  if(/[\u3400-\u9fff]/.test(text))return 'zh-CN';
  if(/[ăâđêôơưĂÂĐÊÔƠƯÀ-ỹ]/.test(text))return 'vi-VN';
- const current=String(state.current?.language||'').toLowerCase();
- if(current.startsWith('zh'))return 'zh-CN';
- if(current.startsWith('vi'))return 'vi-VN';
- if(current.startsWith('en'))return 'en-US';
- if(state.current?.language&&state.current.language!=='auto')return state.current.language;
- const explicit=String(state.book?.ttsLang||'').trim();
- if(explicit&&!['auto',''].includes(explicit))return explicit;
- return state.lang==='en'?'en-US':'en-US';
+ return state.lang==='zh'?'zh-CN':state.lang==='vi'?'vi-VN':'en-US';
 }
 function getTTSVoiceState(){
  const hasApi=typeof window.speechSynthesis?.getVoices==='function';
