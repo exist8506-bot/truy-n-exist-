@@ -131,8 +131,9 @@ async function translateGoogleFallback(text,target){
  if(!v)throw Error('TRANSLATION_EMPTY');
  return {text:v,provider:'google-web-fallback'};
 }
+function detectSourceLanguage(text){const s=String(text||'');if(/[\\u3400-\\u9fff]/.test(s))return 'zh-CN';if(/[ăâđêôơưĂÂĐÊÔƠƯÀ-ỹ]/.test(s))return 'vi';return 'en';}
 async function translateMyMemory(text,target){
- const url='https://api.mymemory.translated.net/get?q='+encodeURIComponent(String(text||''))+'&langpair=vi|'+encodeURIComponent(target);
+ const url='https://api.mymemory.translated.net/get?q='+encodeURIComponent(String(text||''))+'&langpair='+encodeURIComponent(detectSourceLanguage(text)+'|'+target);
  const r=await fetchWithTimeout(url,{headers:{Accept:'application/json','User-Agent':'KhoTruyenFull/1.0'}},9000);
  if(!r.ok)throw Error('TRANSLATION_MEMORY_HTTP_'+r.status);
  const j=await r.json(),v=String(j?.responseData?.translatedText||'').trim();
