@@ -86,6 +86,13 @@ jobs:
           npx playwright test --grep-invert "desktop end-to-end: library, reader, account, admin, offline|Vietnamese Unicode and reader font regression" tests --config=playwright.config.mjs
       - name: Docker build
         run: docker build -t kho-truyen-full:ci .
+      - name: Deployment volume config regression
+        run: |
+          grep -q 'KHO_DATA_DIR' render.yaml
+          grep -q '/app/server-data' render.yaml
+          grep -q 'server-data' docker-compose.yml
+          grep -q 'KHO_DATA_DIR: /app/server-data' docker-compose.yml
+          grep -q 'VOLUME ["/app/server-data"]' Dockerfile
       - name: Docker runtime smoke
         run: |
           data_dir="$(mktemp -d)"
