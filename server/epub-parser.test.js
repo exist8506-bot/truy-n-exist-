@@ -7,16 +7,16 @@ function zip(entries){
   for(const {name,text} of entries){
     const nameBuf=Buffer.from(name,'utf8'),data=Buffer.from(text,'utf8');
     const local=Buffer.concat([
-      Buffer.from('PK\\x03\\x04','binary'),u16(20),u16(0),u16(0),u16(0),u16(0),u32(0),u32(data.length),u32(data.length),u16(nameBuf.length),u16(0),nameBuf,data
+      Buffer.from('PK\x03\x04','binary'),u16(20),u16(0),u16(0),u16(0),u16(0),u32(0),u32(data.length),u32(data.length),u16(nameBuf.length),u16(0),nameBuf,data
     ]);
     locals.push(local);
     const central=Buffer.concat([
-      Buffer.from('PK\\x01\\x02','binary'),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(0),u32(data.length),u32(data.length),u16(nameBuf.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),nameBuf
+      Buffer.from('PK\x01\x02','binary'),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(0),u32(data.length),u32(data.length),u16(nameBuf.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),nameBuf
     ]);
     centrals.push(central);offset+=local.length;
   }
   const body=Buffer.concat(locals),cd=Buffer.concat(centrals);
-  const end=Buffer.concat([Buffer.from('PK\\x05\\x06','binary'),u16(0),u16(0),u16(entries.length),u16(entries.length),u32(cd.length),u32(body.length),u16(0)]);
+  const end=Buffer.concat([Buffer.from('PK\x05\x06','binary'),u16(0),u16(0),u16(entries.length),u16(entries.length),u32(cd.length),u32(body.length),u16(0)]);
   return Buffer.concat([body,cd,end]);
 }
 
