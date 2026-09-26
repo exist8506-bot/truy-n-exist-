@@ -120,7 +120,7 @@ async function loadBooks(searchGuard=null){
    if(searchGuard!==null&&searchGuard!==librarySearchId)return state.books;state.books=fallbackBooks;
   state.apiAvailable=false;
   state.remoteSearch=false;
-  $('#apiStatus').textContent=staticBooks.length?'● Dữ liệu tĩnh':'● Dữ liệu local';
+  $('#apiStatus').textContent=fallbackBooks.length?'● Dữ liệu tĩnh':'● Dữ liệu local';
   renderFilterOptions();
  }
  updateStats(); return state.books;
@@ -660,6 +660,7 @@ async function downloadBook(bookId){
  }catch(e){
   job.status='error';job.error=e.message||'DOWNLOAD_FAILED';job.updatedAt=new Date().toISOString();await offlineSetDownload(job);refreshOfflineUI();toast('Tải offline bị gián đoạn, có thể tiếp tục');
  }
+}
 window.downloadBook=downloadBook;window.cancelOffline=id=>{offlineCancel.add(id);toast('Đang dừng tải…')};window.removeOffline=async id=>{await offlineDeleteBook(id).catch(()=>{});refreshOfflineUI();toast('Đã xóa dữ liệu offline')};
 window.downloadChapter=()=>{const text=state.book.title+'\n'+$('#rtitle').textContent+'\n\n'+$('#rtext').innerText;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));a.download=(state.book.title+'-'+state.chapter+'.txt').replace(/[^\w\-À-ỹ ]/g,'_');a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);toast('Đã tải chương')};
   }
