@@ -62,6 +62,8 @@ jobs:
         run: node server/chapter-content-search.test.js
       - name: Logout and cover regression
         run: node server/logout-regression.test.js
+      - name: Production bootstrap security regression
+        run: node server/production-bootstrap-security.test.js
       - name: Start API smoke test
         run: |
           set +e
