@@ -422,6 +422,7 @@ async function readChapter(i,options={}){
  const lang=state.lang;
    let j;try{j=await fetchChapterData(i)}catch(e){if(loadId===readerLoadId)toast('Không tải được chương; hãy thử lại');return false}
   if(loadId!==readerLoadId||bookId!==state.book?.id||lang!==state.lang)return false;
+  if(!String(j?.content||'').trim()){if(loadId===readerLoadId)toast('Chương không có nội dung');return false}
  state.chapter=i;state.current=j;if(j?.translationError&&state.lang!=='vi')toast(T('translationError'));show('reader');$('#rbook').textContent=state.book.title;$('#rtitle').textContent=j.title||((T('chapterUnit'))+' '+chapterDisplayNumber(i));$('#rmeta').textContent=T('chapterUnit')+' '+chapterDisplayNumber(i)+' · '+(state.book.author||'');const bookmarkBtn=$('#bookmarkBtn');if(bookmarkBtn)bookmarkBtn.textContent=isBookmarked()?T('marked'):T('mark');$('#rtext').innerHTML=String(j.content||'').split(/\n+/).filter(Boolean).map(x=>'<p>'+esc(x)+'</p>').join('');
  applyReader();recordRead();updateReaderProgress();restoreScroll();if(!options.skipHistory)history.pushState({},'',location.pathname+'#'+encodeURIComponent(state.book.id)+'/chapter/'+i);
   requestAnimationFrame(()=>prefetchChapter(i+1));
