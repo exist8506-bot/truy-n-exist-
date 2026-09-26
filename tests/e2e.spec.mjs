@@ -140,6 +140,28 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   await page.locator('#adCat').fill('Tiên hiệp / Thần ma');
   await page.locator('#adCreate').click();
   await expect(page.locator('#adOut')).toContainText('Đã tạo');
+  await page.locator('#adBook').selectOption({label:/E2E UI Story/});
+  await page.locator('#adTitle').fill('E2E UI Story Updated');
+  await page.locator('#adAuthor').fill('E2E Updated');
+  await page.locator('#adCat').fill('E2E Category');
+  await page.locator('#adDesc').fill('Updated description');
+  await page.locator('#adUpdateStory').click();
+  await expect(page.locator('#adOut')).toContainText('Đã lưu');
+  await page.locator('#adIndex').fill('0');
+  await page.locator('#adChapterTitle').fill('E2E Chapter');
+  await page.locator('#adContent').fill('Nội dung chương E2E đủ dài để kiểm tra thao tác thêm sửa xóa trên giao diện quản trị.');
+  await page.locator('#adAddChapter').click();
+  await expect(page.locator('#adOut')).toContainText('Đã thêm');
+  await page.locator('#adChapterTitle').fill('E2E Chapter Updated');
+  await page.locator('#adContent').fill('Nội dung chương E2E đã được sửa lại để kiểm tra cập nhật trên giao diện quản trị.');
+  await page.locator('#adUpdateChapter').click();
+  await expect(page.locator('#adOut')).toContainText('Đã sửa');
+  page.once('dialog',dialog=>dialog.accept());
+  await page.locator('#adDeleteChapter').click();
+  await expect(page.locator('#adOut')).toContainText('Đã xóa chương');
+  page.once('dialog',dialog=>dialog.accept());
+  await page.locator('#adDeleteStory').click();
+  await expect(page.locator('#adOut')).toContainText('Đã xóa truyện');
 
   const txt=['Chương 1','Nội dung chương một đủ dài để kiểm tra import trong giao diện quản trị.','Chương 2','Nội dung chương hai đủ dài để kiểm tra import trong giao diện quản trị.'].join('\n');
   await page.locator('#adFile').setInputFiles({name:'e2e-import.txt',mimeType:'text/plain',buffer:Buffer.from(txt)});
