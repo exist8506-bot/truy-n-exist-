@@ -350,6 +350,25 @@ test('offline download can cancel and resume', async ({ browser }) => {
   await context.close();
 });
 
+test('mobile swipe changes exactly one chapter', async ({ browser }) => {
+  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true});
+  await context.addInitScript(() => localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1'));
+  const page=await context.newPage();
+  await page.goto('/');
+  await page.locator('#grid .card').filter({hasText:'Mùa Sao Trên Đỉnh Núi'}).locator('.info').click();
+  await page.locator('#chapters .chapter').first().click();
+  await expect(page.locator('#rtitle')).toHaveText('Ánh đèn cuối thung lũng');
+  await page.evaluate(() => {
+    const target=document.querySelector('#reader');
+    const start=new Touch({identifier:1,target,clientX:320,clientY:400});
+    const end=new Touch({identifier:1,target,clientX:120,clientY:405});
+    target.dispatchEvent(new TouchEvent('touchstart',{touches:[start],changedTouches:[start],bubbles:true}));
+    target.dispatchEvent(new TouchEvent('touchend',{changedTouches:[end],bubbles:true}));
+  });
+  await expect(page.locator('#rtitle')).toHaveText('Vệt sáng trong rừng');
+  await context.close();
+});
+
 test('mobile responsive: bottom navigation, reader, bookmark and persistence', async ({ browser }) => {
   const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true});
   await context.addInitScript(() => localStorage.setItem('ktf_api_base','http://127.0.0.1:9/api/v1'));
