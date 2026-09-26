@@ -91,7 +91,7 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   await page.getByRole('button',{name:'⛶'}).click();
 
   const [chapterDownload]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'⬇ Tải chương'}).click()]);
-  expect(await chapterDownload.suggestedFilename()).toContain('Phong');
+  expect(await chapterDownload.suggestedFilename()).toContain('Mùa Sao');
 
   await page.getByRole('button',{name:'☰ Mục lục'}).click();
   await page.getByRole('button',{name:/↗ Chia sẻ/}).click();
