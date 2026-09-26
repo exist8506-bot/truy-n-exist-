@@ -59,6 +59,9 @@ x=await req('/stories/b1/chapters?page=1&pageSize=5&q=anh');if(x.status!==200||x
  const badBackup=JSON.parse(JSON.stringify(cleanBackup));badBackup.chapters[0].story_id='missing-story';
  x=await req('/admin/backup/restore',{method:'POST',headers:{...adminAuth,'content-type':'application/json'},body:JSON.stringify(badBackup)});
  if(x.status!==400||x.data.error!=='INVALID_BACKUP_REFERENCES')throw Error('invalid backup references were not rejected '+JSON.stringify(x.data));
+ const badCoverBackup=JSON.parse(JSON.stringify(cleanBackup));badCoverBackup.covers={bad:'not-an-image'};
+ x=await req('/admin/backup/restore',{method:'POST',headers:{...adminAuth,'content-type':'application/json'},body:JSON.stringify(badCoverBackup)});
+ if(x.status!==400||x.data.error!=='INVALID_BACKUP_COVER')throw Error('invalid backup cover was not rejected '+JSON.stringify(x.data));
  x=await req('/stories?page=1&pageSize=200');if(x.status!==200||x.data.count!==baseStories)throw Error('invalid backup mutated live data');
  const legacyBackup=JSON.parse(JSON.stringify(cleanBackup));
  if(legacyBackup.chapters[0])delete legacyBackup.chapters[0].search_key;
