@@ -214,9 +214,9 @@ let m=p.match(/^\/api\/v1\/stories\/([^/]+)\/chapters\/(\d+)$/);if(m&&req.method
 m=p.match(/^\/api\/v1\/stories\/([^/]+)\/chapters$/);if(m&&req.method==='GET'){const ck=cacheKey(req),hit=cacheGet(ck);if(hit)return reply(200,hit);if(!getStory(m[1]))return reply(404,{error:'BOOK_NOT_FOUND'});const total=Number(q('SELECT COUNT(*) n FROM chapters WHERE story_id=?',m[1]).n),bounds=q('SELECT MIN(chapter_index) minIndex,MAX(chapter_index) maxIndex FROM chapters WHERE story_id=?',m[1]),minIndex=bounds?.minIndex==null?0:Number(bounds.minIndex),maxIndex=bounds?.maxIndex==null?-1:Number(bounds.maxIndex);const hasPaging=u.query.page!=null||u.query.pageSize!=null||u.query.q!=null;const cq=String(u.query.q||'').trim();if(!hasPaging)return reply(200,{items:all('SELECT id,story_id,chapter_index,title,updated_at FROM chapters WHERE story_id=? ORDER BY chapter_index',m[1]).map(chapterRow),minIndex,maxIndex,count:total});const page=clampedInteger(u.query.page,1,1,1000000),size=clampedInteger(u.query.pageSize,50,1,100),direction=String(u.query.sort||'asc').toLowerCase()==='desc'?'DESC':'ASC';let rows;if(cq){const needle=norm(cq),like='%'+needle+'%',offset=(page-1)*size;
          const num=Number(cq); let countRow,filtered;
          if(Number.isFinite(num)&&String(num)===cq){
-           countRow=q('SELECT COUNT(*) n FROM chapters WHERE story_id=? AND (search_key LIKE ? OR chapter_index=?)',m[1],like,num-1);
-           filtered=all('SELECT id,story_id,chapter_index,title,updated_at FROM chapters WHERE story_id=? AND (search_key LIKE ? OR chapter_index=?) ORDER BY chapter_index '+direction+' LIMIT ? OFFSET ?',m[1],like,num-1,size,offset);
-         }else{
+            const targetIndex=minIndex===0?num-1:num;
+            countRow=q('SELECT COUNT(*) n FROM chapters WHERE story_id=? AND (search_key LIKE ? OR chapter_index=?)',m[1],like,targetIndex);
+            filtered=all('SELECT id,story_id,chapter_index,title,updated_at FROM chapters WHERE story_id=? AND (search_key LIKE ? OR chapter_index=?) ORDER BY chapter_index '+direction+' LIMIT ? OFFSET ?',m[1],like,targetIndex,size,offset);
            countRow=q('SELECT COUNT(*) n FROM chapters WHERE story_id=? AND search_key LIKE ?',m[1],like);
            filtered=all('SELECT id,story_id,chapter_index,title,updated_at FROM chapters WHERE story_id=? AND search_key LIKE ? ORDER BY chapter_index '+direction+' LIMIT ? OFFSET ?',m[1],like,size,offset);
          }
