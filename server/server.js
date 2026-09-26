@@ -1,8 +1,8 @@
 const http=require('http'),fs=require('fs'),path=require('path'),url=require('url'),zlib=require('zlib'),crypto=require('crypto');
 const {DatabaseSync}=require('node:sqlite');
 const {hash,token}=require('./auth');
-const ROOT=path.resolve(__dirname,'..'),DATA_DIR=__dirname,DB_FILE=path.join(DATA_DIR,'kho_truyen.sqlite'),SCHEMA_FILE=path.join(DATA_DIR,'schema.sql'),COVERS=path.join(DATA_DIR,'covers'),PORT=Number(process.env.PORT||8787),SESSION_DAYS=30,TRUST_PROXY=String(process.env.TRUST_PROXY||'0')==='1';
-fs.mkdirSync(COVERS,{recursive:true});
+const ROOT=path.resolve(__dirname,'..'),CODE_DIR=__dirname,DATA_DIR=path.resolve(process.env.KHO_DATA_DIR||CODE_DIR),DB_FILE=path.join(DATA_DIR,'kho_truyen.sqlite'),SCHEMA_FILE=path.join(CODE_DIR,'schema.sql'),COVERS=path.join(DATA_DIR,'covers'),PORT=Number(process.env.PORT||8787),SESSION_DAYS=30,TRUST_PROXY=String(process.env.TRUST_PROXY||'0')==='1';
+fs.mkdirSync(DATA_DIR,{recursive:true});fs.mkdirSync(COVERS,{recursive:true});
 const db=new DatabaseSync(DB_FILE); db.exec(fs.readFileSync(SCHEMA_FILE,'utf8')); db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA temp_store=MEMORY; PRAGMA cache_size=-20000; PRAGMA foreign_keys=ON;');
 const now=()=>new Date().toISOString();
 const CACHE_TTL=Number(process.env.KHO_CACHE_TTL_MS||5000), CACHE=new Map(), INFLIGHT=new Map();
@@ -22,9 +22,12 @@ db.exec("CREATE TABLE IF NOT EXISTS bookmarks(user_id TEXT NOT NULL,story_id TEX
 db.exec('CREATE INDEX IF NOT EXISTS idx_bookmarks_user_updated ON bookmarks(user_id,updated_at);');
 db.exec('CREATE TABLE IF NOT EXISTS chapter_translations(story_id TEXT NOT NULL,chapter_index INTEGER NOT NULL,lang TEXT NOT NULL,source_hash TEXT NOT NULL,title TEXT DEFAULT "",content TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(story_id,chapter_index,lang));');
 function seed(){
-  const legacy=path.join(DATA_DIR,'seed.json'),publicSeed=path.join(DATA_DIR,'public-domain-seed.json'),sources=[];
-  if(fs.existsSync(legacy))sources.push(JSON.parse(fs.readFileSync(legacy,'utf8')));
-  if(fs.existsSync(publicSeed))sources.push(JSON.parse(fs.readFileSync(publicSeed,'utf8')));
+  const sources=[];
+  for(const dir of [...new Set([DATA_DIR,CODE_DIR])]){
+    const legacy=path.join(dir,'seed.json'),publicSeed=path.join(dir,'public-domain-seed.json');
+    if(fs.existsSync(legacy))sources.push(JSON.parse(fs.readFileSync(legacy,'utf8')));
+    if(fs.existsSync(publicSeed))sources.push(JSON.parse(fs.readFileSync(publicSeed,'utf8')));
+  }
   if(!sources.length)return;
   const t=now();
   db.exec('BEGIN');
