@@ -59,7 +59,7 @@ function deletedFavs(){return get('ktf_deleted_favs',[])} function setDeletedFav
 function deletedBookmarks(){return get('ktf_deleted_bookmarks',{})} function setDeletedBookmarks(v){save('ktf_deleted_bookmarks',v)}
 function hist(){return get('ktf_hist',[])} function setHist(v){save('ktf_hist',v)}
 function historyClearPending(){return get('ktf_history_clear_pending',false)} function setHistoryClearPending(v){save('ktf_history_clear_pending',!!v)}
-function progress(){return get('ktf_prog',{})} function setProgress(v){save('ktf_prog',v)}
+function progress(){const raw=get('ktf_prog',{}),out={};if(!raw||typeof raw!=='object'||Array.isArray(raw))return out;for(const [id,v] of Object.entries(raw)){const chapter=Number(v?.chapter),percent=Number(v?.percent);if(!Number.isInteger(chapter)||chapter<0||!Number.isFinite(percent))continue;out[id]={chapter,percent:Math.max(0,Math.min(100,percent)),updated:Number.isFinite(Number(v?.updated))?Number(v.updated):Date.now()}}return out} function setProgress(v){save('ktf_prog',v)}
 function show(id){['library','detail','reader','history','bookcase'].forEach(x=>$('#'+x)?.classList.remove('show'));$('#'+id)?.classList.add('show');document.body.classList.toggle('reading-mode',id==='reader');scrollTo(0,0)}
 window.home=()=>{show('library');renderLibrary()}; window.focusSearch=()=>{$('#search')?.focus();show('library')};
 window.goNextUnread=()=>{if(!state.book)return;const p=progress()[state.book.id],min=state.chapterMin,max=state.chapterMax;const total=totalChapterCount();if(!total||max<min)return;let start=Number.isFinite(Number(p?.chapter))?Number(p.chapter):min;if(Number(p?.percent||0)>=95)start++;if(start<min)start=min;if(start>max)return toast('Bạn đã đọc đến chương cuối');readChapter(start)};
