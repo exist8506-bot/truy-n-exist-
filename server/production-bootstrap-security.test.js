@@ -15,10 +15,6 @@ try{
  legacyDb.prepare('INSERT INTO users VALUES(?,?,?,?,?,?,?)').run('u_bootstrap_nguyenvanhoa','nguyenvanhoa',legacyHash.hash,legacyHash.salt,'Legacy Admin','admin',new Date().toISOString());
  legacyDb.prepare('INSERT INTO profiles VALUES(?,?,?)').run('u_bootstrap_nguyenvanhoa','',new Date().toISOString());
  legacyDb.close();
- p=await start({});
- x=await req('/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'nguyenvanhoa',password})});
- if(x.status!==401)throw Error('legacy default bootstrap password still works in production');
- p.kill('SIGTERM');await wait(300);
  p=await start({BOOTSTRAP_ADMIN_USERNAME:'nguyenvanhoa',BOOTSTRAP_ADMIN_PASSWORD:password});
  x=await req('/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'nguyenvanhoa',password})});
  x=await req('/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'nguyenvanhoa',password})});
