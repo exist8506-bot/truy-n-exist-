@@ -68,7 +68,7 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   await page.locator('#next').click();
   await expect(page.locator('#rtitle')).toHaveText('Vệt sáng trong rừng');
   await page.goBack();
-  await expect(page.locator('#rtitle')).toHaveText('Chương 1');
+  await expect(page.locator('#rtitle')).toHaveText('Ánh đèn cuối thung lũng');
   expect(page.url()).toBe(firstReaderUrl);
   await page.goForward();
   await expect(page.locator('#rtitle')).toHaveText('Vệt sáng trong rừng');
