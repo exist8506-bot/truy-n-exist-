@@ -70,12 +70,21 @@ function ensureBootstrapAdmin(){
   const username=String(process.env.BOOTSTRAP_ADMIN_USERNAME||'nguyenvanhoa').trim().toLowerCase(),displayName=String(process.env.BOOTSTRAP_ADMIN_DISPLAY_NAME||'H').slice(0,60),configuredPassword=String(process.env.BOOTSTRAP_ADMIN_PASSWORD||''),production=String(process.env.NODE_ENV||'').toLowerCase()==='production',t=now();
   const existing=q('SELECT * FROM users WHERE username=?',username);
   if(production&&!configuredPassword)return existing?.role==='admin'?existing.id:null;
+  const defaultPassword=String.fromCharCode(49,50,51);
   if(existing){
     if(existing.role!=='admin')run('UPDATE users SET role=? WHERE id=?','admin',existing.id);
+    if(production&&configuredPassword){
+      const legacyDefaultHash=hash(defaultPassword,existing.password_salt).hash;
+      if(existing.password_hash===legacyDefaultHash){
+        const upgraded=hash(configuredPassword);
+        run('UPDATE users SET password_hash=?,password_salt=? WHERE id=?',upgraded.hash,upgraded.salt,existing.id);
+        run('DELETE FROM sessions WHERE user_id=?',existing.id);
+      }
+    }
     run('INSERT INTO profiles(user_id,avatar,updated_at) VALUES(?,?,?) ON CONFLICT(user_id) DO NOTHING',existing.id,'',t);
     return existing.id;
   }
-  const password=configuredPassword||String.fromCharCode(49,50,51),id='u_bootstrap_'+username,h=hash(password);
+  const password=production&&!configuredPassword?defaultPassword:(configuredPassword||defaultPassword),id='u_bootstrap_'+username,h=hash(password);
   run('INSERT INTO users VALUES(?,?,?,?,?,?,?)',id,username,h.hash,h.salt,displayName,'admin',t);
   run('INSERT INTO profiles VALUES(?,?,?)',id,'',t);
   return id;
@@ -205,7 +214,7 @@ if(p==='/api/v1/auth/login'||p==='/api/v1/auth/register'){if(!rateLimit(req,res,
 if(p.startsWith('/api/v1/admin/')){if(!rateLimit(req,res,'admin',180))return;}
 if(p==='/api/v1/health')return reply(200,{ok:true,version:'1.19.0',database:'sqlite',books:Number(q('SELECT COUNT(*) n FROM stories').n),chapters:Number(q('SELECT COUNT(*) n FROM chapters').n),users:Number(q('SELECT COUNT(*) n FROM users').n)});
 if(p==='/api/v1/auth/register'&&req.method==='POST')return body(req).then(x=>{const username=String(x.username||'').trim().toLowerCase(),password=String(x.password||'');if(!/^[a-z0-9_.-]{3,32}$/.test(username)||password.length<6)return reply(400,{error:'INVALID_ACCOUNT'});if(q('SELECT 1 FROM users WHERE username=?',username))return reply(409,{error:'USERNAME_EXISTS'});const id='u_'+token().slice(0,12),h=hash(password),t=now(),role='user';run('INSERT INTO users VALUES(?,?,?,?,?,?,?)',id,username,h.hash,h.salt,String(x.displayName||username).slice(0,60),role,t);run('INSERT INTO profiles VALUES(?,?,?)',id,'',t);const sess=token();run('INSERT INTO sessions VALUES(?,?,?,?)',sess,id,new Date(Date.now()+SESSION_DAYS*864e5).toISOString(),t);const u=q('SELECT * FROM users WHERE id=?',id);reply(201,{token:sess,user:publicUser(u)})}).catch(e=>reply(e.message==='BODY_TOO_LARGE'?413:400,{error:e.message||'BAD_JSON'}));
-if(p==='/api/v1/auth/login'&&req.method==='POST')return body(req).then(x=>{const u=q('SELECT * FROM users WHERE username=?',String(x.username||'').trim().toLowerCase());if(!u)return reply(401,{error:'INVALID_CREDENTIALS'});if(hash(String(x.password||''),u.password_salt).hash!==u.password_hash)return reply(401,{error:'INVALID_CREDENTIALS'});const sess=token(),t=now();run('INSERT INTO sessions VALUES(?,?,?,?)',sess,u.id,new Date(Date.now()+SESSION_DAYS*864e5).toISOString(),t);reply(200,{token:sess,user:publicUser(u)})}).catch(()=>reply(400,{error:'BAD_JSON'}));
+if(p==='/api/v1/auth/login'&&req.method==='POST')return body(req).then(x=>{const username=String(x.username||'').trim().toLowerCase(),password=String(x.password||''),u=q('SELECT * FROM users WHERE username=?',username);const production=String(process.env.NODE_ENV||'').toLowerCase()==='production',bootstrapUsername=String(process.env.BOOTSTRAP_ADMIN_USERNAME||'nguyenvanhoa').trim().toLowerCase(),configuredPassword=String(process.env.BOOTSTRAP_ADMIN_PASSWORD||'');if(!u)return reply(401,{error:'INVALID_CREDENTIALS'});if(production&&!configuredPassword&&username===bootstrapUsername&&password===String.fromCharCode(49,50,51))return reply(401,{error:'INVALID_CREDENTIALS'});if(hash(password,u.password_salt).hash!==u.password_hash)return reply(401,{error:'INVALID_CREDENTIALS'});const sess=token(),t=now();run('INSERT INTO sessions VALUES(?,?,?,?)',sess,u.id,new Date(Date.now()+SESSION_DAYS*864e5).toISOString(),t);reply(200,{token:sess,user:publicUser(u)})}).catch(()=>reply(400,{error:'BAD_JSON'}));
 if(p==='/api/v1/auth/me'&&req.method==='GET'){const u=userByToken(req);return u?reply(200,publicUser(u)):reply(401,{error:'UNAUTHORIZED'})}
 if(p==='/api/v1/auth/logout'&&req.method==='POST'){const h=(req.headers.authorization||'').replace(/^Bearer /,'');if(h)run('DELETE FROM sessions WHERE token=?',h);cacheClear('/api/v1/stories');return reply(200,{ok:true})}
 if(p==='/api/v1/account/password'&&req.method==='PUT')return body(req).then(x=>{const sessionUser=requireUser(req,res);if(!sessionUser)return;const u=q('SELECT * FROM users WHERE id=?',sessionUser.id);if(!u)return reply(401,{error:'UNAUTHORIZED'});const current=String(x.currentPassword||''),next=String(x.newPassword||'');if(next.length<6)return reply(400,{error:'INVALID_PASSWORD'});if(hash(current,u.password_salt).hash!==u.password_hash)return reply(401,{error:'INVALID_CREDENTIALS'});const h=hash(next);run('UPDATE users SET password_hash=?,password_salt=? WHERE id=?',h.hash,h.salt,u.id);run('DELETE FROM sessions WHERE user_id=? AND token<>?',u.id,(req.headers.authorization||'').replace(/^Bearer /,''));reply(200,{ok:true})}).catch(e=>reply(400,{error:e.message||'BAD_JSON'}));if(p==='/api/v1/profile'&&req.method==='GET'){const u=requireUser(req,res);if(!u)return;const p0=q('SELECT avatar,updated_at updatedAt FROM profiles WHERE user_id=?',u.id);return reply(200,{displayName:u.display_name||u.username,avatar:p0?.avatar||'',updatedAt:p0?.updatedAt||u.created_at})}
