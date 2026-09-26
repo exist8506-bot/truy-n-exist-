@@ -218,8 +218,8 @@ m=p.match(/^\/api\/v1\/stories\/([^/]+)\/chapters$/);if(m&&req.method==='GET'){c
             countRow=q('SELECT COUNT(*) n FROM chapters WHERE story_id=? AND (search_key LIKE ? OR chapter_index=?)',m[1],like,targetIndex);
             filtered=all('SELECT id,story_id,chapter_index,title,updated_at FROM chapters WHERE story_id=? AND (search_key LIKE ? OR chapter_index=?) ORDER BY chapter_index '+direction+' LIMIT ? OFFSET ?',m[1],like,targetIndex,size,offset);
           }else{
-            countRow=q('SELECT COUNT(*) n FROM chapters WHERE story_id=? AND search_key LIKE ?',m[1],like);
-            filtered=all('SELECT id,story_id,chapter_index,title,updated_at FROM chapters WHERE story_id=? AND search_key LIKE ? ORDER BY chapter_index '+direction+' LIMIT ? OFFSET ?',m[1],like,size,offset);
+             countRow=q('SELECT COUNT(*) n FROM chapters WHERE story_id=? AND (search_key LIKE ? OR content LIKE ?)',m[1],like,like);
+             filtered=all('SELECT id,story_id,chapter_index,title,updated_at FROM chapters WHERE story_id=? AND (search_key LIKE ? OR content LIKE ?) ORDER BY chapter_index '+direction+' LIMIT ? OFFSET ?',m[1],like,like,size,offset);
           }
          const count=Number(countRow.n||0);
          return reply(200,{items:filtered.map(chapterRow),page,pageSize:size,total:Math.ceil(count/size),count,minIndex,maxIndex})}else rows=all('SELECT id,story_id,chapter_index,title,updated_at FROM chapters WHERE story_id=? ORDER BY chapter_index '+direction+' LIMIT ? OFFSET ?',m[1],size,(page-1)*size);return reply(200,{items:rows.map(chapterRow),page,pageSize:size,total:Math.ceil(total/size),count:total,minIndex,maxIndex})}
