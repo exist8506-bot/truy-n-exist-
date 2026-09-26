@@ -361,8 +361,8 @@ async function fetchChapterData(i){
   const cachedTranslated=await offlineGet(state.book.id,i,lang).catch(()=>null);
   if(cachedTranslated?.language===lang&&cachedTranslated.translated)return cachedTranslated;
   const cached=await offlineGet(state.book.id,i,'original').catch(()=>null);
-  const base=cached||state.chapters.find(x=>(x.index??x.chapter)===i)||state.book.chapters?.[i];
-  const original=cached||{bookId:state.book.id,index:i,title:base?.title||('Chương '+(i+1)),content:base?.content||base?.[1]||''};
+   const localChapters=Array.isArray(state.book.chapters)?state.book.chapters:[];const indexedLocal=localChapters.find((x,idx)=>Number(x?.index??x?.chapter??idx)===i);const base=cached||state.chapters.find(x=>(x.index??x.chapter)===i)||indexedLocal||localChapters[i];
+   const original=cached||{bookId:state.book.id,index:i,title:base?.title||('Chương '+chapterDisplayNumber(i)),content:base?.content||base?.[1]||''};
   if(lang==='vi'&&!/[\u3400-\u9fff]/.test(String(original.content||'')))return {...original,language:'vi',translated:false};
   try{
    const translated=await translateChapterFallback(original,lang);
