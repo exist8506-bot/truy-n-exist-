@@ -362,10 +362,11 @@ async function translateChapterFallback(chapter,lang){
  translatedChapterCache.set(key,result);
  return result;
 }
-async function fetchChapterData(i){
+async function fetchChapterData(i,options={}){
  const lang=storyTargetLanguage();
  const key=state.book.id+':'+i+':'+lang;
- if(chapterInflight.has(key))return chapterInflight.get(key);
+ const trackInflight=options.trackInflight!==false;
+ if(trackInflight&&chapterInflight.has(key))return chapterInflight.get(key);
  const fallback=async()=>{
   const cachedTranslated=await offlineGet(state.book.id,i,lang).catch(()=>null);
   if(cachedTranslated?.language===lang&&cachedTranslated.translated)return cachedTranslated;
@@ -396,9 +397,9 @@ async function fetchChapterData(i){
    try{return await fallback()}catch{state.apiAvailable=false;return fallback()}
   }
  })();
- chapterInflight.set(key,job);try{return await job}finally{chapterInflight.delete(key)}
+ if(trackInflight)chapterInflight.set(key,job);try{return await job}finally{if(trackInflight)chapterInflight.delete(key)}
 }
-async function prefetchChapter(i){if(!state.book||i<state.chapterMin||i>state.chapterMax)return;try{await fetchChapterData(i)}catch{}}
+async function prefetchChapter(i){if(!state.book||i<state.chapterMin||i>state.chapterMax)return;try{await fetchChapterData(i,{trackInflight:false})}catch{}}
 let autoAdvanceTimer=0,ttsRunId=0,readerLoadId=0,ttsAudio=null;
 function totalChapterCount(){return Number(state.book?.chapterCount||state.book?.chapters?.length||state.chapters.length||0)}
 function chapterDisplayNumber(index){const n=Number(index);return Number.isInteger(n)?(state.chapterMin===0?n+1:n):''}
