@@ -781,7 +781,6 @@ s.querySelector('#adRestoreBtn').onclick=async()=>{const f=s.querySelector('#adR
 s.querySelector('#adDiag').onclick=async()=>{try{out.textContent=JSON.stringify(await api('/admin/stories/diagnostics'),null,2)}catch(e){out.textContent='Diagnostics lỗi: '+e.message}};
 };
 window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;if(e.key==='ArrowRight')goChapter(1);else if(e.key==='ArrowLeft')goChapter(-1);else if(e.code==='Space'){e.preventDefault();speak()}else if(e.key==='Escape')$('#reader')?.classList.toggle('focus')});
-let touchX=0;document.addEventListener('touchstart',e=>touchX=e.changedTouches[0].screenX,{passive:true});document.addEventListener('touchend',e=>{const d=e.changedTouches[0].screenX-touchX;if(Math.abs(d)>70&&$('#reader')?.classList.contains('show'))goChapter(d<0?1:-1)},{passive:true});
 async function boot(){applyLanguage();await loadBooks();await refreshOfflineUI();await restoreAccount();renderLibrary();applyLanguage();const m=location.hash.match(/^#([^/]+)\/chapter\/(\d+)/);if(m){const id=decodeURIComponent(m[1]);if(state.books.some(b=>b.id===id))await openBook(id).then(()=>readChapter(+m[2],{skipHistory:true}))}if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{})}
 boot();
 })();
