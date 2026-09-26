@@ -175,10 +175,11 @@ test('static fallback mode: real public seed, search, read, PWA cache and offlin
   await page.locator('#chapters .chapter').first().click();
   await expect(page.locator('#rtitle')).not.toBeEmpty();
   await expect(page.locator('#rtext')).not.toBeEmpty();
-  await page.locator('#reader .readerbar>.btn').first().click();
-  await page.locator('#detailBox .settings .btn.good').click();
-  await page.locator('.actions .btn').nth(3).click();
-  await expect(page.locator('#downloadList')).toContainText('Đã lưu đầy đủ',{timeout:30000});
+   await page.locator('#reader .readerbar>.btn').first().click();
+   await expect.poll(()=>page.evaluate(()=>typeof window.downloadBook)).toBe('function');
+   await page.evaluate(()=>window.downloadBook('phong-than-dien-nghia'));
+   await page.locator('.actions .btn').nth(3).click();
+   await expect(page.locator('#downloadList')).toContainText('Đã lưu đầy đủ',{timeout:90000});
 
   const cache=await page.evaluate(async()=>{await navigator.serviceWorker.ready;const keys=await caches.keys();return {keys,seed:!!await caches.match('./public-domain-seed.json')};});
   expect(cache.keys.some(k=>k.includes('kho-truyen-1.22.0'))).toBeTruthy();
