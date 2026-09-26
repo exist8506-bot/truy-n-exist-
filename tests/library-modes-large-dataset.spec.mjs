@@ -3,11 +3,11 @@ import { test, expect } from 'playwright/test';
 test('library modes keep the complete loaded dataset beyond 100 stories', async ({ page }) => {
   const pageOne = Array.from({ length: 100 }, (_, i) => ({
     id: 'story-' + (i + 1), title: 'Story ' + (i + 1), author: 'Author',
-    cat: 'Test', desc: '', status: 'FULL', chapters: 1, chapterMin: 0, chapterMax: 0
+    cat: i === 0 ? 'Category A' : 'Category Common', desc: '', status: 'FULL', chapters: 1, chapterMin: 0, chapterMax: 0
   }));
   const pageTwo = Array.from({ length: 20 }, (_, i) => ({
     id: 'story-' + (i + 101), title: 'Story ' + (i + 101), author: 'Author',
-    cat: 'Test', desc: '', status: 'FULL',
+    cat: 'Category B', desc: '', status: 'FULL',
     chapters: i === 19 ? 999 : 2, chapterMin: 0, chapterMax: i === 19 ? 998 : 1
   }));
 
@@ -37,6 +37,9 @@ test('library modes keep the complete loaded dataset beyond 100 stories', async 
   await page.locator('#dataTools button').nth(1).click();
   await expect(page.locator('#grid .card')).toHaveCount(1);
   await expect(page.locator('#grid .card').first()).toContainText('Story 120');
+  const categories = await page.locator('#categoryFilter option').allTextContents();
+  expect(categories).toContain('Category A');
+  expect(categories).toContain('Category B');
 
   await page.locator('#statusFilter').selectOption('FULL');
   await expect(page.locator('#statusFilter')).toHaveValue('FULL');
