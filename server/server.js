@@ -18,6 +18,15 @@ const q=(sql,...a)=>db.prepare(sql).get(...a); const all=(sql,...a)=>db.prepare(
 try{db.exec("ALTER TABLE chapters ADD COLUMN search_key TEXT DEFAULT ''");}catch{}
 for(const r of all("SELECT id,title FROM chapters WHERE search_key='' OR search_key IS NULL"))run('UPDATE chapters SET search_key=? WHERE id=?',norm(r.title),r.id);
 db.exec('CREATE INDEX IF NOT EXISTS idx_chapters_search ON chapters(story_id,search_key);');
+let CHAPTER_FTS=false;
+try{
+ db.exec("CREATE VIRTUAL TABLE IF NOT EXISTS chapters_fts USING fts5(story_id UNINDEXED,search_key,content='chapters',content_rowid='rowid',tokenize='unicode61 remove_diacritics 2');");
+ db.exec("CREATE TRIGGER IF NOT EXISTS chapters_fts_ai AFTER INSERT ON chapters BEGIN INSERT INTO chapters_fts(rowid,story_id,search_key) VALUES(new.rowid,new.story_id,new.search_key); END;");
+ db.exec("CREATE TRIGGER IF NOT EXISTS chapters_fts_ad AFTER DELETE ON chapters BEGIN INSERT INTO chapters_fts(chapters_fts,rowid,story_id,search_key) VALUES('delete',old.rowid,old.story_id,old.search_key); END;");
+ db.exec("CREATE TRIGGER IF NOT EXISTS chapters_fts_au AFTER UPDATE OF story_id,title,content,search_key ON chapters BEGIN INSERT INTO chapters_fts(chapters_fts,rowid,story_id,search_key) VALUES('delete',old.rowid,old.story_id,old.search_key); INSERT INTO chapters_fts(rowid,story_id,search_key) VALUES(new.rowid,new.story_id,new.search_key); END;");
+ db.exec("INSERT INTO chapters_fts(chapters_fts) VALUES('rebuild');");
+ CHAPTER_FTS=true;
+}catch(e){CHAPTER_FTS=false;}
 db.exec("CREATE TABLE IF NOT EXISTS bookmarks(user_id TEXT NOT NULL,story_id TEXT NOT NULL,chapter_index INTEGER NOT NULL,title TEXT DEFAULT '',created_at TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(user_id,story_id,chapter_index));");
 db.exec('CREATE INDEX IF NOT EXISTS idx_bookmarks_user_updated ON bookmarks(user_id,updated_at);');
 db.exec('CREATE TABLE IF NOT EXISTS chapter_translations(story_id TEXT NOT NULL,chapter_index INTEGER NOT NULL,lang TEXT NOT NULL,source_hash TEXT NOT NULL,title TEXT DEFAULT "",content TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(story_id,chapter_index,lang));');
