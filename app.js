@@ -141,7 +141,7 @@ function filtered(){
  if(state.filter!=='all')a=a.filter(b=>String(b.status||'').toUpperCase()===String(state.filter).toUpperCase());
  if(category!=='all')a=a.filter(b=>String(b.cat||'')===String(category));
  if(status!=='all')a=a.filter(b=>String(b.status||'').toUpperCase()===String(status).toUpperCase());
- const norm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('vi');
+ const norm=s=>String(s??'').replace(/Đ/g,'D').replace(/đ/g,'d').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('vi');
  const q=norm($('#search')?.value||'');
  if(q)a=a.filter(b=>norm(b.title+' '+b.author+' '+b.cat+' '+(b.desc||'')).includes(q));
  if(state.mode==='reading'){const p=progress();a=a.filter(b=>p[b.id]?.percent>0)}
