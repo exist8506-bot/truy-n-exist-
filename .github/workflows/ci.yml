@@ -56,6 +56,8 @@ jobs:
         run: node server/renumber-search.test.js
       - name: ZIP hardening regression
         run: node server/zip-hardening.test.js
+      - name: Authenticated cache policy regression
+        run: node server/auth-cache-policy.test.js
       - name: Start API smoke test
         run: |
           set +e
