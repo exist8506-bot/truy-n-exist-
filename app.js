@@ -86,6 +86,11 @@ function normalizeBook(b){
   chapters:Array.isArray(src.chapters)?src.chapters:[]
  };
 }
+async function loadFallbackBooks(){
+ const local=localBooks().map(normalizeBook),staticBooks=await loadStaticSeed(),map=new Map(local.map(b=>[b.id,b]));
+ for(const item of staticBooks)if(!map.has(item.id))map.set(item.id,item);
+ return [...map.values()];
+}
 async function loadStaticSeed(){
  const paths=['public-domain-seed.json','server/public-domain-seed.json'];
  for(const path of paths){
@@ -111,11 +116,8 @@ async function loadBooks(searchGuard=null){
   }while(page<10000);
    if(searchGuard!==null&&searchGuard!==librarySearchId)return state.books;state.books=out.map(normalizeBook);state.apiAvailable=true;state.remoteSearch=false;$('#apiStatus').textContent='● SQLite API';renderFilterOptions();
  }catch{
-  const local=localBooks().map(normalizeBook);
-  const staticBooks=await loadStaticSeed();
-  const map=new Map(local.map(b=>[b.id,b]));
-  for(const item of staticBooks)if(!map.has(item.id))map.set(item.id,item);
-   if(searchGuard!==null&&searchGuard!==librarySearchId)return state.books;state.books=[...map.values()];
+  const fallbackBooks=await loadFallbackBooks();
+   if(searchGuard!==null&&searchGuard!==librarySearchId)return state.books;state.books=fallbackBooks;
   state.apiAvailable=false;
   state.remoteSearch=false;
   $('#apiStatus').textContent=staticBooks.length?'● Dữ liệu tĩnh':'● Dữ liệu local';
@@ -169,9 +171,8 @@ async function refreshRemoteSearch(page=1){
  }catch{
   if(requestId!==librarySearchId)return;
   state.remoteSearch=false;
+   const fallbackBooks=await loadFallbackBooks().catch(()=>[]);if(requestId!==librarySearchId)return;state.books=fallbackBooks;
   $('#apiStatus').textContent='● Dữ liệu tĩnh';
-   await loadBooks(requestId).catch(()=>{});
-   if(requestId!==librarySearchId)return;
   renderFilterOptions();
   renderLibraryGridOnly();
   toast('Đang dùng dữ liệu tĩnh trên web');
@@ -659,7 +660,6 @@ async function downloadBook(bookId){
  }catch(e){
   job.status='error';job.error=e.message||'DOWNLOAD_FAILED';job.updatedAt=new Date().toISOString();await offlineSetDownload(job);refreshOfflineUI();toast('Tải offline bị gián đoạn, có thể tiếp tục');
  }
-    state.token='';storageRemove('ktf_token');state.user=null;
 window.downloadBook=downloadBook;window.cancelOffline=id=>{offlineCancel.add(id);toast('Đang dừng tải…')};window.removeOffline=async id=>{await offlineDeleteBook(id).catch(()=>{});refreshOfflineUI();toast('Đã xóa dữ liệu offline')};
 window.downloadChapter=()=>{const text=state.book.title+'\n'+$('#rtitle').textContent+'\n\n'+$('#rtext').innerText;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));a.download=(state.book.title+'-'+state.chapter+'.txt').replace(/[^\w\-À-ỹ ]/g,'_');a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);toast('Đã tải chương')};
   }
