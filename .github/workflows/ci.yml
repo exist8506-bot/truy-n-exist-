@@ -72,3 +72,20 @@ jobs:
           npx playwright test --grep-invert "desktop end-to-end: library, reader, account, admin, offline|Vietnamese Unicode and reader font regression" tests --config=playwright.config.mjs
       - name: Docker build
         run: docker build -t kho-truyen-full:ci .
+      - name: Docker runtime smoke
+        run: |
+          data_dir="$(mktemp -d)"
+          container_id="$(docker run -d --rm -p 8788:8787 -v "$data_dir:/app/server-data" kho-truyen-full:ci)"
+          cleanup() { docker rm -f "$container_id" >/dev/null 2>&1 || true; rm -rf "$data_dir"; }
+          trap cleanup EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8788/api/v1/health >/tmp/health.json; then
+              break
+            fi
+            sleep 1
+          done
+          test -s /tmp/health.json
+          node -e "const fs=require('fs'); const h=JSON.parse(fs.readFileSync('/tmp/health.json','utf8')); if(!h.ok||h.books<13||h.chapters<500) throw new Error('Docker runtime smoke failed: '+JSON.stringify(h)); console.log(h)"
+          curl -fsS http://127.0.0.1:8788/api/v1/stories?page=1&pageSize=1 >/tmp/story.json
+          node -e "const fs=require('fs'); const d=JSON.parse(fs.readFileSync('/tmp/story.json','utf8')); if(d.count<13||!d.items.length) throw new Error('Docker story API failed');"
+
