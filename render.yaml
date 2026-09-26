@@ -10,7 +10,9 @@ services:
         value: 8787
       - key: TRUST_PROXY
         value: "1"
+      - key: KHO_DATA_DIR
+        value: /app/server-data
     disk:
       name: kho-truyen-data
-      mountPath: /app/server
+      mountPath: /app/server-data
       sizeGB: 1
