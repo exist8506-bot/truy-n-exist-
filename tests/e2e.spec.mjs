@@ -85,7 +85,7 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
     localStorage.setItem('ktf_prog',JSON.stringify(p));
   });
   await page.getByRole('button',{name:'↪ Chương chưa đọc'}).click();
-  await expect(page.locator('#rtitle')).toHaveText('Chương 3');
+  await expect(page.locator('#rtitle')).toHaveText('Người khách áo xanh');
   await page.getByRole('button',{name:/🔊/}).click();
   await expect(page.locator('#ttsLabel')).toHaveText('Dừng');
   await page.getByRole('button',{name:'⛶'}).click();
