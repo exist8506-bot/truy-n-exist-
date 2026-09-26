@@ -153,7 +153,7 @@ function filtered(){
 }
 function card(b){const on=favs().includes(b.id), p=progress()[b.id]?.percent||0;return '<div class="card"><div class="cover" style="background:'+esc(b.tone||'linear-gradient(145deg,#182848,#4b6cb7)')+'"><span class="book">📖</span><span class="tag">'+esc(b.cat||T('story'))+'</span><button class="favbtn '+(on?'on':'')+'" onclick="event.stopPropagation();toggleFav(\''+esc(b.id)+'\')">'+(on?'♥':'♡')+'</button><h3>'+esc(b.title)+'</h3></div><div class="info" onclick="openBook(\''+esc(b.id)+'\')" style="cursor:pointer"><b>'+esc(b.title)+'</b><div class="muted">'+esc(b.author||'')+'</div><div class="meta"><span>'+((b.chapterCount||b.chapters?.length||0))+' '+T('chapterUnit')+'</span><span class="status">'+esc(b.status||'FULL')+'</span></div><div class="mini-progress"><i style="width:'+p+'%"></i></div></div></div>'}
 function renderFilterOptions(){
- const c=$('#categoryFilter');if(c){const current=c.value, cats=[...new Set(state.books.map(b=>b.cat).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'vi'));c.innerHTML='<option value="all">Tất cả thể loại</option>'+cats.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');if(cats.includes(current))c.value=current}
+  const c=$('#categoryFilter');if(c&&(!state.remoteSearch||c.options.length<=1)){const current=c.value,cats=[...new Set(state.books.map(b=>b.cat).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'vi'));c.innerHTML='<option value="all">Tất cả thể loại</option>'+cats.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');if(cats.includes(current))c.value=current}
 }
 let searchTimer=0,librarySearchId=0,chapterLoadId=0;
 async function refreshRemoteSearch(page=1){
