@@ -7,6 +7,7 @@ test('latest openBook call wins when story requests return out of order', async 
   });
 
   await page.goto('/');
+  await expect(page.locator('#grid .card')).toHaveCount(13);
   await page.evaluate(async () => {
     await Promise.all([window.openBook('b1'), window.openBook('b2')]);
   });
