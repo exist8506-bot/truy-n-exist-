@@ -16,9 +16,9 @@ test('remote search error returns to real static catalog', async ({ page }) => {
   });
 
   await page.goto('/');
-  await expect(page.locator('#grid .card')).toHaveCount(13);
+  await expect(page.locator('#grid .card')).toHaveCount(1);
 
-  await page.locator('#search').fill('not-found');
+  await page.locator('#search').fill('Mùa Sao');
   await page.waitForTimeout(300);
   expect(searchFailed).toBeTruthy();
   await expect(page.locator('#grid .card')).toHaveCount(13);
