@@ -47,7 +47,7 @@ function seed(){
         const c=Array.isArray(chapters[i])
           ? {title:chapters[i][0],content:chapters[i][1],index:i}
           : chapters[i]||{};
-        const idx=Math.max(0,Number(c.index??i));
+       const rawIndex=Number(c.index??i),idx=Number.isInteger(rawIndex)&&rawIndex>=0?rawIndex:i;
         const cid=id+':'+idx;
         const present=q('SELECT id FROM chapters WHERE id=?',cid);
         if(!present){
