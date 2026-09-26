@@ -209,7 +209,7 @@ async function loadChapterPage(page=1){
   const orderedLocal=state.order==='desc'?filteredLocal.slice().reverse():filteredLocal;
   state.chapters=orderedLocal.slice(startIndex,startIndex+chapterPageSize);
   chapterPage=Math.max(1,page);
-  chapterTotal=filteredLocal.length;
+   const localIndexes=normalized.map(c=>Number(c.index)).filter(Number.isInteger);state.chapterMin=localIndexes.length?Math.min(...localIndexes):0;state.chapterMax=localIndexes.length?Math.max(...localIndexes):-1;chapterTotal=filteredLocal.length;
   state.book.chapterCount=normalized.length;
   renderChapters();
  };
@@ -220,7 +220,7 @@ async function loadChapterPage(page=1){
   const j=await api('/stories/'+encodeURIComponent(state.book.id)+'/chapters?'+params);if(requestId!==chapterLoadId)return;
   state.chapters=(j.items||[]).map(c=>({...c,index:Number(c.index??c.chapter??0)}));
   chapterPage=Number(j.page||page);chapterTotal=Number(j.count??state.chapters.length);
-  state.book.chapterCount=Number(state.book.chapterCount||chapterTotal);
+   chapterPage=Number(j.page||page);chapterTotal=Number(j.count??state.chapters.length);state.chapterMin=Number.isInteger(Number(j.minIndex))?Number(j.minIndex):(state.chapters.length?Math.min(...state.chapters.map(c=>Number(c.index))):0);state.chapterMax=Number.isInteger(Number(j.maxIndex))?Number(j.maxIndex):(state.chapters.length?Math.max(...state.chapters.map(c=>Number(c.index))):-1);
   renderChapters();
  }catch{
   if(requestId!==chapterLoadId)return;
@@ -249,7 +249,7 @@ window.renderChapters=()=>{
 };
 window.toggleOrder=()=>{state.order=state.order==='asc'?'desc':'asc';chapterPage=1;loadChapterPage(1)};
 window.startBook=i=>readChapter(i);
-window.continueBook=()=>readChapter(progress()[state.book.id]?.chapter||0);
+window.continueBook=()=>readChapter(progress()[state.book.id]?.chapter??state.chapterMin);
 const chapterInflight=new Map();
 const translatedChapterCache=new Map();
 function storyTargetLanguage(){
@@ -391,7 +391,7 @@ let autoAdvanceTimer=0,ttsRunId=0,readerLoadId=0,ttsAudio=null;
 function totalChapterCount(){return Number(state.book?.chapterCount||state.book?.chapters?.length||state.chapters.length||0)}
 function scheduleAutoAdvance(){
  if(autoAdvanceTimer||!state.book)return;
- const n=totalChapterCount();if(state.chapter>=n-1)return;
+  const n=totalChapterCount();if(state.chapterMax<state.chapter+1)return;
  $('#autoNext').style.display='flex';
  autoAdvanceTimer=setTimeout(async()=>{
   autoAdvanceTimer=0;
@@ -406,7 +406,7 @@ async function readChapter(i,options={}){
  if(!state.book)return;
  if(autoAdvanceTimer){clearTimeout(autoAdvanceTimer);autoAdvanceTimer=0}
  const n=totalChapterCount();
- if(i<0||i>=n)return;
+  if(i<state.chapterMin||i>state.chapterMax||state.chapterMax<state.chapterMin)return;
  const loadId=++readerLoadId;
  const bookId=state.book.id;
  const lang=state.lang;
@@ -509,8 +509,8 @@ function speakTTSChunk(runId=ttsRunId){
  if(!ttsState.active||runId!==ttsRunId)return;
  if(ttsState.chapterKey!==state.book.id+':'+state.chapter)return;
  if(ttsState.pos>=ttsState.chunks.length){
-  const next=state.chapter+1,n=totalChapterCount();
-  if(next<n){
+   const next=state.chapter+1;
+   if(next<=state.chapterMax){
    const keep=runId;
    try{speechSynthesis?.cancel?.()}catch{}
    readChapter(next).then(()=>{if(keep===ttsRunId&&ttsState.active)startTTSCurrent()});
