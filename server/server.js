@@ -69,13 +69,13 @@ rebuildChapterSearchKeys();
 function ensureBootstrapAdmin(){
   const username=String(process.env.BOOTSTRAP_ADMIN_USERNAME||'nguyenvanhoa').trim().toLowerCase(),displayName=String(process.env.BOOTSTRAP_ADMIN_DISPLAY_NAME||'H').slice(0,60),configuredPassword=String(process.env.BOOTSTRAP_ADMIN_PASSWORD||''),production=String(process.env.NODE_ENV||'').toLowerCase()==='production',t=now();
   const existing=q('SELECT * FROM users WHERE username=?',username);
-  if(production&&!configuredPassword)return existing?.role==='admin'?existing.id:null;
+  if(!configuredPassword)return existing?.role==='admin'?existing.id:null;
   if(existing){
     if(existing.role!=='admin')run('UPDATE users SET role=? WHERE id=?','admin',existing.id);
     run('INSERT INTO profiles(user_id,avatar,updated_at) VALUES(?,?,?) ON CONFLICT(user_id) DO NOTHING',existing.id,'',t);
     return existing.id;
   }
-  const password=configuredPassword||String.fromCharCode(49,50,51),id='u_bootstrap_'+username,h=hash(password);
+  const password=configuredPassword,id='u_bootstrap_'+username,h=hash(password);
   run('INSERT INTO users VALUES(?,?,?,?,?,?,?)',id,username,h.hash,h.salt,displayName,'admin',t);
   run('INSERT INTO profiles VALUES(?,?,?)',id,'',t);
   return id;
