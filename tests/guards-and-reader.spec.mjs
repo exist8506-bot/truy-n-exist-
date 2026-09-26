@@ -2,7 +2,7 @@ import { test, expect } from 'playwright/test';
 
 test('unauthenticated admin guard and normal reader remain usable', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#grid .card')).toHaveCount(13);
+  await expect(page.locator('#grid .card')).toHaveCount(14);
 
   await page.locator('.actions .btn').nth(2).click();
   await expect(page.locator('#toast')).toContainText('Cần đăng nhập tài khoản admin');
