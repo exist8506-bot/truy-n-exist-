@@ -60,6 +60,8 @@ jobs:
         run: node server/auth-cache-policy.test.js
       - name: Chapter content search regression
         run: node server/chapter-content-search.test.js
+      - name: Logout and cover regression
+        run: node server/logout-regression.test.js
       - name: Start API smoke test
         run: |
           set +e
