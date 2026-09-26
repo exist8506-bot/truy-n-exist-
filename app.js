@@ -54,10 +54,10 @@ window.configureApi=()=>{const current=window.KhoAPI?.base?.()||'';const value=p
 function toast(x){const t=$('#toast');if(!t)return;t.textContent=x;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2200)}
 function save(k,v){localStorage.setItem(k,typeof v==='string'?v:JSON.stringify(v))}
 function get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return localStorage.getItem(k)??d}}
-function favs(){return get('ktf_favs',[])} function setFavs(v){save('ktf_favs',v)}
-function deletedFavs(){return get('ktf_deleted_favs',[])} function setDeletedFavs(v){save('ktf_deleted_favs',v)}
-function deletedBookmarks(){return get('ktf_deleted_bookmarks',{})} function setDeletedBookmarks(v){save('ktf_deleted_bookmarks',v)}
-function hist(){return get('ktf_hist',[])} function setHist(v){save('ktf_hist',v)}
+function favs(){const v=get('ktf_favs',[]);return Array.isArray(v)?[...new Set(v.map(x=>String(x||'').trim()).filter(Boolean))]:[]} function setFavs(v){save('ktf_favs',v)}
+function deletedFavs(){const v=get('ktf_deleted_favs',[]);return Array.isArray(v)?[...new Set(v.map(x=>String(x||'').trim()).filter(Boolean))]:[]} function setDeletedFavs(v){save('ktf_deleted_favs',v)}
+function deletedBookmarks(){const v=get('ktf_deleted_bookmarks',{});return v&&typeof v==='object'&&!Array.isArray(v)?v:{}} function setDeletedBookmarks(v){save('ktf_deleted_bookmarks',v)}
+function hist(){const v=get('ktf_hist',[]);return Array.isArray(v)?v.filter(x=>x&&typeof x==='object'):[]} function setHist(v){save('ktf_hist',v)}
 function historyClearPending(){return get('ktf_history_clear_pending',false)} function setHistoryClearPending(v){save('ktf_history_clear_pending',!!v)}
 function progress(){const raw=get('ktf_prog',{}),out={};if(!raw||typeof raw!=='object'||Array.isArray(raw))return out;for(const [id,v] of Object.entries(raw)){const chapter=Number(v?.chapter),percent=Number(v?.percent);if(!Number.isInteger(chapter)||chapter<0||!Number.isFinite(percent))continue;out[id]={chapter,percent:Math.max(0,Math.min(100,percent)),updated:Number.isFinite(Number(v?.updated))?Number(v.updated):Date.now()}}return out} function setProgress(v){save('ktf_prog',v)}
 function show(id){['library','detail','reader','history','bookcase'].forEach(x=>$('#'+x)?.classList.remove('show'));$('#'+id)?.classList.add('show');document.body.classList.toggle('reading-mode',id==='reader');scrollTo(0,0)}
