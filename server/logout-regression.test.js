@@ -13,5 +13,8 @@ async function req(path,opts={}){const r=await fetch('http://127.0.0.1:8787/api/
  x=await req('/auth/me',{headers:auth});if(x.status!==200)throw Error('session not usable');
  x=await req('/auth/logout',{method:'POST',headers:auth});if(x.status!==200||!x.data.ok)throw Error('logout failed: '+JSON.stringify(x.data));
  x=await req('/auth/me',{headers:auth});if(x.status!==401)throw Error('logged-out token still active: '+JSON.stringify(x.data));
- console.log('logout invalidation OK');
+ const badAuth={authorization:'Bearer '+(await (async()=>{const y=await req('/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'nguyenvanhoa',password})});return y.data.token})()) ,'content-type':'application/json'};
+ x=await req('/admin/stories/b1/cover',{method:'POST',headers:badAuth,body:JSON.stringify({data:'data:text/plain;base64,ZmFrZQ=='})});
+ if(x.status!==400||x.data.error!=='INVALID_IMAGE')throw Error('invalid cover accepted: '+JSON.stringify(x.data));
+ console.log('logout and cover validation OK');
 }finally{p.kill('SIGTERM');await wait(100);for(const f of ['kho_truyen.sqlite','kho_truyen.sqlite-wal','kho_truyen.sqlite-shm'])try{fs.unlinkSync(path.join(root,f))}catch{}}})().catch(e=>{console.error(e);process.exitCode=1});
