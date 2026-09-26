@@ -350,4 +350,4 @@ if(require.main===module){
  process.on('SIGINT',()=>{db.close();server.close(()=>process.exit(0))});
  process.on('SIGTERM',()=>{db.close();server.close(()=>process.exit(0))});
 }
-module.exports={parseEpub,chapterizeText,stripHtml,parseImportFile,db,server};
+module.exports={parseEpub,chapterizeText,stripHtml,parseImportFile,zipRead,db,server};
