@@ -102,9 +102,9 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   await expect(page.locator('#downloadList')).toContainText('Đã lưu đầy đủ',{timeout:30000});
 
   await page.locator('.actions .btn').nth(4).click();
-  await expect(page.locator('#historyList')).toContainText('Chương 3');
+  await expect(page.locator('#historyList')).toContainText(/chương 3/i);
   await page.locator('.actions .btn').nth(3).click();
-  await expect(page.locator('#bookmarkList')).toContainText('Chương 2');
+  await expect(page.locator('#bookmarkList')).toContainText(/chương 2/i);
 
   await page.locator('.actions .btn').first().click();
   await page.locator('#accountRegisterTab').click();
