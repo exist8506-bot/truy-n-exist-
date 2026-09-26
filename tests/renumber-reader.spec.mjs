@@ -1,6 +1,10 @@
 import { test, expect } from 'playwright/test';
 
 test('reader supports non-zero chapter numbering after renumber', async ({ page }) => {
+  const chapters = [
+    { bookId: story.id, index: 10, title: 'Chương Mười', content: 'Nội dung chương số mười.' },
+    { bookId: 'renumber-ui', index: 11, title: 'Chương Mười Một', content: 'Nội dung chương số mười một.' }
+  ];
   const story = {
     id: 'renumber-ui',
     title: 'Truyện đánh số 10',
@@ -8,14 +12,8 @@ test('reader supports non-zero chapter numbering after renumber', async ({ page 
     cat: 'Test',
     desc: 'Renumbered reader regression',
     status: 'FULL',
-    chapters: 2,
-    chaptersData: []
+    chapters
   };
-  story.chapters = chapters;
-  const chapters = [
-    { bookId: story.id, index: 10, title: 'Chương Mười', content: 'Nội dung chương số mười.' },
-    { bookId: story.id, index: 11, title: 'Chương Mười Một', content: 'Nội dung chương số mười một.' }
-  ];
 
   await page.route('**/api/v1/stories?*', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
