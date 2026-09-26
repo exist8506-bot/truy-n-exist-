@@ -87,7 +87,7 @@ function send(res,status,data,type='application/json; charset=utf-8',req=null){
   if(req&&req.method==='GET'&&!req.headers?.authorization&&req.headers['if-none-match']===tag){headers['Cache-Control']='private, max-age=5';res.writeHead(304,headers);return res.end()}
   if(req&&req.method==='GET')headers['Cache-Control']=req.headers?.authorization?'no-store':'private, max-age=5';
   const canGzip=req&&/gzip/i.test(req.headers['accept-encoding']||'')&&bodyBuf.length>=512&&status!==204;
-  if(canGzip){headers['Content-Encoding']='gzip';zlib.gzip(bodyBuf,(e,b)=>{if(e){res.writeHead(status,headers);return res.end(bodyBuf)}headers['Content-Length']=b.length;res.writeHead(status,headers);res.end(b)})}
+  if(canGzip){headers['Content-Encoding']='gzip';zlib.gzip(bodyBuf,(e,b)=>{if(e){delete headers['Content-Encoding'];headers['Content-Length']=bodyBuf.length;res.writeHead(status,headers);return res.end(bodyBuf)}headers['Content-Length']=b.length;res.writeHead(status,headers);res.end(b)})}
   else {headers['Content-Length']=bodyBuf.length;res.writeHead(status,headers);res.end(bodyBuf)}
 }
 function body(req,limit=10*1024*1024){return new Promise((resolve,reject)=>{let s='',n=0;req.on('data',c=>{n+=c.length;if(n>limit){reject(new Error('BODY_TOO_LARGE'));req.destroy();return}s+=c});req.on('end',()=>{try{resolve(s?JSON.parse(s):{})}catch(e){reject(new Error('BAD_JSON'))}});req.on('error',reject)})}
