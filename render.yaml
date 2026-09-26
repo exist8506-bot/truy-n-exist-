@@ -12,6 +12,10 @@ services:
         value: "1"
       - key: KHO_DATA_DIR
         value: /app/server-data
+      - key: BOOTSTRAP_ADMIN_USERNAME
+        sync: false
+      - key: BOOTSTRAP_ADMIN_PASSWORD
+        sync: false
     disk:
       name: kho-truyen-data
       mountPath: /app/server-data
