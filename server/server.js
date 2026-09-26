@@ -88,7 +88,7 @@ function send(res,status,data,type='application/json; charset=utf-8',req=null){
   else {headers['Content-Length']=bodyBuf.length;res.writeHead(status,headers);res.end(bodyBuf)}
 }
 function body(req,limit=10*1024*1024){return new Promise((resolve,reject)=>{let s='',n=0;req.on('data',c=>{n+=c.length;if(n>limit){reject(new Error('BODY_TOO_LARGE'));req.destroy();return}s+=c});req.on('end',()=>{try{resolve(s?JSON.parse(s):{})}catch(e){reject(new Error('BAD_JSON'))}});req.on('error',reject)})}
-function userByToken(req){const h=req.headers.authorization||'';if(!h.startsWith('Bearer '))return null;const s=q('SELECT * FROM sessions WHERE token=? AND expires_at>?',h.slice(7),now());if(!s)return null;return q('SELECT id,username,display_name,role,created_at FROM users WHERE id=?',s.user_id)||null}
+function userByToken(req){const h=req.headers.authorization||'';if(!h.startsWith('Bearer '))return null;const tokenValue=h.slice(7);const s=q('SELECT * FROM sessions WHERE token=?',tokenValue);if(!s)return null;if(s.expires_at<=now()){run('DELETE FROM sessions WHERE token=?',tokenValue);return null}return q('SELECT id,username,display_name,role,created_at FROM users WHERE id=?',s.user_id)||null}
 function requireUser(req,res){const u=userByToken(req);if(!u){send(res,401,{error:'UNAUTHORIZED'});return null}return u}
 function requireAdmin(req,res){const u=requireUser(req,res);if(!u)return null;if(u.role!=='admin'){send(res,403,{error:'ADMIN_REQUIRED'});return null}return u}
 function publicUser(u){return {id:u.id,username:u.username,displayName:u.display_name||u.username,role:u.role||'user',createdAt:u.created_at}}
