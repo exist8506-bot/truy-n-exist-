@@ -697,17 +697,17 @@ async function restoreAccount(){
   const remoteB=remote.bookmarks||{},deletedB=deletedBookmarks();for(const [id,items] of Object.entries(remoteB)){const story=state.books.find(b=>b.id===id);if(!story)continue;const min=Number.isInteger(Number(story.chapterMin))?Number(story.chapterMin):0,max=Number.isInteger(Number(story.chapterMax))?Number(story.chapterMax):Math.max(min,(Number(story.chapterCount)||1)+min-1);for(const v of (items||[])){const idx=Number(v.chapterIndex);if(!Number.isInteger(idx)||idx<min||idx>max||deletedB[id]?.[idx])continue;localB[id]=localB[id]||{};const cur=localB[id][idx];const remoteTime=Date.parse(v.updatedAt||'')||0;const localTime=Number(cur?.at||0);if(!cur||remoteTime>=localTime)localB[id][idx]={title:v.title||'',at:remoteTime||Date.now()}}}setBookmarks(localB);
   const remoteH=remote.history||{},localH=hist(),historyByKey=new Map(localH.map(x=>[x.bookId+':'+x.chapter,{...x}]));for(const [id,v] of Object.entries(remoteH)){const story=state.books.find(b=>b.id===id);if(!story)continue;const idx=Number(v.chapterIndex),min=Number.isInteger(Number(story.chapterMin))?Number(story.chapterMin):0,max=Number.isInteger(Number(story.chapterMax))?Number(story.chapterMax):Math.max(min,(Number(story.chapterCount)||1)+min-1);if(!Number.isInteger(idx)||idx<min||idx>max)continue;const key=id+':'+idx,cur=historyByKey.get(key),rt=Date.parse(v.updatedAt||'')||0,lt=Number(cur?.at||0);if(!cur||rt>=lt)historyByKey.set(key,{bookId:id,chapter:idx,title:cur?.title||'',at:rt||Date.now()})}setHist([...historyByKey.values()].sort((a,b)=>Number(b.at||0)-Number(a.at||0)).slice(0,200));
   const deletedF=new Set(deletedFavs());const validStoryIds=new Set(state.books.map(b=>b.id));const mergedF=[...new Set([...(Array.isArray(remote.favorites)?remote.favorites:[]).filter(id=>validStoryIds.has(id)&&!deletedF.has(id)),...localF.filter(id=>validStoryIds.has(id))])];setFavs(mergedF);
-  await pushLocalSync();
-  updateStats();renderBookcase();
+   const pushed=await pushLocalSync();if(pushed.some(v=>v===null))throw Error('SYNC_PARTIAL');
+   updateStats();renderBookcase();return true;
  }catch(e){
   if(e?.message==='UNAUTHORIZED'||e?.message==='INVALID_CREDENTIALS'){
    state.token='';storageRemove('ktf_token');state.user=null;
   } else {
    toast('Chưa đồng bộ được dữ liệu; sẽ thử lại khi online');
-  }
+    return false;
  }
 }
-window.syncNow=async()=>{if(!state.token)return toast('Hãy đăng nhập trước');try{await pushLocalSync();await restoreAccount();toast('Đã đồng bộ tủ truyện và tiến độ')}catch{toast('Đồng bộ chưa hoàn tất')}}
+ window.syncNow=async()=>{if(!state.token)return toast('Hãy đăng nhập trước');try{const pushed=await pushLocalSync();if(pushed.some(v=>v===null))throw Error('SYNC_PARTIAL');const restored=await restoreAccount();if(!restored)throw Error('SYNC_FAILED');toast('Đã đồng bộ tủ truyện và tiến độ')}catch{toast('Đồng bộ chưa hoàn tất')}}
 window.addEventListener('online',()=>{if(state.token)window.syncNow?.()});
 function accountError(e){
  const map={API_UNREACHABLE:'Chưa kết nối được máy chủ đăng nhập. Trang GitHub Pages đang thiếu backend API; hãy cấu hình URL API bằng nút 🌐 một lần.',HTTP_404:'Không tìm thấy máy chủ API đăng nhập. Kiểm tra URL API.',INVALID_ACCOUNT:'Tên đăng nhập 3–32 ký tự, chỉ dùng a-z, 0-9, dấu chấm, gạch dưới hoặc gạch ngang; mật khẩu tối thiểu 6 ký tự.',USERNAME_EXISTS:'Tên đăng nhập đã tồn tại.',INVALID_CREDENTIALS:'Tên đăng nhập hoặc mật khẩu không đúng.',UNAUTHORIZED:'Phiên đăng nhập đã hết hạn.'};
