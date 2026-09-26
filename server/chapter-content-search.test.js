@@ -8,6 +8,8 @@ async function req(path){const r=await fetch('http://127.0.0.1:8787/api/v1'+path
  let h;for(let i=0;i<30;i++){try{h=await req('/health');if(h.status===200)break}catch{}await wait(100)}if(h?.status!==200)throw Error('health failed');
  let x=await req('/stories/b1/chapters?page=1&pageSize=100&q=Minh');
  if(x.status!==200||x.data.count<1)throw Error('content search failed: '+JSON.stringify(x.data));
+ x=await req('/stories/b1/chapters?page=1&pageSize=100&q=dinh');
+ if(x.status!==200||x.data.count<1)throw Error('accent-insensitive content search failed: '+JSON.stringify(x.data));
  x=await req('/stories/b1/chapters?page=1&pageSize=100&q=không+tồn+tại');
  if(x.status!==200||x.data.count!==0)throw Error('empty content search failed: '+JSON.stringify(x.data));
  console.log('chapter content search regression OK');
