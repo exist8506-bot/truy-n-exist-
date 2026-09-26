@@ -64,6 +64,7 @@ x=await req('/stories/b1/chapters?page=1&pageSize=5&q=anh');if(x.status!==200||x
  if(x.status!==400||x.data.error!=='INVALID_BACKUP_COVER')throw Error('invalid backup cover was not rejected '+JSON.stringify(x.data));
  x=await req('/stories?page=1&pageSize=200');if(x.status!==200||x.data.count!==baseStories)throw Error('invalid backup mutated live data');
  const legacyBackup=JSON.parse(JSON.stringify(cleanBackup));
+ legacyBackup.covers={};
  if(legacyBackup.chapters[0])delete legacyBackup.chapters[0].search_key;
  x=await req('/admin/backup/restore',{method:'POST',headers:{...adminAuth,'content-type':'application/json'},body:JSON.stringify(legacyBackup)});
  if(x.status!==200)throw Error('legacy backup restore failed '+JSON.stringify(x.data));
