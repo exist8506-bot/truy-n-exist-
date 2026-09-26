@@ -68,6 +68,8 @@ jobs:
         run: node server/seed-index-regression.test.js
       - name: Gzip fallback regression
         run: node server/gzip-fallback-regression.test.js
+      - name: Chapter content hardening regression
+        run: node server/chapter-content-hardening.test.js
       - name: Start API smoke test
         run: |
           set +e
