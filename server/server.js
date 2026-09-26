@@ -75,7 +75,8 @@ function ensureBootstrapAdmin(){
     run('INSERT INTO profiles(user_id,avatar,updated_at) VALUES(?,?,?) ON CONFLICT(user_id) DO NOTHING',existing.id,'',t);
     return existing.id;
   }
-  const password=configuredPassword||String.fromCharCode(49,50,51),id='u_bootstrap_'+username,h=hash(password);
+  if(!configuredPassword)return existing?.role==='admin'?existing.id:null;
+  const password=configuredPassword,id='u_bootstrap_'+username,h=hash(password);
   run('INSERT INTO users VALUES(?,?,?,?,?,?,?)',id,username,h.hash,h.salt,displayName,'admin',t);
   run('INSERT INTO profiles VALUES(?,?,?)',id,'',t);
   return id;
