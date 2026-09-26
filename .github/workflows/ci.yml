@@ -67,7 +67,7 @@ jobs:
         run: |
           npm install --no-save --no-package-lock playwright@1.55.0
           npx playwright install --with-deps chromium
-          npx playwright test --grep-invert "desktop end-to-end: library, reader, account, admin, offline|Vietnamese Unicode and reader font regression" tests --config=playwright.config.mjs
+          npx playwright test tests --config=playwright.config.mjs
 
       - name: Docker build
         run: docker build -t kho-truyen-full:ci .
