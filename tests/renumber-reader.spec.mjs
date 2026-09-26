@@ -8,8 +8,10 @@ test('reader supports non-zero chapter numbering after renumber', async ({ page 
     cat: 'Test',
     desc: 'Renumbered reader regression',
     status: 'FULL',
-    chapters: 2
+    chapters: 2,
+    chaptersData: []
   };
+  story.chapters = chapters;
   const chapters = [
     { bookId: story.id, index: 10, title: 'Chương Mười', content: 'Nội dung chương số mười.' },
     { bookId: story.id, index: 11, title: 'Chương Mười Một', content: 'Nội dung chương số mười một.' }
@@ -60,4 +62,9 @@ test('reader supports non-zero chapter numbering after renumber', async ({ page 
 
   await page.locator('#prev').click();
   await expect(page.locator('#rtitle')).toHaveText('Chương Mười');
+
+  await page.route('**/api/v1/stories/renumber-ui/chapters/11*', route => route.abort());
+  await page.locator('#next').click();
+  await expect(page.locator('#rtitle')).toHaveText('Chương Mười Một');
+  await expect(page.locator('#rtext')).toContainText('Nội dung chương số mười một.');
 });
