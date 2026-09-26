@@ -14,7 +14,8 @@ test('library modes keep the complete loaded dataset beyond 100 stories', async 
   await page.route('**/api/v1/stories?*', async route => {
     const url = new URL(route.request().url());
     const requestedPage = Number(url.searchParams.get('page') || 1);
-    const items = requestedPage === 1 ? pageOne : pageTwo;
+    const q = url.searchParams.get('q') || '';
+    const items = q ? [pageTwo[19]] : (requestedPage === 1 ? pageOne : pageTwo);
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -26,5 +27,10 @@ test('library modes keep the complete loaded dataset beyond 100 stories', async 
   await expect(page.locator('#grid .card')).toHaveCount(120);
   await page.locator('#segRank').click();
   await expect(page.locator('#homeMode')).toContainText('Story 120');
+  await expect(page.locator('#grid .card')).toHaveCount(120);
+
+  await page.locator('#search').fill('Story 120');
+  await expect(page.locator('#grid .card')).toHaveCount(1);
+  await page.locator('#search').fill('');
   await expect(page.locator('#grid .card')).toHaveCount(120);
 });
