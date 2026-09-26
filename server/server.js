@@ -251,18 +251,37 @@ if(p==='/api/v1/bookmarks'&&req.method==='PUT')return body(req).then(x=>{const u
 if(p==='/api/v1/favorites'&&req.method==='GET'){const u=requireUser(req,res);if(!u)return;return reply(200,all('SELECT story_id FROM favorites WHERE user_id=? ORDER BY created_at DESC',u.id).map(r=>r.story_id))}
 if(p==='/api/v1/favorites'&&req.method==='PUT')return body(req).then(x=>{const u=requireUser(req,res);if(!u)return;const s=getStory(String(x.storyId||''));if(!s)return reply(400,{error:'INVALID_STORY'});if(x.active===false)run('DELETE FROM favorites WHERE user_id=? AND story_id=?',u.id,s.id);else run('INSERT OR IGNORE INTO favorites VALUES(?,?,?)',u.id,s.id,now());reply(200,{items:all('SELECT story_id FROM favorites WHERE user_id=? ORDER BY created_at DESC',u.id).map(r=>r.story_id)})}).catch(()=>reply(400,{error:'BAD_JSON'}));
 let m=p.match(/^\/api\/v1\/stories\/([^/]+)\/chapters\/(\d+)$/);if(m&&req.method==='GET'){const ck=cacheKey(req),hit=cacheGet(ck);if(hit)return reply(200,hit);const r=q('SELECT * FROM chapters WHERE story_id=? AND chapter_index=?',m[1],Number(m[2]));if(!r)return reply(404,{error:'CHAPTER_NOT_FOUND'});const requestedLang=String(u.query.lang||'').trim();const job=requestedLang&&TRANSLATE_LANGS.has(requestedLang)?getTranslatedChapter(r,requestedLang):Promise.resolve({...chapterRow(r),language:null,translated:false});return job.then(out=>{cacheSet(ck,out);return reply(200,out)}).catch(e=>reply(502,{error:'TRANSLATION_FAILED',detail:String(e.message||e)}))}
-m=p.match(/^\/api\/v1\/stories\/([^/]+)\/chapters$/);if(m&&req.method==='GET'){const ck=cacheKey(req),hit=cacheGet(ck);if(hit)return reply(200,hit);if(!getStory(m[1]))return reply(404,{error:'BOOK_NOT_FOUND'});const total=Number(q('SELECT COUNT(*) n FROM chapters WHERE story_id=?',m[1]).n),bounds=q('SELECT MIN(chapter_index) minIndex,MAX(chapter_index) maxIndex FROM chapters WHERE story_id=?',m[1]),minIndex=bounds?.minIndex==null?0:Number(bounds.minIndex),maxIndex=bounds?.maxIndex==null?-1:Number(bounds.maxIndex);const hasPaging=u.query.page!=null||u.query.pageSize!=null||u.query.q!=null;const cq=String(u.query.q||'').trim();if(!hasPaging)return reply(200,{items:all('SELECT id,story_id,chapter_index,title,updated_at FROM chapters WHERE story_id=? ORDER BY chapter_index',m[1]).map(chapterRow),minIndex,maxIndex,count:total});const page=clampedInteger(u.query.page,1,1,1000000),size=clampedInteger(u.query.pageSize,50,1,100),direction=String(u.query.sort||'asc').toLowerCase()==='desc'?'DESC':'ASC';let rows;if(cq){const needle=norm(cq),like='%'+needle+'%',offset=(page-1)*size;
-         const num=Number(cq); let countRow,filtered;
-         if(Number.isFinite(num)&&String(num)===cq){
-            const targetIndex=minIndex===0?num-1:num;
-            countRow=q('SELECT COUNT(*) n FROM chapters WHERE story_id=? AND (search_key LIKE ? OR chapter_index=?)',m[1],like,targetIndex);
-            filtered=all('SELECT id,story_id,chapter_index,title,updated_at FROM chapters WHERE story_id=? AND (search_key LIKE ? OR chapter_index=?) ORDER BY chapter_index '+direction+' LIMIT ? OFFSET ?',m[1],like,targetIndex,size,offset);
-          }else{
-             countRow=q('SELECT COUNT(*) n FROM chapters WHERE story_id=? AND search_key LIKE ?',m[1],like);
-             filtered=all('SELECT id,story_id,chapter_index,title,updated_at FROM chapters WHERE story_id=? AND search_key LIKE ? ORDER BY chapter_index '+direction+' LIMIT ? OFFSET ?',m[1],like,size,offset);
-          }
-         const count=Number(countRow.n||0);
-         return reply(200,{items:filtered.map(chapterRow),page,pageSize:size,total:Math.ceil(count/size),count,minIndex,maxIndex})}else rows=all('SELECT id,story_id,chapter_index,title,updated_at FROM chapters WHERE story_id=? ORDER BY chapter_index '+direction+' LIMIT ? OFFSET ?',m[1],size,(page-1)*size);return reply(200,{items:rows.map(chapterRow),page,pageSize:size,total:Math.ceil(total/size),count:total,minIndex,maxIndex})}
+m=p.match(/^\/api\/v1\/stories\/([^/]+)\/chapters$/);if(m&&req.method==='GET'){const ck=cacheKey(req),hit=cacheGet(ck);if(hit)return reply(200,hit);if(!getStory(m[1]))return reply(404,{error:'BOOK_NOT_FOUND'});const total=Number(q('SELECT COUNT(*) n FROM chapters WHERE story_id=?',m[1]).n),bounds=q('SELECT MIN(chapter_index) minIndex,MAX(chapter_index) maxIndex FROM chapters WHERE story_id=?',m[1]),minIndex=bounds?.minIndex==null?0:Number(bounds.minIndex),maxIndex=bounds?.maxIndex==null?-1:Number(bounds.maxIndex);const hasPaging=u.query.page!=null||u.query.pageSize!=null||u.query.q!=null;const cq=String(u.query.q||'').trim();if(!hasPaging)return reply(200,{items:all('SELECT id,story_id,chapter_index,title,updated_at FROM chapters WHERE story_id=? ORDER BY chapter_index',m[1]).map(chapterRow),minIndex,maxIndex,count:total});const page=clampedInteger(u.query.page,1,1,1000000),size=clampedInteger(u.query.pageSize,50,1,100),direction=String(u.query.sort||'asc').toLowerCase()==='desc'?'DESC':'ASC';let rows;if(cq){
+ const needle=norm(cq),like='%'+needle+'%',offset=(page-1)*size,num=Number(cq),isNumber=Number.isFinite(num)&&String(num)===cq;
+ const targetIndex=isNumber?(minIndex===0?num-1:num);
+ let count=0,filtered=[];
+ if(CHAPTER_FTS){
+   const terms=needle.split(/\s+/).filter(Boolean).slice(0,12).map(t=>'"'+t.replace(/"/g,'""')+'"*');
+   const match=terms.join(' AND ');
+   try{
+     if(isNumber){
+       const c=q('SELECT COUNT(*) n FROM chapters_fts f WHERE f.story_id=? AND f.search_key MATCH ? OR f.story_id=? AND rowid IN (SELECT rowid FROM chapters WHERE story_id=? AND chapter_index=?)',m[1],match,m[1],m[1],targetIndex);
+       count=Number(c?.n||0);
+       filtered=all('SELECT c.id,c.story_id,c.chapter_index,c.title,c.updated_at FROM chapters c LEFT JOIN chapters_fts f ON f.rowid=c.rowid WHERE (f.story_id=? AND f.search_key MATCH ?) OR (c.story_id=? AND c.chapter_index=?) ORDER BY c.chapter_index '+direction+' LIMIT ? OFFSET ?',m[1],match,m[1],targetIndex,size,offset);
+     }else{
+       const c=q('SELECT COUNT(*) n FROM chapters_fts f WHERE f.story_id=? AND f.search_key MATCH ?',m[1],match);
+       count=Number(c?.n||0);
+       filtered=all('SELECT c.id,c.story_id,c.chapter_index,c.title,c.updated_at FROM chapters c JOIN chapters_fts f ON f.rowid=c.rowid WHERE f.story_id=? AND f.search_key MATCH ? ORDER BY c.chapter_index '+direction+' LIMIT ? OFFSET ?',m[1],match,size,offset);
+     }
+   }catch(e){count=0;filtered=[]}
+ }
+ if(!CHAPTER_FTS||(!filtered.length&&page===1)){
+   if(isNumber){
+     const c=q('SELECT COUNT(*) n FROM chapters WHERE story_id=? AND (search_key LIKE ? OR chapter_index=?)',m[1],like,targetIndex);
+     count=Number(c?.n||0);
+     filtered=all('SELECT id,story_id,chapter_index,title,updated_at FROM chapters WHERE story_id=? AND (search_key LIKE ? OR chapter_index=?) ORDER BY chapter_index '+direction+' LIMIT ? OFFSET ?',m[1],like,targetIndex,size,offset);
+   }else{
+     const c=q('SELECT COUNT(*) n FROM chapters WHERE story_id=? AND search_key LIKE ?',m[1],like);
+     count=Number(c?.n||0);
+     filtered=all('SELECT id,story_id,chapter_index,title,updated_at FROM chapters WHERE story_id=? AND search_key LIKE ? ORDER BY chapter_index '+direction+' LIMIT ? OFFSET ?',m[1],like,size,offset);
+   }
+ }
+ return reply(200,{items:filtered.map(chapterRow),page,pageSize:size,total:Math.ceil(count/size),count,minIndex,maxIndex})}else rows=all('SELECT id,story_id,chapter_index,title,updated_at FROM chapters WHERE story_id=? ORDER BY chapter_index '+direction+' LIMIT ? OFFSET ?',m[1],size,(page-1)*size);return reply(200,{items:rows.map(chapterRow),page,pageSize:size,total:Math.ceil(total/size),count:total,minIndex,maxIndex})}
 m=p.match(/^\/api\/v1\/stories\/([^/]+)$/);if(m&&req.method==='GET'){const ck=cacheKey(req),hit=cacheGet(ck);if(hit)return reply(200,hit);const s=getStory(m[1]);if(!s)return reply(404,{error:'BOOK_NOT_FOUND'});const out=storyRow(s);cacheSet(ck,out);return reply(200,out)}
 if(p==='/api/v1/stories'&&req.method==='GET'){const ck=cacheKey(req),hit=cacheGet(ck);if(hit)return reply(200,hit);let where=[],args=[],sql=`SELECT s.*,COUNT(c.id) chapters,MIN(c.chapter_index) chapter_min,MAX(c.chapter_index) chapter_max FROM stories s LEFT JOIN chapters c ON c.story_id=s.id`;const qv=String(u.query.q||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();if(qv){where.push(`s.search_key LIKE ?`);const z='%'+norm(qv)+'%';args.push(z)}if(u.query.author&&u.query.author!=='all'){where.push('s.author=?');args.push(String(u.query.author))}if(u.query.category&&u.query.category!=='all'){where.push('s.category=?');args.push(String(u.query.category))}if(u.query.status&&u.query.status!=='all'){where.push('s.status=?');args.push(String(u.query.status).toUpperCase())}if(where.length)sql+=' WHERE '+where.join(' AND ');sql+=' GROUP BY s.id';const sort=u.query.sort||'title';sql+=' ORDER BY '+(sort==='chapters'?'chapters DESC':sort==='author'?'s.author COLLATE NOCASE':sort==='new'?'s.updated_at DESC':'s.title COLLATE NOCASE');const page=clampedInteger(u.query.page,1,1,1000000),size=clampedInteger(u.query.pageSize,12,1,100);const total=Number(q('SELECT COUNT(*) n FROM ('+sql+')',...args).n),pagedSql=sql+' LIMIT ? OFFSET ?',paged=all(pagedSql,...args,size,(page-1)*size),items=paged.map(storyRow);const out={items,page,total:Math.max(1,Math.ceil(total/size)),pageSize:size,count:total};cacheSet(ck,out);return reply(200,out)}
 if(p.startsWith('/api/v1/admin/')){const u0=requireAdmin(req,res);if(!u0)return;
