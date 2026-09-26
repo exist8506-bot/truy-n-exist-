@@ -75,7 +75,7 @@ jobs:
       - name: Docker runtime smoke
         run: |
           data_dir="$(mktemp -d)"
-          container_id="$(docker run -d --rm -p 8788:8787 -v "$data_dir:/app/server-data" kho-truyen-full:ci)"
+          container_id="$(docker run -d --rm -p 8788:8787 -e KHO_DATA_DIR=/app/server-data -v "$data_dir:/app/server-data" kho-truyen-full:ci)"
           cleanup() { docker rm -f "$container_id" >/dev/null 2>&1 || true; rm -rf "$data_dir"; }
           trap cleanup EXIT
           for i in $(seq 1 30); do
