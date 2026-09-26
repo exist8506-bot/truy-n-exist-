@@ -7,7 +7,7 @@ test('library modes keep the complete loaded dataset beyond 100 stories', async 
   }));
   const pageTwo = Array.from({ length: 20 }, (_, i) => ({
     id: 'story-' + (i + 101), title: 'Story ' + (i + 101), author: 'Author',
-    cat: 'Category B', desc: '', status: 'DRAFT',
+    cat: 'Category B', desc: '', status: i===19 ? 'FULL' : 'DRAFT',
     chapters: i === 19 ? 999 : 2, chapterMin: 0, chapterMax: i === 19 ? 998 : 1
   }));
 
@@ -15,11 +15,13 @@ test('library modes keep the complete loaded dataset beyond 100 stories', async 
     const url = new URL(route.request().url());
     const requestedPage = Number(url.searchParams.get('page') || 1);
     const q = url.searchParams.get('q') || '';
-    const items = q ? [pageTwo[19]] : (requestedPage === 1 ? pageOne : pageTwo);
+    const status = url.searchParams.get('status') || 'all';
+    let items = q ? [pageTwo[19]] : (requestedPage === 1 ? pageOne : pageTwo);
+    if (status === 'FULL') items = items.filter(x => x.status === 'FULL');
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ items, page: requestedPage, pageSize: 100, total: 120, count: 120 })
+      body: JSON.stringify({ items, page: requestedPage, pageSize: 100, total: status === 'FULL' ? 1 : 120, count: status === 'FULL' ? 1 : 120 })
     });
   });
 
