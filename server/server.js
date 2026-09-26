@@ -181,13 +181,18 @@ function looksChinese(text){return /[\u3400-\u9fff]/.test(String(text||''))}
 function looksEnglish(text){return /^[\x00-\x7F\s\p{P}\p{N}]+$/u.test(String(text||''))}
 async function getTranslatedChapter(row,lang){
  if(!TRANSLATE_LANGS.has(lang))return {...chapterRow(row),language:null,translated:false};
+ const translationBudgetMs=Number(process.env.KHO_TRANSLATION_BUDGET_MS||2500);
+ const translateWithinBudget=async()=>{
+  const job=Promise.all([translateExternal(row.title,lang),translateExternal(row.content,lang)]);
+  let timer;try{return await Promise.race([job,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('TRANSLATION_BUDGET_EXCEEDED')),translationBudgetMs)})])}finally{clearTimeout(timer)}
+ };
  const sourceHash=translationHash(row.title+'\n'+row.content);
  const cached=q('SELECT * FROM chapter_translations WHERE story_id=? AND chapter_index=? AND lang=?',row.story_id,Number(row.chapter_index),lang);
  if(cached&&cached.source_hash===sourceHash)return {bookId:row.story_id,index:Number(row.chapter_index),title:cached.title||row.title,content:cached.content,id:row.id,updatedAt:cached.updated_at,language:lang,translated:true};
  const sameLanguage=(lang==='vi'&&looksVietnamese(row.content))||(lang==='en'&&looksEnglish(row.content))||(lang==='zh-CN'&&looksChinese(row.content));
  if(sameLanguage)return {...chapterRow(row),language:lang,translated:false,provider:'passthrough'};
  try{
-  const [titleResult,contentResult]=await Promise.all([translateExternal(row.title,lang),translateExternal(row.content,lang)]);
+  const [titleResult,contentResult]=await translateWithinBudget();
   const title=titleResult.text,content=contentResult.text,provider=contentResult.provider||titleResult.provider||'unknown',t=now();
   run('INSERT INTO chapter_translations(story_id,chapter_index,lang,source_hash,title,content,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(story_id,chapter_index,lang) DO UPDATE SET source_hash=excluded.source_hash,title=excluded.title,content=excluded.content,updated_at=excluded.updated_at',row.story_id,Number(row.chapter_index),lang,sourceHash,title,content,t);
   return {bookId:row.story_id,index:Number(row.chapter_index),title,content,id:row.id,updatedAt:row.updated_at,language:lang,translated:true,provider};
