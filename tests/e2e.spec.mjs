@@ -62,16 +62,16 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   await page.locator('#grid .card').first().locator('.info').click();
   await page.locator('#chapters .chapter').first().click();
   await expect(page.locator('#reader')).toHaveClass(/show/);
-  await expect(page.locator('#rtitle')).toHaveText('Chương 1');
+  await expect(page.locator('#rtitle')).toHaveText('Ánh đèn cuối thung lũng');
   await expect(page.locator('#rtext')).not.toBeEmpty();
   const firstReaderUrl=page.url();
   await page.locator('#next').click();
-  await expect(page.locator('#rtitle')).toHaveText('Chương 2');
+  await expect(page.locator('#rtitle')).toHaveText('Vệt sáng trong rừng');
   await page.goBack();
   await expect(page.locator('#rtitle')).toHaveText('Chương 1');
   expect(page.url()).toBe(firstReaderUrl);
   await page.goForward();
-  await expect(page.locator('#rtitle')).toHaveText('Chương 2');
+  await expect(page.locator('#rtitle')).toHaveText('Vệt sáng trong rừng');
 
   await page.locator('#bookmarkBtn').click();
   await expect(page.locator('#bookmarkBtn')).toContainText('Đã đánh dấu');
