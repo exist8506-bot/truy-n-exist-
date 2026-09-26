@@ -2,7 +2,7 @@ import { test, expect } from 'playwright/test';
 
 test('reader supports non-zero chapter numbering after renumber', async ({ page }) => {
   const chapters = [
-    { bookId: story.id, index: 10, title: 'Chương Mười', content: 'Nội dung chương số mười.' },
+    { bookId: 'renumber-ui', index: 10, title: 'Chương Mười', content: 'Nội dung chương số mười.' },
     { bookId: 'renumber-ui', index: 11, title: 'Chương Mười Một', content: 'Nội dung chương số mười một.' }
   ];
   const story = {
