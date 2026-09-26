@@ -239,7 +239,7 @@ async function openBook(id){
  }
  if(!b){show('library');toast('Truyện này không còn tồn tại hoặc chưa tải được dữ liệu');return null}
  state.book=b;chapterPage=1;chapterTotal=Number(b.chapterCount||0);state.chapterMin=Number.isInteger(Number(b.chapterMin))?Number(b.chapterMin):0;state.chapterMax=Number.isInteger(Number(b.chapterMax))?Number(b.chapterMax):Math.max(-1,state.chapterMin+chapterTotal-1);state.chapters=[];const chapterBox=$('#chapters');if(chapterBox)chapterBox.innerHTML='<div class="empty">Đang tải danh sách chương…</div>';const chapterPagerBox=$('#chapterPager');if(chapterPagerBox)chapterPagerBox.innerHTML='';
- $('#detailBox').innerHTML='<div class="detailbox"><div class="detailcover" style="background:'+esc(b.tone||'#26324b')+'"><span style="font-size:48px">📚</span><span>'+esc(b.cat||'Truyện')+'</span></div><div><div class="badges"><span class="badge good">'+esc(b.status||'FULL')+'</span><span class="badge">'+esc(b.author||'')+'</span></div><h2>'+esc(b.title)+'</h2><p class="muted">'+esc(b.desc||'')+'</p><div class="settings"><button class="btn primary" onclick="startBook(0)">▶ Đọc từ đầu</button><button class="btn" onclick="continueBook()">↪ Đọc tiếp</button><button class="btn" onclick="toggleFav(\''+esc(b.id)+'\');openBook(\''+esc(b.id)+'\')">'+(favs().includes(b.id)?T('removeShelf'):T('addShelf'))+'</button><button class="btn" onclick="shareCurrent()">↗ Chia sẻ</button><button class="btn good" onclick="downloadBook(\''+esc(b.id)+'\')">⬇ Lưu cả truyện offline</button></div></div></div>';
+ $('#detailBox').innerHTML='<div class="detailbox"><div class="detailcover" style="background:'+esc(b.tone||'#26324b')+'"><span style="font-size:48px">📚</span><span>'+esc(b.cat||'Truyện')+'</span></div><div><div class="badges"><span class="badge good">'+esc(b.status||'FULL')+'</span><span class="badge">'+esc(b.author||'')+'</span></div><h2>'+esc(b.title)+'</h2><p class="muted">'+esc(b.desc||'')+'</p><div class="settings"><button class="btn primary" onclick="startBook()">▶ Đọc từ đầu</button><button class="btn" onclick="continueBook()">↪ Đọc tiếp</button><button class="btn" onclick="toggleFav(\''+esc(b.id)+'\');openBook(\''+esc(b.id)+'\')">'+(favs().includes(b.id)?T('removeShelf'):T('addShelf'))+'</button><button class="btn" onclick="shareCurrent()">↗ Chia sẻ</button><button class="btn good" onclick="downloadBook(\''+esc(b.id)+'\')">⬇ Lưu cả truyện offline</button></div></div></div>';
  await loadChapterPage(1);
 }
 window.openBook=openBook;window.openDetail=()=>state.book&&openBook(state.book.id);
@@ -252,7 +252,7 @@ window.renderChapters=()=>{
 };
 window.toggleOrder=()=>{state.order=state.order==='asc'?'desc':'asc';chapterPage=1;loadChapterPage(1)};
 window.startBook=i=>{const requested=Number(i);readChapter(Number.isInteger(requested)&&requested>=state.chapterMin&&requested<=state.chapterMax?requested:state.chapterMin)};
-window.continueBook=()=>readChapter(progress()[state.book.id]?.chapter??state.chapterMin);
+window.continueBook=()=>{const p=progress()[state.book.id]?.chapter;const i=Number(p);readChapter(Number.isInteger(i)&&i>=state.chapterMin&&i<=state.chapterMax?i:state.chapterMin)};
 const chapterInflight=new Map();
 const translatedChapterCache=new Map();
 function storyTargetLanguage(){
