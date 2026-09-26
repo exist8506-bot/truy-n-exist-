@@ -663,7 +663,6 @@ async function downloadBook(bookId){
 }
 window.downloadBook=downloadBook;window.cancelOffline=id=>{offlineCancel.add(id);toast('Đang dừng tải…')};window.removeOffline=async id=>{await offlineDeleteBook(id).catch(()=>{});refreshOfflineUI();toast('Đã xóa dữ liệu offline')};
 window.downloadChapter=()=>{const text=state.book.title+'\n'+$('#rtitle').textContent+'\n\n'+$('#rtext').innerText;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));a.download=(state.book.title+'-'+state.chapter+'.txt').replace(/[^\w\-À-ỹ ]/g,'_');a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);toast('Đã tải chương')};
-  }
 window.shareCurrent=async()=>{const u=location.href;if(navigator.share)try{await navigator.share({title:state.book?.title||'Kho Truyện Full',url:u});return}catch{}
  try{if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(u);toast('Đã sao chép liên kết');return}}catch{}
  window.prompt('Sao chép liên kết truyện:',u)};
