@@ -77,6 +77,8 @@ function normalizeBook(b){
   status:String(src.status??'FULL'),
   tone:String(src.tone??''),
   chapterCount:Number.isFinite(count)?Math.max(0,count):0,
+  chapterMin:Number.isInteger(Number(src.chapterMin))?Number(src.chapterMin):(Array.isArray(src.chapters)&&src.chapters.length?Math.min(...src.chapters.map((x,i)=>Number(x?.index??i)).filter(Number.isInteger)):0),
+  chapterMax:Number.isInteger(Number(src.chapterMax))?Number(src.chapterMax):(Array.isArray(src.chapters)&&src.chapters.length?Math.max(...src.chapters.map((x,i)=>Number(x?.index??i)).filter(Number.isInteger)):-1),
   chapters:Array.isArray(src.chapters)?src.chapters:[]
  };
 }
@@ -181,7 +183,7 @@ function renderHomeMode(){
  const c=$('#homeMode');if(!c)return;
  if(state.mode==='all'){c.innerHTML='<div class="panel"><h3>✨ Khám phá</h3><div class="muted">Kho truyện được sắp xếp theo lựa chọn bên dưới.</div></div>';return}
  if(state.mode==='rank'){const a=state.books.slice().sort((x,y)=>(y.chapterCount||0)-(x.chapterCount||0)).slice(0,5);c.innerHTML='<div class="panel"><h3>📈 Xếp hạng theo số chương</h3>'+a.map((b,i)=>'<div class="rankrow"><span class="rankno">'+(i+1)+'</span><span class="rankcover">📖</span><span class="grow"><b>'+esc(b.title)+'</b><div class="muted">'+esc(b.author)+'</div></span><b>'+(b.chapterCount||0)+'</b></div>').join('')+'</div>';return}
- if(state.mode==='reading'){const p=progress();const a=state.books.filter(b=>p[b.id]?.percent>0).sort((x,y)=>(p[y.id]?.percent||0)-(p[x.id]?.percent||0)).slice(0,6);c.innerHTML='<div class="panel"><h3>📖 '+T('reading')+'</h3>'+(a.length?a.map(b=>'<div class="rankrow"><span class="rankcover">📚</span><span class="grow"><b>'+esc(b.title)+'</b><div class="muted">'+Math.round(p[b.id].percent||0)+'% · '+T('chapterUnit')+' '+(Number(p[b.id].chapter||0)+(state.book?.id===b.id&&state.chapterMin!==0?0:1))+'</div></span><button class="btn" onclick="openBook(\''+esc(b.id)+'\')">'+T('open')+'</button></div>').join(''):'<div class="empty">'+T('noReading')+'</div>')+'</div>';return}
+ if(state.mode==='reading'){const p=progress();const a=state.books.filter(b=>p[b.id]?.percent>0).sort((x,y)=>(p[y.id]?.percent||0)-(p[x.id]?.percent||0)).slice(0,6);c.innerHTML='<div class="panel"><h3>📖 '+T('reading')+'</h3>'+(a.length?a.map(b=>'<div class="rankrow"><span class="rankcover">📚</span><span class="grow"><b>'+esc(b.title)+'</b><div class="muted">'+Math.round(p[b.id].percent||0)+'% · '+T('chapterUnit')+' '+(Number.isInteger(Number(p[b.id].chapter))?(b.chapterMin===0?Number(p[b.id].chapter)+1:Number(p[b.id].chapter)):b.chapterMin)+'</div></span><button class="btn" onclick="openBook(\''+esc(b.id)+'\')">'+T('open')+'</button></div>').join(''):'<div class="empty">'+T('noReading')+'</div>')+'</div>';return}
  if(state.mode==='new'){
   const a=state.books.slice().sort((x,y)=>String(y.updatedAt||y.updated_at||'').localeCompare(String(x.updatedAt||x.updated_at||''))).slice(0,6);
   c.innerHTML='<div class="panel"><h3>🆕 Mới cập nhật</h3>'+a.map(b=>'<div class="rankrow"><span class="rankcover">🆕</span><span class="grow"><b>'+esc(b.title)+'</b><div class="muted">'+esc(b.author)+' · '+(b.chapterCount||0)+' chương</div></span><button class="btn" onclick="openBook(\''+esc(b.id)+'\')">Đọc</button></div>').join('')+'</div>';return
@@ -235,7 +237,7 @@ async function openBook(id){
   try{b=normalizeBook(await api('/stories/'+encodeURIComponent(id)))}catch{}
  }
  if(!b){show('library');toast('Truyện này không còn tồn tại hoặc chưa tải được dữ liệu');return null}
- state.book=b;chapterPage=1;chapterTotal=Number(b.chapterCount||0);state.chapters=[];const chapterBox=$('#chapters');if(chapterBox)chapterBox.innerHTML='<div class="empty">Đang tải danh sách chương…</div>';const chapterPagerBox=$('#chapterPager');if(chapterPagerBox)chapterPagerBox.innerHTML='';
+ state.book=b;chapterPage=1;chapterTotal=Number(b.chapterCount||0);state.chapterMin=Number.isInteger(Number(b.chapterMin))?Number(b.chapterMin):0;state.chapterMax=Number.isInteger(Number(b.chapterMax))?Number(b.chapterMax):Math.max(-1,state.chapterMin+chapterTotal-1);state.chapters=[];const chapterBox=$('#chapters');if(chapterBox)chapterBox.innerHTML='<div class="empty">Đang tải danh sách chương…</div>';const chapterPagerBox=$('#chapterPager');if(chapterPagerBox)chapterPagerBox.innerHTML='';
  $('#detailBox').innerHTML='<div class="detailbox"><div class="detailcover" style="background:'+esc(b.tone||'#26324b')+'"><span style="font-size:48px">📚</span><span>'+esc(b.cat||'Truyện')+'</span></div><div><div class="badges"><span class="badge good">'+esc(b.status||'FULL')+'</span><span class="badge">'+esc(b.author||'')+'</span></div><h2>'+esc(b.title)+'</h2><p class="muted">'+esc(b.desc||'')+'</p><div class="settings"><button class="btn primary" onclick="startBook(0)">▶ Đọc từ đầu</button><button class="btn" onclick="continueBook()">↪ Đọc tiếp</button><button class="btn" onclick="toggleFav(\''+esc(b.id)+'\');openBook(\''+esc(b.id)+'\')">'+(favs().includes(b.id)?T('removeShelf'):T('addShelf'))+'</button><button class="btn" onclick="shareCurrent()">↗ Chia sẻ</button><button class="btn good" onclick="downloadBook(\''+esc(b.id)+'\')">⬇ Lưu cả truyện offline</button></div></div></div>';
  await loadChapterPage(1);
 }
