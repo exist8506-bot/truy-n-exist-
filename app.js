@@ -34,7 +34,7 @@ function applyLanguage(){
   if(detailButtons[4])detailButtons[4].textContent=T('offlineAll');
  }
  if(state.book&&$('#detail')?.classList.contains('show'))window.renderChapters?.();
- if(state.book&&$('#reader')?.classList.contains('show'))$('#rmeta').textContent=T('chapterUnit')+' '+(chapterDisplayNumber(state.chapter)+' · '+(state.book.author||'');
+ if(state.book&&$('#reader')?.classList.contains('show'))$('#rmeta').textContent=T('chapterUnit')+' '+chapterDisplayNumber(state.chapter)+' · '+(state.book.author||'');
  const ls=$('#langSelect');if(ls)ls.value=state.lang;const alias=$('#readerLangSelect');if(alias)alias.value=state.lang;
  document.title=T('title');
 }
