@@ -680,12 +680,16 @@ async function restoreAccount(){
   const remote=await api('/sync'), localP=progress(), localF=favs(), localB=bookmarks();
   const remoteP=remote.progress||{};
   for(const [id,v] of Object.entries(remoteP)){
-   const local=localP[id];
-   if(!local||new Date(v.updatedAt||0)>=new Date(local.updatedAt||0))localP[id]={chapter:Number(v.chapterIndex)||0,percent:Number(v.position)||0,updated:new Date(v.updatedAt||Date.now()).getTime()};
+   const story=state.books.find(b=>b.id===id),rawIndex=Number(v.chapterIndex);
+   if(!story||!Number.isInteger(rawIndex))continue;
+   const min=Number.isInteger(Number(story.chapterMin))?Number(story.chapterMin):0,max=Number.isInteger(Number(story.chapterMax))?Number(story.chapterMax):Math.max(min,(Number(story.chapterCount)||1)+min-1);
+   if(max<min||rawIndex<min||rawIndex>max)continue;
+   const local=localP[id],percent=Math.max(0,Math.min(100,Number(v.position)||0));
+   if(!local||new Date(v.updatedAt||0)>=new Date(local.updatedAt||0))localP[id]={chapter:rawIndex,percent,updated:new Date(v.updatedAt||Date.now()).getTime()};
   }
   setProgress(localP);
-  const remoteB=remote.bookmarks||{},deletedB=deletedBookmarks();for(const [id,items] of Object.entries(remoteB)){localB[id]=localB[id]||{};for(const v of (items||[])){const idx=Number(v.chapterIndex||0);if(deletedB[id]?.[idx])continue;const cur=localB[id][idx];const remoteTime=Date.parse(v.updatedAt||'')||0;const localTime=Number(cur?.at||0);if(!cur||remoteTime>=localTime)localB[id][idx]={title:v.title||'',at:remoteTime||Date.now()}}}setBookmarks(localB);
-  const remoteH=remote.history||{},localH=hist(),historyByKey=new Map(localH.map(x=>[x.bookId+':'+x.chapter,{...x}]));for(const [id,v] of Object.entries(remoteH)){const key=id+':'+Number(v.chapterIndex||0),cur=historyByKey.get(key),rt=Date.parse(v.updatedAt||'')||0,lt=Number(cur?.at||0);if(!cur||rt>=lt)historyByKey.set(key,{bookId:id,chapter:Number(v.chapterIndex||0),title:cur?.title||'',at:rt||Date.now()})}setHist([...historyByKey.values()].sort((a,b)=>Number(b.at||0)-Number(a.at||0)).slice(0,200));
+  const remoteB=remote.bookmarks||{},deletedB=deletedBookmarks();for(const [id,items] of Object.entries(remoteB)){const story=state.books.find(b=>b.id===id);if(!story)continue;const min=Number.isInteger(Number(story.chapterMin))?Number(story.chapterMin):0,max=Number.isInteger(Number(story.chapterMax))?Number(story.chapterMax):Math.max(min,(Number(story.chapterCount)||1)+min-1);localB[id]=localB[id]||{};for(const v of (items||[])){const idx=Number(v.chapterIndex);if(!Number.isInteger(idx)||idx<min||idx>max||deletedB[id]?.[idx])continue;const cur=localB[id][idx];const remoteTime=Date.parse(v.updatedAt||'')||0;const localTime=Number(cur?.at||0);if(!cur||remoteTime>=localTime)localB[id][idx]={title:v.title||'',at:remoteTime||Date.now()}}}setBookmarks(localB);
+  const remoteH=remote.history||{},localH=hist(),historyByKey=new Map(localH.map(x=>[x.bookId+':'+x.chapter,{...x}]));for(const [id,v] of Object.entries(remoteH)){const story=state.books.find(b=>b.id===id);if(!story)continue;const idx=Number(v.chapterIndex),min=Number.isInteger(Number(story.chapterMin))?Number(story.chapterMin):0,max=Number.isInteger(Number(story.chapterMax))?Number(story.chapterMax):Math.max(min,(Number(story.chapterCount)||1)+min-1);if(!Number.isInteger(idx)||idx<min||idx>max)continue;const key=id+':'+idx,cur=historyByKey.get(key),rt=Date.parse(v.updatedAt||'')||0,lt=Number(cur?.at||0);if(!cur||rt>=lt)historyByKey.set(key,{bookId:id,chapter:idx,title:cur?.title||'',at:rt||Date.now()})}setHist([...historyByKey.values()].sort((a,b)=>Number(b.at||0)-Number(a.at||0)).slice(0,200));
   const deletedF=new Set(deletedFavs());const mergedF=[...new Set([...(Array.isArray(remote.favorites)?remote.favorites:[]).filter(id=>!deletedF.has(id)),...localF])];setFavs(mergedF);
   await pushLocalSync();
   updateStats();renderBookcase();
