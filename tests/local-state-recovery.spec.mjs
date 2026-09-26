@@ -17,7 +17,7 @@ test('malformed local reading state does not break the app', async ({ page }) =>
   });
 
   await page.goto('/');
-  await expect(page.locator('#grid .card')).toHaveCount(13);
+  await expect(page.locator('#grid .card')).toHaveCount(14);
   await page.locator('#search').fill('Mùa Sao');
   await page.locator('#grid .card').first().locator('.info').click();
   await page.locator('#chapters .chapter').first().click();

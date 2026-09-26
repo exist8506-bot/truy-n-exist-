@@ -8,6 +8,17 @@ try{
  p=await start({});
  let x=await req('/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'nguyenvanhoa',password})});
  if(x.status!==401)throw Error('production created admin without secret');
+ p.kill('SIGTERM');await wait(300);
+ const {DatabaseSync}=require('node:sqlite'),{hash}=require('./auth');
+ const legacyDb=new DatabaseSync(path.join(dir,'kho_truyen.sqlite'));
+ const legacyHash=hash(password);
+ legacyDb.prepare('INSERT INTO users VALUES(?,?,?,?,?,?,?)').run('u_bootstrap_nguyenvanhoa','nguyenvanhoa',legacyHash.hash,legacyHash.salt,'Legacy Admin','admin',new Date().toISOString());
+ legacyDb.prepare('INSERT INTO profiles VALUES(?,?,?)').run('u_bootstrap_nguyenvanhoa','',new Date().toISOString());
+ legacyDb.close();
+ p=await start({BOOTSTRAP_ADMIN_USERNAME:'nguyenvanhoa',BOOTSTRAP_ADMIN_PASSWORD:password});
+ x=await req('/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'nguyenvanhoa',password})});
+ x=await req('/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'nguyenvanhoa',password})});
+ if(x.status!==200||x.data.user?.role!=='admin')throw Error('configured password did not upgrade legacy bootstrap admin');
  x=await req('/auth/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'firstprod',password})});
  if(x.status!==201||x.data.user?.role!=='user')throw Error('first public registration became admin: '+JSON.stringify(x.data));
  p.kill('SIGTERM');await wait(300);

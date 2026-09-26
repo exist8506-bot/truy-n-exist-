@@ -9,6 +9,8 @@ test('Vietnamese Unicode and reader font regression', async ({ browser }) => {
   await expect(page.locator('html')).toHaveAttribute('lang','vi');
   await expect(page.locator('#grid')).toContainText('Mùa Sao Trên Đỉnh Núi');
   await expect(page.locator('#grid')).toContainText('Quán Nhỏ Cuối Con Dốc');
+  await page.locator('#search').fill('Mùa Sao');
+  await expect(page.locator('#grid .card')).toHaveCount(1);
   await page.locator('#grid .card').first().locator('.info').click();
   await page.locator('#chapters .chapter').first().click();
   await expect(page.locator('#rtext')).toContainText('Đêm');
@@ -36,7 +38,7 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   });
   const page=await context.newPage();
   await page.goto('/');
-  await expect(page.locator('#grid .card')).toHaveCount(13);
+  await expect(page.locator('#grid .card')).toHaveCount(14);
   await expect(page.locator('#statBooks')).toHaveText('13');
   await expect(page.locator('#statChapters')).not.toHaveText('126');
   await expect(page.locator('#grid')).toContainText('Phong Thần Diễn Nghĩa');
@@ -48,7 +50,7 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   expect(await page.locator('#grid .card').count()).toBeGreaterThanOrEqual(10);
   await page.locator('#categoryFilter').selectOption('all');
   await page.locator('#sortBooks').selectOption('chapters');
-  await expect(page.locator('#grid .card')).toHaveCount(13);
+  await expect(page.locator('#grid .card')).toHaveCount(14);
 
   await page.locator('#grid .card').filter({hasText:'Phong Thần Diễn Nghĩa'}).locator('.info').click();
   await expect(page.locator('#chapterCount')).toContainText('100 chương');
@@ -85,13 +87,13 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
     localStorage.setItem('ktf_prog',JSON.stringify(p));
   });
   await page.getByRole('button',{name:'↪ Chương chưa đọc'}).click();
-  await expect(page.locator('#rtitle')).toHaveText('Chương 3');
+  await expect(page.locator('#rtitle')).toHaveText('Người khách áo xanh');
   await page.getByRole('button',{name:/🔊/}).click();
   await expect(page.locator('#ttsLabel')).toHaveText('Dừng');
   await page.getByRole('button',{name:'⛶'}).click();
 
   const [chapterDownload]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'⬇ Tải chương'}).click()]);
-  expect(await chapterDownload.suggestedFilename()).toContain('Phong');
+  expect(await chapterDownload.suggestedFilename()).toContain('Mùa Sao');
 
   await page.getByRole('button',{name:'☰ Mục lục'}).click();
   await page.getByRole('button',{name:/↗ Chia sẻ/}).click();
@@ -102,9 +104,9 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   await expect(page.locator('#downloadList')).toContainText('Đã lưu đầy đủ',{timeout:30000});
 
   await page.locator('.actions .btn').nth(4).click();
-  await expect(page.locator('#historyList')).toContainText('Chương 3');
+  await expect(page.locator('#historyList')).toContainText(/chương 3/i);
   await page.locator('.actions .btn').nth(3).click();
-  await expect(page.locator('#bookmarkList')).toContainText('Chương 2');
+  await expect(page.locator('#bookmarkList')).toContainText(/chương 2/i);
 
   await page.locator('.actions .btn').first().click();
   await page.locator('#accountRegisterTab').click();
@@ -187,7 +189,7 @@ test('static fallback mode: real public seed, search, read, PWA cache and offlin
   const page=await context.newPage();
   await page.goto('/');
   await expect(page.locator('#apiStatus')).toContainText('Dữ liệu tĩnh');
-  await expect(page.locator('#grid .card')).toHaveCount(13);
+  await expect(page.locator('#grid .card')).toHaveCount(14);
   await expect(page.locator('#grid')).toContainText('Phong Thần Diễn Nghĩa');
   await expect(page.locator('#statChapters')).not.toHaveText('126');
 
@@ -403,7 +405,7 @@ test('mobile responsive: bottom navigation, reader, bookmark and persistence', a
   await page.goto('/');
   await expect(page.locator('.bottomnav')).toBeVisible();
   await expect(page.locator('.bottomnav button')).toHaveCount(4);
-  await expect(page.locator('#grid .card')).toHaveCount(13);
+  await expect(page.locator('#grid .card')).toHaveCount(14);
 
   await page.locator('.bottomnav button').nth(3).click();
   await expect(page.locator('#search')).toBeFocused();

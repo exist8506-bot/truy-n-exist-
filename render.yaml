@@ -6,6 +6,8 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/v1/health
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: PORT
         value: 8787
       - key: TRUST_PROXY
