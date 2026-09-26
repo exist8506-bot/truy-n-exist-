@@ -7,7 +7,7 @@ GitHub Pages chỉ chạy frontend tĩnh. Backend SQLite cần một máy chủ 
 1. Tạo Web Service từ repository này.
 2. Chọn Docker.
 3. Render sẽ đọc `render.yaml` nếu dùng Blueprint.
-4. Persistent disk phải mount tại `/app/server` để giữ SQLite và cover.
+4. Persistent disk phải mount tại `/app/server-data` để giữ SQLite và cover. `KHO_DATA_DIR` cũng phải trỏ tới `/app/server-data`.
 5. Sau khi deploy, kiểm tra `/api/v1/health`.
 6. Lấy URL API dạng `https://<service>.onrender.com/api/v1`.
 7. Mở GitHub Pages → nút 🌐 → nhập URL API.
