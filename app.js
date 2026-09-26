@@ -407,8 +407,8 @@ function scheduleAutoAdvance(){
   const next=state.chapter+1;
   const keepTts=ttsState.active,runId=ttsRunId;
   if(keepTts)try{speechSynthesis?.cancel?.()}catch{}
-  await readChapter(next);
-  if(keepTts&&runId===ttsRunId)startTTSCurrent();
+  const opened=await readChapter(next);
+  if(opened&&keepTts&&runId===ttsRunId)startTTSCurrent();
  },900);
 }
 async function readChapter(i,options={}){
@@ -438,7 +438,7 @@ function setBookmarks(v){save('ktf_bookmarks_v1',v&&typeof v==='object'&&!Array.
 function isBookmarked(){const b=bookmarks();return !!(state.book&&b[state.book.id]&&b[state.book.id][state.chapter])}
 window.toggleBookmark=async()=>{if(!state.book)return;const b=bookmarks(),d=deletedBookmarks();b[state.book.id]=b[state.book.id]||{};d[state.book.id]=d[state.book.id]||{};const active=!!b[state.book.id][state.chapter];if(active){delete b[state.book.id][state.chapter];d[state.book.id][state.chapter]=Date.now()}else{b[state.book.id][state.chapter]={title:state.current?.title||'',at:Date.now()};delete d[state.book.id][state.chapter]}setBookmarks(b);setDeletedBookmarks(d);const el=$('#bookmarkBtn');if(el)el.textContent=isBookmarked()?'🔖 Đã đánh dấu':'🔖 Đánh dấu';if(state.token)api('/bookmarks',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:state.book.id,chapterIndex:state.chapter,title:state.current?.title||'',active:!active})}).then(()=>{const dd=deletedBookmarks();if(dd[state.book.id]){delete dd[state.book.id][state.chapter];if(!Object.keys(dd[state.book.id]).length)delete dd[state.book.id];setDeletedBookmarks(dd)}}).catch(()=>{});renderBookcase();toast(!active?'Đã đánh dấu chương':'Đã bỏ đánh dấu')}
 function renderBookmarks(){const box=$('#bookmarkList');if(!box)return;const b=bookmarks(),items=[];for(const [storyId,chs] of Object.entries(b)){const story=state.books.find(x=>x.id===storyId);for(const [idx,v] of Object.entries(chs||{})){const index=Number(idx),display=Number.isInteger(index)?(story?.chapterMin===0?index+1:index):(story?.chapterMin??index);items.push({storyId,index,title:v?.title||('Chương '+display),at:Number(v?.at||0),storyTitle:story?.title||storyId,display})}}items.sort((a,b)=>b.at-a.at);box.innerHTML=items.length?items.map(x=>'<div class="histrow"><div><b>'+esc(x.storyTitle)+'</b><div class="muted">'+T('chapterUnit')+' '+x.display+' · '+esc(x.title)+'</div></div><button class="btn" onclick="openBook(\''+esc(x.storyId)+'\').then(()=>readChapter('+x.index+'))">'+T('read')+'</button></div>').join(''):'<div class="empty">'+T('noBookmarks')+'</div>'}
-window.goChapter=d=>{const x=state.chapter+d;if(x<state.chapterMin||x>state.chapterMax){toast(d<0?T('prev'):T('next'));return}const keepTts=ttsState.active,runId=ttsRunId;if(keepTts)try{speechSynthesis?.cancel?.()}catch{}readChapter(x).then(()=>{if(keepTts&&runId===ttsRunId)startTTSCurrent()})};
+window.goChapter=d=>{const x=state.chapter+d;if(x<state.chapterMin||x>state.chapterMax){toast(d<0?T('prev'):T('next'));return}const keepTts=ttsState.active,runId=ttsRunId;if(keepTts)try{speechSynthesis?.cancel?.()}catch{}readChapter(x).then(opened=>{if(opened&&keepTts&&runId===ttsRunId)startTTSCurrent()})};
 window.font=d=>{state.fontSize=Math.max(14,Math.min(30,state.fontSize+d));save('ktf_fs',state.fontSize);applyReader()};window.setFont=x=>{state.font=x==='Georgia'||x==='system-ui'?x:'system-ui';save('ktf_font',state.font);applyReader()};window.setTheme=x=>{state.theme=safeTheme(x);save('ktf_theme',state.theme);applyReader()};let ttsState={active:false,chunks:[],pos:0,chapterKey:'',mode:''};
 function stopTTS(silent=false){
  ttsRunId++;
