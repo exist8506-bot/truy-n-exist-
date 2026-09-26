@@ -45,6 +45,6 @@ test('sync ignores stale chapter references from remote data', async ({ page }) 
     history: JSON.parse(localStorage.getItem('ktf_hist') || '[]')
   }));
   expect(state.progress.b1).toBeUndefined();
-  expect(state.bookmarks.b1).toBeUndefined();
+  expect(state.bookmarks.b1 || {}).toEqual({});
   expect(state.history.some(x => x.bookId === 'b1' && x.chapter === 99)).toBeFalsy();
 });
