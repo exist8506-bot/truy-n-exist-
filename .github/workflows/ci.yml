@@ -50,6 +50,8 @@ jobs:
         run: node server/epub-parser.test.js
       - name: Bootstrap persistence regression
         run: node server/bootstrap-persistence.test.js
+      - name: Chinese chapterize regression
+        run: node server/chinese-chapterize.test.js
       - name: Start API smoke test
         run: |
           set +e
