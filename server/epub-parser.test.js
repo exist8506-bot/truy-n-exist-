@@ -1,9 +1,33 @@
-const fs=require('fs'),os=require('os'),path=require('path');
-const dir=fs.mkdtempSync(path.join(os.tmpdir(),'kho-parser-'));process.env.KHO_DATA_DIR=dir;
-const {parseImportFile,db}=require('./server');
+const {parseEpub,db}=require('./server');
+
+function u16(n){const b=Buffer.alloc(2);b.writeUInt16LE(n,0);return b}
+function u32(n){const b=Buffer.alloc(4);b.writeUInt32LE(n>>>0,0);return b}
+function zip(entries){
+  const locals=[],centrals=[];let offset=0;
+  for(const {name,text} of entries){
+    const nameBuf=Buffer.from(name,'utf8'),data=Buffer.from(text,'utf8');
+    const local=Buffer.concat([
+      Buffer.from('PK\\x03\\x04','binary'),u16(20),u16(0),u16(0),u16(0),u16(0),u32(0),u32(data.length),u32(data.length),u16(nameBuf.length),u16(0),nameBuf,data
+    ]);
+    locals.push(local);
+    const central=Buffer.concat([
+      Buffer.from('PK\\x01\\x02','binary'),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(0),u32(data.length),u32(data.length),u16(nameBuf.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),nameBuf
+    ]);
+    centrals.push(central);offset+=local.length;
+  }
+  const body=Buffer.concat(locals),cd=Buffer.concat(centrals);
+  const end=Buffer.concat([Buffer.from('PK\\x05\\x06','binary'),u16(0),u16(0),u16(entries.length),u16(entries.length),u32(cd.length),u32(body.length),u16(0)]);
+  return Buffer.concat([body,cd,end]);
+}
+
 try{
- const d=parseImportFile('attribute-order.epub','data:application/epub+zip;base64,UEsDBBQAAAAIAM4+Ol0E/rx9cQAAAJUAAAAWAAAATUVUQS1JTkYvY29udGFpbmVyLnhtbE2NQQ4CIQwAv0J6NWz1DuwTNPEFFYsSWdoAGv29ezBZb3OYzLj5vRTz4tazVA+HaQ9zcFHqoFy5BddERsqF+4YmPUuxSuPu4Xg6o1J80I0n0QRm4WsmOz7KHki15EhjTaPwRbv9qbt1Chgc/tVxm34BUEsDBBQAAAAIAM4+Ol2ZFiDK3AAAAEUBAAAPAAAAT1BTL3BhY2thZ2Uub3BmTZCxbsMwDET3foXAtYhZb4VhOUCBds6QfAAhMbZQSRZkpnD/vrTTBt0EvrvjUf1xTdF8cV3CnC20zQsYzm72IY8WLuePwysch6e+kPukkY2q89J5Z2ESKR1iudXYzHVE75AjJ86yYNu0COpKLORJaOi96yRI5OH9dHkzZ16kx8dso64yyVyHDXHd4d+ox0eORlIOV9XoMwgnE7wFN1FpwST2gQ7yXdgClRKDI9GrcJ0kxWdtDmaqfLUgvAq6qW12AqhZ+C93KSFrqS1e5bphN92XoLa5c/X8fsrwA1BLAwQUAAAACADOPjpdqKk9+F0AAABkAAAAEgAAAE9QUy90ZXh0L2NoMS54aHRtbLPJKMnSsbNJyk+ptLPJMLRzzji24djCvHQFQxt9INemwM7v4e6ZmQoppUAx14BQJ4WSjFKgSLJCyeG1eRkKRyY+3LU4Hyj4cPdKhZKHuzfq2egX2NnoQwzUB5sOAFBLAQIUAxQAAAAIAM4+Ol0E/rx9cQAAAJUAAAAWAAAAAAAAAAAAAACAAQAAAABNRVRBLUlORi9jb250YWluZXIueG1sUEsBAhQDFAAAAAgAzj46XZkWIMrcAAAARQEAAA8AAAAAAAAAAAAAAIABpQAAAE9QUy9wYWNrYWdlLm9wZlBLAQIUAxQAAAAIAM4+Ol2oqT34XQAAAGQAAAASAAAAAAAAAAAAAACAAa4BAABPUFMvdGV4dC9jaDEueGh0bWxQSwUGAAAAAAMAAwDBAAAAOwIAAAAA');
- if(d.format!=='epub'||d.title!=='EPUB Test'||d.author!=='Tester'||d.chapters.length!==1)throw Error('EPUB metadata/chapter parse failed: '+JSON.stringify({format:d.format,title:d.title,author:d.author,count:d.chapters.length}));
- if(d.chapters[0].title!=='Chương 1'||!d.chapters[0].content.includes('Nội dung EPUB thuộc tính đảo thứ tự.'))throw Error('EPUB content parse failed: '+JSON.stringify(d.chapters[0]));
- console.log('EPUB attribute-order regression OK');
-}finally{db.close();fs.rmSync(dir,{recursive:true,force:true})}
+  const buf=zip([
+    {name:'META-INF/container.xml',text:'<?xml version="1.0"?><container><rootfile full-path="OPS/package.opf"/></container>'},
+    {name:'OPS/package.opf',text:'<package><metadata><dc:title>EPUB Test</dc:title><dc:creator>Tester</dc:creator></metadata><manifest><item media-type="application/xhtml+xml" href="chap%201.xhtml#top" id="c1"/></manifest><spine><itemref linear="yes" idref="c1"/></spine></package>'},
+    {name:'OPS/chap 1.xhtml',text:'<html><body><h1>Chương 1</h1><p>Nội dung EPUB thuộc tính đảo thứ tự.</p></body></html>'}
+  ]);
+  const d=parseEpub(buf);
+  if(d.title!=='EPUB Test'||d.author!=='Tester'||d.chapters.length!==1)throw Error('EPUB metadata/chapter parse failed: '+JSON.stringify({title:d.title,author:d.author,count:d.chapters.length}));
+  if(d.chapters[0].title!=='Chương 1'||!d.chapters[0].content.includes('Nội dung EPUB thuộc tính đảo thứ tự.'))throw Error('EPUB href/spine parse failed: '+JSON.stringify(d.chapters[0]));
+  console.log('EPUB spine/href regression OK');
+}finally{db.close()}
