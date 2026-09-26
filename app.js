@@ -681,34 +681,94 @@ async function pushLocalSync(){
  return result;
 }
 async function restoreAccount(){
- if(!state.token)return;
- try{
-  const u=await api('/auth/me');state.user=u;
-  const remote=await api('/sync'), localP=progress(), localF=favs(), localB=bookmarks();
-  const remoteP=remote.progress||{};
-  for(const [id,v] of Object.entries(remoteP)){
-   const story=state.books.find(b=>b.id===id),rawIndex=Number(v.chapterIndex);
-   if(!story||!Number.isInteger(rawIndex))continue;
-   const min=Number.isInteger(Number(story.chapterMin))?Number(story.chapterMin):0,max=Number.isInteger(Number(story.chapterMax))?Number(story.chapterMax):Math.max(min,(Number(story.chapterCount)||1)+min-1);
-   if(max<min||rawIndex<min||rawIndex>max)continue;
-   const local=localP[id],percent=Math.max(0,Math.min(100,Number(v.position)||0));
-   if(!local||new Date(v.updatedAt||0)>=new Date(local.updatedAt||0))localP[id]={chapter:rawIndex,percent,updated:new Date(v.updatedAt||Date.now()).getTime()};
-  }
-  setProgress(localP);
-  const remoteB=remote.bookmarks||{},deletedB=deletedBookmarks();for(const [id,items] of Object.entries(remoteB)){const story=state.books.find(b=>b.id===id);if(!story)continue;const min=Number.isInteger(Number(story.chapterMin))?Number(story.chapterMin):0,max=Number.isInteger(Number(story.chapterMax))?Number(story.chapterMax):Math.max(min,(Number(story.chapterCount)||1)+min-1);for(const v of (items||[])){const idx=Number(v.chapterIndex);if(!Number.isInteger(idx)||idx<min||idx>max||deletedB[id]?.[idx])continue;localB[id]=localB[id]||{};const cur=localB[id][idx];const remoteTime=Date.parse(v.updatedAt||'')||0;const localTime=Number(cur?.at||0);if(!cur||remoteTime>=localTime)localB[id][idx]={title:v.title||'',at:remoteTime||Date.now()}}}setBookmarks(localB);
-  const remoteH=remote.history||{},localH=hist(),historyByKey=new Map(localH.map(x=>[x.bookId+':'+x.chapter,{...x}]));for(const [id,v] of Object.entries(remoteH)){const story=state.books.find(b=>b.id===id);if(!story)continue;const idx=Number(v.chapterIndex),min=Number.isInteger(Number(story.chapterMin))?Number(story.chapterMin):0,max=Number.isInteger(Number(story.chapterMax))?Number(story.chapterMax):Math.max(min,(Number(story.chapterCount)||1)+min-1);if(!Number.isInteger(idx)||idx<min||idx>max)continue;const key=id+':'+idx,cur=historyByKey.get(key),rt=Date.parse(v.updatedAt||'')||0,lt=Number(cur?.at||0);if(!cur||rt>=lt)historyByKey.set(key,{bookId:id,chapter:idx,title:cur?.title||'',at:rt||Date.now()})}setHist([...historyByKey.values()].sort((a,b)=>Number(b.at||0)-Number(a.at||0)).slice(0,200));
-  const deletedF=new Set(deletedFavs());const validStoryIds=new Set(state.books.map(b=>b.id));const mergedF=[...new Set([...(Array.isArray(remote.favorites)?remote.favorites:[]).filter(id=>validStoryIds.has(id)&&!deletedF.has(id)),...localF.filter(id=>validStoryIds.has(id))])];setFavs(mergedF);
-   const pushed=await pushLocalSync();if(pushed.some(v=>v===null))throw Error('SYNC_PARTIAL');
-   updateStats();renderBookcase();return true;
- }catch(e){
-  if(e?.message==='UNAUTHORIZED'||e?.message==='INVALID_CREDENTIALS'){
-   state.token='';storageRemove('ktf_token');state.user=null;
-  } else {
-   toast('Chưa đồng bộ được dữ liệu; sẽ thử lại khi online');
+  if(!state.token)return true;
+  try{
+    const u=await api('/auth/me');
+    state.user=u;
+    const remote=await api('/sync');
+    const localP=progress(),localF=favs(),localB=bookmarks();
+    const remoteP=remote.progress||{};
+    for(const [id,v] of Object.entries(remoteP)){
+      const story=state.books.find(book=>book.id===id);
+      const rawIndex=Number(v.chapterIndex);
+      if(!story||!Number.isInteger(rawIndex))continue;
+      const min=Number.isInteger(Number(story.chapterMin))?Number(story.chapterMin):0;
+      const max=Number.isInteger(Number(story.chapterMax))?Number(story.chapterMax):Math.max(min,(Number(story.chapterCount)||1)+min-1);
+      if(max<min||rawIndex<min||rawIndex>max)continue;
+      const local=localP[id];
+      const percent=Math.max(0,Math.min(100,Number(v.position)||0));
+      if(!local||new Date(v.updatedAt||0)>=new Date(local.updatedAt||0)){
+        localP[id]={chapter:rawIndex,percent,updated:new Date(v.updatedAt||Date.now()).getTime()};
+      }
+    }
+    setProgress(localP);
+
+    const remoteB=remote.bookmarks||{},deletedB=deletedBookmarks();
+    for(const [id,items] of Object.entries(remoteB)){
+      const story=state.books.find(book=>book.id===id);
+      if(!story)continue;
+      const min=Number.isInteger(Number(story.chapterMin))?Number(story.chapterMin):0;
+      const max=Number.isInteger(Number(story.chapterMax))?Number(story.chapterMax):Math.max(min,(Number(story.chapterCount)||1)+min-1);
+      for(const v of (items||[])){
+        const idx=Number(v.chapterIndex);
+        if(!Number.isInteger(idx)||idx<min||idx>max||deletedB[id]?.[idx])continue;
+        localB[id]=localB[id]||{};
+        const cur=localB[id][idx];
+        const remoteTime=Date.parse(v.updatedAt||'')||0;
+        const localTime=Number(cur?.at||0);
+        if(!cur||remoteTime>=localTime)localB[id][idx]={title:v.title||'',at:remoteTime||Date.now()};
+      }
+    }
+    setBookmarks(localB);
+
+    const remoteH=remote.history||{};
+    const localH=hist();
+    const historyByKey=new Map(localH.map(x=>[x.bookId+':'+x.chapter,{...x}]));
+    for(const [id,v] of Object.entries(remoteH)){
+      const story=state.books.find(book=>book.id===id);
+      if(!story)continue;
+      const idx=Number(v.chapterIndex);
+      const min=Number.isInteger(Number(story.chapterMin))?Number(story.chapterMin):0;
+      const max=Number.isInteger(Number(story.chapterMax))?Number(story.chapterMax):Math.max(min,(Number(story.chapterCount)||1)+min-1);
+      if(!Number.isInteger(idx)||idx<min||idx>max)continue;
+      const key=id+':'+idx;
+      const cur=historyByKey.get(key);
+      const remoteTime=Date.parse(v.updatedAt||'')||0;
+      const localTime=Number(cur?.at||0);
+      if(!cur||remoteTime>=localTime)historyByKey.set(key,{bookId:id,chapter:idx,title:cur?.title||'',at:remoteTime||Date.now()});
+    }
+    setHist([...historyByKey.values()].sort((x,y)=>Number(y.at||0)-Number(x.at||0)).slice(0,200));
+
+    const deletedF=new Set(deletedFavs());
+    const validStoryIds=new Set(state.books.map(book=>book.id));
+    const mergedF=[...new Set([
+      ...(Array.isArray(remote.favorites)?remote.favorites:[]).filter(id=>validStoryIds.has(id)&&!deletedF.has(id)),
+      ...localF.filter(id=>validStoryIds.has(id))
+    ])];
+    setFavs(mergedF);
+
+    const pushed=await pushLocalSync();
+    if(pushed.some(v=>v===null))throw Error('SYNC_PARTIAL');
+    updateStats();
+    renderBookcase();
+    return true;
+  }catch(e){
+    if(e?.message==='UNAUTHORIZED'||e?.message==='INVALID_CREDENTIALS'){
+      state.token='';
+      storageRemove('ktf_token');
+      state.user=null;
+      return false;
+    }
+    toast('Chưa đồng bộ được dữ liệu; sẽ thử lại khi online');
     return false;
- }
+  }
 }
- window.syncNow=async()=>{if(!state.token)return toast('Hãy đăng nhập trước');try{const pushed=await pushLocalSync();if(pushed.some(v=>v===null))throw Error('SYNC_PARTIAL');const restored=await restoreAccount();if(!restored)throw Error('SYNC_FAILED');toast('Đã đồng bộ tủ truyện và tiến độ')}catch{toast('Đồng bộ chưa hoàn tất')}}
+window.syncNow=async()=>{
+  if(!state.token)return toast('Hãy đăng nhập trước');
+  const ok=await restoreAccount();
+  if(ok)toast('Đã đồng bộ tủ truyện và tiến độ');
+  else if(state.token)toast('Đồng bộ chưa hoàn tất');
+};
 window.addEventListener('online',()=>{if(state.token)window.syncNow?.()});
 function accountError(e){
  const map={API_UNREACHABLE:'Chưa kết nối được máy chủ đăng nhập. Trang GitHub Pages đang thiếu backend API; hãy cấu hình URL API bằng nút 🌐 một lần.',HTTP_404:'Không tìm thấy máy chủ API đăng nhập. Kiểm tra URL API.',INVALID_ACCOUNT:'Tên đăng nhập 3–32 ký tự, chỉ dùng a-z, 0-9, dấu chấm, gạch dưới hoặc gạch ngang; mật khẩu tối thiểu 6 ký tự.',USERNAME_EXISTS:'Tên đăng nhập đã tồn tại.',INVALID_CREDENTIALS:'Tên đăng nhập hoặc mật khẩu không đúng.',UNAUTHORIZED:'Phiên đăng nhập đã hết hạn.'};
