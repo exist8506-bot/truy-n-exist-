@@ -263,7 +263,7 @@ if(p==='/api/v1/admin/import/batch'&&req.method==='POST')return body(req,30*1024
     const issues={duplicates:[...new Set(duplicates)],missing,empty:[],short:[],contentDuplicates:[]};
     const contentSeen=new Map(); chapters.forEach((c,i)=>{const len=(c.content||'').trim().length;if(!len)issues.empty.push(i+1);else if(len<50)issues.short.push(i+1);const key=norm(c.content||'').replace(/\s+/g,' ');if(key){if(contentSeen.has(key))issues.contentDuplicates.push([contentSeen.get(key),i+1]);else contentSeen.set(key,i+1)}});
     if((issues.duplicates.length||issues.missing.length||issues.empty.length||issues.short.length||issues.contentDuplicates.length)&&!x.allowIssues){run('UPDATE import_jobs SET status=?,error=?,updated_at=? WHERE id=?','REJECTED','IMPORT_ISSUES',now(),jobId);return reply(400,{error:'IMPORT_ISSUES',issues,checked:chapters.length,jobId});}
-    db.exec('BEGIN IMMEDIATE');
+     let committed=false;db.exec('BEGIN IMMEDIATE');
     try{
       run('UPDATE import_jobs SET status=?,updated_at=? WHERE id=?','IMPORTING',now(),jobId);
       run('INSERT INTO stories VALUES(?,?,?,?,?,?,?,?,?,?,?)',id,title,author,cat,desc,norm([title,author,cat,desc].join(' ')),String(x.tone||'').slice(0,200),'FULL','',t,t);
@@ -271,9 +271,9 @@ if(p==='/api/v1/admin/import/batch'&&req.method==='POST')return body(req,30*1024
       for(let start=0;start<chapters.length;start+=batchSize){
         for(let i=start;i<Math.min(start+batchSize,chapters.length);i++){const c=chapters[i];run('INSERT INTO chapters(id,story_id,chapter_index,title,content,created_at,updated_at,search_key) VALUES(?,?,?,?,?,?,?,?)',`${id}:${i}`,id,i,String(c.title||`Chương ${i+1}`).slice(0,200),c.content||'',t,t,norm(String(c.title||`Chương ${i+1}`)));done++;}
         run('UPDATE import_jobs SET processed=?,updated_at=? WHERE id=?',done,now(),jobId);}
-      run('UPDATE stories SET updated_at=? WHERE id=?',now(),id); db.exec('COMMIT'); run('UPDATE import_jobs SET status=?,processed=?,updated_at=? WHERE id=?','COMPLETED',done,now(),jobId);
+      run('UPDATE stories SET updated_at=? WHERE id=?',now(),id); db.exec('COMMIT');committed=true; run('UPDATE import_jobs SET status=?,processed=?,updated_at=? WHERE id=?','COMPLETED',done,now(),jobId);
       cacheClear('/api/v1/stories'); return reply(201,{ok:true,jobId,story:storyRow(getStory(id)),imported:done,batchSize,issues});
-    }catch(e){try{db.exec('ROLLBACK')}catch{};run('UPDATE import_jobs SET status=?,error=?,updated_at=? WHERE id=?','FAILED',String(e.message||'IMPORT_ROLLBACK').slice(0,500),now(),jobId);return reply(400,{error:'IMPORT_ROLLBACK',detail:e.message,jobId})}
+     }catch(e){if(!committed){try{db.exec('ROLLBACK')}catch{};run('UPDATE import_jobs SET status=?,error=?,updated_at=? WHERE id=?','FAILED',String(e.message||'IMPORT_ROLLBACK').slice(0,500),now(),jobId);return reply(400,{error:'IMPORT_ROLLBACK',detail:e.message,jobId})}return reply(500,{error:'IMPORT_POST_COMMIT_FAILED',detail:e.message,jobId})}
   }catch(e){return reply(400,{error:'IMPORT_BATCH_FAILED',detail:e.message})}
 }).catch(e=>reply(e.message==='BODY_TOO_LARGE'?413:400,{error:e.message||'BAD_JSON'}));
 if(p==='/api/v1/admin/stories/diagnostics'&&req.method==='GET'){
