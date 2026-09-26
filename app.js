@@ -159,7 +159,7 @@ let searchTimer=0,librarySearchId=0,chapterLoadId=0;
 async function refreshRemoteSearch(page=1){
  const requestId=++librarySearchId;
  if(!state.remoteSearch)return;
- const q=($('#search')?.value||'').trim(),cat=$('#categoryFilter')?.value||'all',status=$('#statusFilter')?.value||'all',sort=$('#sortBooks')?.value||'title';
+  const q=($('#search')?.value||'').trim(),cat=$('#categoryFilter')?.value||'all',status=state.filter!=='all'?String(state.filter).toUpperCase():( $('#statusFilter')?.value||'all' ),sort=$('#sortBooks')?.value||'title';
  const params=new URLSearchParams({page:String(page),pageSize:String(state.libraryPageSize),sort});if(q)params.set('q',q);if(cat!=='all')params.set('category',cat);if(status!=='all')params.set('status',status);
  try{
   const j=await api('/stories?'+params.toString());if(requestId!==librarySearchId)return;state.books=(j.items||[]).map(normalizeBook);state.libraryPage=Number(j.page||page);state.libraryTotal=Number(j.count||state.books.length);$('#apiStatus').textContent='● SQLite API · '+state.libraryTotal+' kết quả';renderFilterOptions();const c=$('#categoryFilter');if(c)c.value=cat;renderLibraryGridOnly();
