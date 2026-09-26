@@ -21,7 +21,8 @@ test('localStorage quota or permission failures do not break reader settings', a
     };
   });
 
-  await page.locator('#settings').isVisible().catch(()=>{});
+  await page.locator('.readerbar .btn').filter({hasText:'⚙'}).click();
+  await expect(page.locator('#settings')).toBeVisible();
   await page.locator('#fontSelect').selectOption('Georgia');
   await page.locator('#themeSelect').selectOption('light');
   await page.locator('#ttsRate').selectOption('1.25');
