@@ -56,6 +56,10 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   await expect(page.locator('#detailBox .settings .btn').first()).toContainText('Start reading');
   await expect(page.locator('#chapterCount')).toContainText('chapters');
   await page.selectOption('#langSelect','vi');
+  await page.locator('#detail .back').click();
+  await page.locator('#search').fill('Mùa Sao');
+  await expect(page.locator('#grid .card')).toHaveCount(1);
+  await page.locator('#grid .card').first().locator('.info').click();
   await page.locator('#chapters .chapter').first().click();
   await expect(page.locator('#reader')).toHaveClass(/show/);
   await expect(page.locator('#rtitle')).toHaveText('Chương 1');
@@ -77,7 +81,7 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   await page.locator('#ttsRate').selectOption('1.25');
   await page.evaluate(() => {
     const p=JSON.parse(localStorage.getItem('ktf_prog')||'{}');
-    p['phong-than-dien-nghia']={chapter:1,percent:100,updated:Date.now()};
+    p['b1']={chapter:1,percent:100,updated:Date.now()};
     localStorage.setItem('ktf_prog',JSON.stringify(p));
   });
   await page.getByRole('button',{name:'↪ Chương chưa đọc'}).click();
@@ -91,7 +95,7 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
 
   await page.getByRole('button',{name:'☰ Mục lục'}).click();
   await page.getByRole('button',{name:/↗ Chia sẻ/}).click();
-  expect(await page.evaluate(()=>window.__shared?.url)).toContain('#phong-than-dien-nghia/chapter/2');
+  expect(await page.evaluate(()=>window.__shared?.url)).toContain('#b1/chapter/2');
 
   await page.getByRole('button',{name:/Lưu cả truyện offline/}).click();
   await page.locator('.actions .btn').nth(3).click();
