@@ -523,7 +523,7 @@ function speakTTSChunk(runId=ttsRunId){
    if(next<=state.chapterMax){
    const keep=runId;
    try{speechSynthesis?.cancel?.()}catch{}
-   readChapter(next).then(()=>{if(keep===ttsRunId&&ttsState.active)startTTSCurrent()});
+    readChapter(next).then(opened=>{if(opened&&keep===ttsRunId&&ttsState.active)startTTSCurrent()});
   }else stopTTS(true);
   return;
  }
