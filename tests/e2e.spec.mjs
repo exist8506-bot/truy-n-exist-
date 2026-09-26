@@ -38,7 +38,7 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   });
   const page=await context.newPage();
   await page.goto('/');
-  await expect(page.locator('#grid .card')).toHaveCount(13);
+  await expect(page.locator('#grid .card')).toHaveCount(14);
   await expect(page.locator('#statBooks')).toHaveText('13');
   await expect(page.locator('#statChapters')).not.toHaveText('126');
   await expect(page.locator('#grid')).toContainText('Phong Thần Diễn Nghĩa');
@@ -50,7 +50,7 @@ test('desktop end-to-end: library, reader, account, admin, offline', async ({ br
   expect(await page.locator('#grid .card').count()).toBeGreaterThanOrEqual(10);
   await page.locator('#categoryFilter').selectOption('all');
   await page.locator('#sortBooks').selectOption('chapters');
-  await expect(page.locator('#grid .card')).toHaveCount(13);
+  await expect(page.locator('#grid .card')).toHaveCount(14);
 
   await page.locator('#grid .card').filter({hasText:'Phong Thần Diễn Nghĩa'}).locator('.info').click();
   await expect(page.locator('#chapterCount')).toContainText('100 chương');
@@ -189,7 +189,7 @@ test('static fallback mode: real public seed, search, read, PWA cache and offlin
   const page=await context.newPage();
   await page.goto('/');
   await expect(page.locator('#apiStatus')).toContainText('Dữ liệu tĩnh');
-  await expect(page.locator('#grid .card')).toHaveCount(13);
+  await expect(page.locator('#grid .card')).toHaveCount(14);
   await expect(page.locator('#grid')).toContainText('Phong Thần Diễn Nghĩa');
   await expect(page.locator('#statChapters')).not.toHaveText('126');
 
@@ -405,7 +405,7 @@ test('mobile responsive: bottom navigation, reader, bookmark and persistence', a
   await page.goto('/');
   await expect(page.locator('.bottomnav')).toBeVisible();
   await expect(page.locator('.bottomnav button')).toHaveCount(4);
-  await expect(page.locator('#grid .card')).toHaveCount(13);
+  await expect(page.locator('#grid .card')).toHaveCount(14);
 
   await page.locator('.bottomnav button').nth(3).click();
   await expect(page.locator('#search')).toBeFocused();
