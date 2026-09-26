@@ -4,8 +4,9 @@ services:
     ports:
       - "8787:8787"
     volumes:
-      - ./server:/app/server
+      - ./server:/app/server-data
     environment:
       PORT: 8787
       KHO_CACHE_TTL_MS: 5000
+      KHO_DATA_DIR: /app/server-data
     restart: unless-stopped
