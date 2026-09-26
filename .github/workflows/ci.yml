@@ -64,6 +64,8 @@ jobs:
         run: node server/logout-regression.test.js
       - name: Production bootstrap security regression
         run: node server/production-bootstrap-security.test.js
+      - name: Seed index regression
+        run: node server/seed-index-regression.test.js
       - name: Start API smoke test
         run: |
           set +e
