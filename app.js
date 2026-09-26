@@ -496,6 +496,7 @@ async function playLingvaAudio(text,lang,runId){
 }
 function playGoogleAudio(text,lang,runId){
  toast('Đang dùng âm thanh dự phòng '+lang);
+  const parts=splitTTSText(text,220);if(parts.length>1){ttsState.chunks.splice(ttsState.pos,0,...parts.slice(1));text=parts[0]}
  const audio=new Audio(remoteTTSUrl(text,lang));audio.preload='auto';ttsAudio=audio;ttsState.mode='audio';
  audio.onended=()=>{if(ttsState.active&&runId===ttsRunId){ttsAudio=null;setTimeout(()=>speakTTSChunk(runId),25)}};
  audio.onerror=()=>{ttsAudio=null;stopTTS(true);toast(T('ttsError'))};
