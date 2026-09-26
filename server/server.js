@@ -68,7 +68,7 @@ function ensureBootstrapAdmin(){
   const username='nguyenvanhoa',displayName='H',password='123',t=now();
   const existing=q('SELECT * FROM users WHERE username=?',username);
   if(existing){
-    run('UPDATE users SET display_name=?,role=? WHERE id=?',displayName,'admin',existing.id);
+    if(existing.role!=='admin')run('UPDATE users SET role=? WHERE id=?','admin',existing.id);
     run('INSERT INTO profiles(user_id,avatar,updated_at) VALUES(?,?,?) ON CONFLICT(user_id) DO NOTHING',existing.id,'',t);
     return existing.id;
   }
