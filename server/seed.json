@@ -9,16 +9,46 @@
       "desc": "Một người gác đèn bước vào hành trình tìm lại những vì sao đã rơi xuống thung lũng.",
       "tone": "linear-gradient(145deg,#182848,#4b6cb7)",
       "chapters": [
-        ["Ánh đèn cuối thung lũng","Đêm ấy, ngọn đèn trên đỉnh núi tắt đúng lúc con tàu mây đi ngang qua. Minh nghe tiếng chuông từ nơi không có ngôi chùa nào và nhìn thấy một vệt sáng rơi xuống rừng thông. Cậu mang chiếc đèn dầu, lần theo dấu sáng, bắt đầu câu chuyện mà nhiều năm sau người ta gọi là Mùa Sao."],
-        ["Vệt sáng trong rừng","Dưới gốc thông già, Minh tìm thấy một mảnh tinh thạch còn ấm. Khi chạm vào, cậu nghe một giọng nói rất khẽ bảo rằng bảy ngôi sao đã thất lạc và chỉ có người giữ lửa mới có thể đưa chúng trở về trời. Cậu không tin, nhưng chiếc la bàn trong túi lại tự xoay về phía bắc."],
-        ["Người khách áo xanh","Một cô gái áo xanh xuất hiện bên con suối. Cô tên Lam, mang theo bản đồ vẽ bằng mực bạc. Lam nói mình đã tìm Minh suốt ba mùa tuyết. Hai người không kịp hỏi nhiều, bởi phía sau họ vang lên tiếng bước chân của những kẻ săn tinh thạch."],
-        ["Thành phố không có bình minh","Họ chạy đến thành phố dưới lòng núi, nơi những chiếc đồng hồ đều dừng ở cùng một giờ. Người dân sống nhờ ánh sáng từ những viên đá sao. Minh hiểu rằng nếu các vì sao không trở lại, thành phố này sẽ chìm vào bóng tối vĩnh viễn."],
-        ["Cánh cửa bằng mưa","Ở cuối quảng trường có một cánh cửa chỉ mở khi trời mưa. Lam đọc bản đồ, Minh đặt ngọn đèn vào ổ khóa. Cánh cửa tan thành màn nước và đưa họ tới một cây cầu treo giữa những tầng mây."],
-        ["Trận chiến trên cầu mây","Đội săn tinh thạch đuổi kịp. Cuộc giao tranh làm cây cầu rung chuyển. Minh nhận ra thứ họ cần bảo vệ không phải tinh thạch, mà là ký ức chứa trong nó. Cậu dùng ngọn lửa nhỏ soi đường cho tất cả cùng nhìn thấy sự thật."],
-        ["Bảy mảnh sao","Bảy mảnh tinh thạch hợp lại thành một bản đồ trời. Lam kể rằng người tạo ra chúng từng là một người canh gác giống Minh. Bản đồ chỉ tới đỉnh núi nơi cậu đã sống từ nhỏ. Hóa ra hành trình chưa từng rời khỏi nhà."],
-        ["Đêm sao trở lại","Trên đỉnh núi, Minh đặt đèn vào lòng tuyết. Ánh sáng chạy dọc các sườn núi rồi bay lên trời. Bảy vì sao trở lại vị trí cũ. Thành phố dưới lòng đất sáng lên, còn chiếc đèn của Minh chỉ còn một tia lửa."],
-        ["Người giữ lửa mới","Lam ở lại thung lũng. Minh tiếp tục trông coi ngọn đèn nhỏ. Mỗi tối, trẻ con trong làng đều lên núi nghe cậu kể về thành phố không có bình minh. Câu chuyện dần biến thành huyền thoại."],
-        ["Mùa sao","Nhiều năm sau, một đứa trẻ nhặt được mảnh tinh thạch bên suối. Minh mỉm cười, trao cho nó chiếc đèn đã cũ. Trên trời, bảy vì sao sáng hơn thường lệ. Mùa sao mới bắt đầu."]
+        [
+          "Ánh đèn cuối thung lũng",
+          "Đêm ấy, ngọn đèn trên đỉnh núi tắt đúng lúc con tàu mây đi ngang qua. Minh nghe tiếng chuông từ nơi không có ngôi chùa nào và nhìn thấy một vệt sáng rơi xuống rừng thông. Cậu mang chiếc đèn dầu, lần theo dấu sáng, bắt đầu câu chuyện mà nhiều năm sau người ta gọi là Mùa Sao."
+        ],
+        [
+          "Vệt sáng trong rừng",
+          "Dưới gốc thông già, Minh tìm thấy một mảnh tinh thạch còn ấm. Khi chạm vào, cậu nghe một giọng nói rất khẽ bảo rằng bảy ngôi sao đã thất lạc và chỉ có người giữ lửa mới có thể đưa chúng trở về trời. Cậu không tin, nhưng chiếc la bàn trong túi lại tự xoay về phía bắc."
+        ],
+        [
+          "Người khách áo xanh",
+          "Một cô gái áo xanh xuất hiện bên con suối. Cô tên Lam, mang theo bản đồ vẽ bằng mực bạc. Lam nói mình đã tìm Minh suốt ba mùa tuyết. Hai người không kịp hỏi nhiều, bởi phía sau họ vang lên tiếng bước chân của những kẻ săn tinh thạch."
+        ],
+        [
+          "Thành phố không có bình minh",
+          "Họ chạy đến thành phố dưới lòng núi, nơi những chiếc đồng hồ đều dừng ở cùng một giờ. Người dân sống nhờ ánh sáng từ những viên đá sao. Minh hiểu rằng nếu các vì sao không trở lại, thành phố này sẽ chìm vào bóng tối vĩnh viễn."
+        ],
+        [
+          "Cánh cửa bằng mưa",
+          "Ở cuối quảng trường có một cánh cửa chỉ mở khi trời mưa. Lam đọc bản đồ, Minh đặt ngọn đèn vào ổ khóa. Cánh cửa tan thành màn nước và đưa họ tới một cây cầu treo giữa những tầng mây."
+        ],
+        [
+          "Trận chiến trên cầu mây",
+          "Đội săn tinh thạch đuổi kịp. Cuộc giao tranh làm cây cầu rung chuyển. Minh nhận ra thứ họ cần bảo vệ không phải tinh thạch, mà là ký ức chứa trong nó. Cậu dùng ngọn lửa nhỏ soi đường cho tất cả cùng nhìn thấy sự thật."
+        ],
+        [
+          "Bảy mảnh sao",
+          "Bảy mảnh tinh thạch hợp lại thành một bản đồ trời. Lam kể rằng người tạo ra chúng từng là một người canh gác giống Minh. Bản đồ chỉ tới đỉnh núi nơi cậu đã sống từ nhỏ. Hóa ra hành trình chưa từng rời khỏi nhà."
+        ],
+        [
+          "Đêm sao trở lại",
+          "Trên đỉnh núi, Minh đặt đèn vào lòng tuyết. Ánh sáng chạy dọc các sườn núi rồi bay lên trời. Bảy vì sao trở lại vị trí cũ. Thành phố dưới lòng đất sáng lên, còn chiếc đèn của Minh chỉ còn một tia lửa."
+        ],
+        [
+          "Người giữ lửa mới",
+          "Lam ở lại thung lũng. Minh tiếp tục trông coi ngọn đèn nhỏ. Mỗi tối, trẻ con trong làng đều lên núi nghe cậu kể về thành phố không có bình minh. Câu chuyện dần biến thành huyền thoại."
+        ],
+        [
+          "Mùa sao",
+          "Nhiều năm sau, một đứa trẻ nhặt được mảnh tinh thạch bên suối. Minh mỉm cười, trao cho nó chiếc đèn đã cũ. Trên trời, bảy vì sao sáng hơn thường lệ. Mùa sao mới bắt đầu."
+        ]
       ]
     },
     {
@@ -29,14 +59,38 @@
       "desc": "Một quán trà, bốn người xa lạ và những lá thư chưa từng được gửi.",
       "tone": "linear-gradient(145deg,#3a1c71,#d76d77)",
       "chapters": [
-        ["Mở cửa","Vy mở cửa quán trà vào một sáng mưa. Người khách đầu tiên không gọi trà mà hỏi liệu cô có thể giữ hộ một lá thư trong ba ngày. Cô đồng ý, dù không hiểu vì sao một quán nhỏ lại trở thành nơi gửi gắm những điều người ta không dám nói."],
-        ["Chiếc ô màu vàng","Ông Tư thường đến lúc bốn giờ, ngồi cạnh cửa sổ và đọc báo cũ. Hôm nay ông để quên chiếc ô màu vàng. Vy đuổi theo nhưng ông đã đi mất. Trong cán ô có một tờ giấy ghi địa chỉ của một căn nhà đã bị phá từ mười năm trước."],
-        ["Bức ảnh sau quầy","Một cô gái tên Hạ đến nhận lá thư. Cô nhận ra người viết là mẹ mình. Bức ảnh sau quầy khiến Hạ bật khóc: đó là tấm ảnh mẹ cô từng chụp ở chính con dốc này. Vy hiểu rằng có những nơi giữ ký ức tốt hơn cả con người."],
-        ["Cơn mưa tháng bảy","Mưa lớn làm mất điện. Bốn người trú trong quán kể cho nhau nghe những chuyện chưa từng kể. Ông Tư thú nhận chiếc ô vàng thuộc về người bạn cũ. Hạ kể cô đã giận mẹ suốt nhiều năm vì một hiểu lầm."],
-        ["Lá thư thứ hai","Ngày hôm sau, Vy tìm thấy một lá thư khác trong ngăn kéo cũ. Không ai biết nó từ đâu đến. Nội dung chỉ có một câu: “Nếu còn nhớ, hãy quay về trước khi quán đóng cửa.”"],
-        ["Người trở lại","Một người đàn ông tóc bạc bước vào. Ông là người bạn của ông Tư và cũng là người đã viết lá thư năm xưa. Hai người ngồi im rất lâu trước khi bật cười vì những chuyện nhỏ nhặt từng khiến họ xa nhau."],
-        ["Bàn trà số bốn","Hạ quyết định ở lại làm việc tại quán một thời gian. Cô sửa lại chiếc bàn số bốn, nơi mẹ cô từng ngồi. Quán đông hơn từ đó, không phải vì quảng cáo mà vì mọi người truyền tai nhau rằng nơi đây có thể giúp một lời chưa nói tìm được đường về."],
-        ["Cuối con dốc","Một năm trôi qua. Vy nhận được lá thư cuối cùng, gửi cho chính cô. Người viết là Hạ: “Cảm ơn vì đã giữ hộ những điều chúng ta tưởng mình đã đánh mất.” Vy cất lá thư vào ngăn kéo, rồi mở cửa quán như mọi ngày."]
+        [
+          "Mở cửa",
+          "Vy mở cửa quán trà vào một sáng mưa. Người khách đầu tiên không gọi trà mà hỏi liệu cô có thể giữ hộ một lá thư trong ba ngày. Cô đồng ý, dù không hiểu vì sao một quán nhỏ lại trở thành nơi gửi gắm những điều người ta không dám nói."
+        ],
+        [
+          "Chiếc ô màu vàng",
+          "Ông Tư thường đến lúc bốn giờ, ngồi cạnh cửa sổ và đọc báo cũ. Hôm nay ông để quên chiếc ô màu vàng. Vy đuổi theo nhưng ông đã đi mất. Trong cán ô có một tờ giấy ghi địa chỉ của một căn nhà đã bị phá từ mười năm trước."
+        ],
+        [
+          "Bức ảnh sau quầy",
+          "Một cô gái tên Hạ đến nhận lá thư. Cô nhận ra người viết là mẹ mình. Bức ảnh sau quầy khiến Hạ bật khóc: đó là tấm ảnh mẹ cô từng chụp ở chính con dốc này. Vy hiểu rằng có những nơi giữ ký ức tốt hơn cả con người."
+        ],
+        [
+          "Cơn mưa tháng bảy",
+          "Mưa lớn làm mất điện. Bốn người trú trong quán kể cho nhau nghe những chuyện chưa từng kể. Ông Tư thú nhận chiếc ô vàng thuộc về người bạn cũ. Hạ kể cô đã giận mẹ suốt nhiều năm vì một hiểu lầm."
+        ],
+        [
+          "Lá thư thứ hai",
+          "Ngày hôm sau, Vy tìm thấy một lá thư khác trong ngăn kéo cũ. Không ai biết nó từ đâu đến. Nội dung chỉ có một câu: “Nếu còn nhớ, hãy quay về trước khi quán đóng cửa.”"
+        ],
+        [
+          "Người trở lại",
+          "Một người đàn ông tóc bạc bước vào. Ông là người bạn của ông Tư và cũng là người đã viết lá thư năm xưa. Hai người ngồi im rất lâu trước khi bật cười vì những chuyện nhỏ nhặt từng khiến họ xa nhau."
+        ],
+        [
+          "Bàn trà số bốn",
+          "Hạ quyết định ở lại làm việc tại quán một thời gian. Cô sửa lại chiếc bàn số bốn, nơi mẹ cô từng ngồi. Quán đông hơn từ đó, không phải vì quảng cáo mà vì mọi người truyền tai nhau rằng nơi đây có thể giúp một lời chưa nói tìm được đường về."
+        ],
+        [
+          "Cuối con dốc",
+          "Một năm trôi qua. Vy nhận được lá thư cuối cùng, gửi cho chính cô. Người viết là Hạ: “Cảm ơn vì đã giữ hộ những điều chúng ta tưởng mình đã đánh mất.” Vy cất lá thư vào ngăn kéo, rồi mở cửa quán như mọi ngày."
+        ]
       ]
     },
     {
@@ -47,14 +101,293 @@
       "desc": "Một chàng giao hàng vô tình trở thành người đưa tin giữa những khu phố bị ngăn cách.",
       "tone": "linear-gradient(145deg,#0f2027,#2c5364)",
       "chapters": [
-        ["Ca giao cuối","Khang nhận ca giao cuối cùng lúc mưa bắt đầu. Địa chỉ nằm trong khu phố đã đóng cửa nhiều năm. Khi tới nơi, anh thấy một chiếc radio cũ phát đi lời nhắn yêu cầu đưa một gói hàng tới ga phía đông."],
-        ["Ga không có trên bản đồ","Khang tìm thấy ga dưới một cầu vượt. Không có tàu, chỉ có những người đang chờ tin từ người thân ở khu bên kia. Anh quyết định nhận thêm một chuyến giao, dù không biết mình đang vận chuyển thứ gì."],
-        ["Mã số 17","Gói hàng chứa một cuốn sổ ghi tên các tuyến đường. Mã 17 dẫn tới một con hẻm bị chặn. Khang dùng những kỹ năng giao hàng để tìm lối vòng qua các tòa nhà và phát hiện một cộng đồng nhỏ đang tự tổ chức cuộc sống."],
-        ["Bản đồ mưa","Một kiến trúc sư trẻ tên An đưa Khang xem bản đồ thoát nước của thành phố. Nếu mưa tiếp tục, khu thấp sẽ ngập. Những con đường bị bỏ quên chính là lối an toàn nhất."],
-        ["Đêm mất điện","Điện toàn khu tắt. Khang dùng đèn xe máy dẫn mọi người qua hẻm. Tin nhắn truyền tay nhau khiến hàng trăm người cùng mở cửa giúp đỡ. Thành phố vốn bị chia cắt bỗng thành một mạng lưới."],
-        ["Chuyến xe đầu tiên","Sáng hôm sau, tuyến xe buýt cũ được mở lại. Khang giao cuốn sổ cho người quản lý ga. Anh nhận ra công việc của mình không chỉ là mang hàng từ điểm A đến B; đôi khi nó là đưa con người tìm lại nhau."],
-        ["Người gửi radio","Khang gặp người đã gửi chiếc radio: một bà cụ sống một mình. Bà chỉ muốn biết tuyến đường cũ có còn tồn tại để con trai có thể về nhà. Khang dẫn bà tới bến xe mới."],
-        ["Thành phố sau mưa","Mưa tạnh. Những biển chỉ đường mới xuất hiện trên các con phố. Khang quay lại ứng dụng giao hàng và nhận một đơn rất bình thường: một bó hoa, một địa chỉ, một lời nhắn. Anh mỉm cười rồi lên xe."]
+        [
+          "Ca giao cuối",
+          "Khang nhận ca giao cuối cùng lúc mưa bắt đầu. Địa chỉ nằm trong khu phố đã đóng cửa nhiều năm. Khi tới nơi, anh thấy một chiếc radio cũ phát đi lời nhắn yêu cầu đưa một gói hàng tới ga phía đông."
+        ],
+        [
+          "Ga không có trên bản đồ",
+          "Khang tìm thấy ga dưới một cầu vượt. Không có tàu, chỉ có những người đang chờ tin từ người thân ở khu bên kia. Anh quyết định nhận thêm một chuyến giao, dù không biết mình đang vận chuyển thứ gì."
+        ],
+        [
+          "Mã số 17",
+          "Gói hàng chứa một cuốn sổ ghi tên các tuyến đường. Mã 17 dẫn tới một con hẻm bị chặn. Khang dùng những kỹ năng giao hàng để tìm lối vòng qua các tòa nhà và phát hiện một cộng đồng nhỏ đang tự tổ chức cuộc sống."
+        ],
+        [
+          "Bản đồ mưa",
+          "Một kiến trúc sư trẻ tên An đưa Khang xem bản đồ thoát nước của thành phố. Nếu mưa tiếp tục, khu thấp sẽ ngập. Những con đường bị bỏ quên chính là lối an toàn nhất."
+        ],
+        [
+          "Đêm mất điện",
+          "Điện toàn khu tắt. Khang dùng đèn xe máy dẫn mọi người qua hẻm. Tin nhắn truyền tay nhau khiến hàng trăm người cùng mở cửa giúp đỡ. Thành phố vốn bị chia cắt bỗng thành một mạng lưới."
+        ],
+        [
+          "Chuyến xe đầu tiên",
+          "Sáng hôm sau, tuyến xe buýt cũ được mở lại. Khang giao cuốn sổ cho người quản lý ga. Anh nhận ra công việc của mình không chỉ là mang hàng từ điểm A đến B; đôi khi nó là đưa con người tìm lại nhau."
+        ],
+        [
+          "Người gửi radio",
+          "Khang gặp người đã gửi chiếc radio: một bà cụ sống một mình. Bà chỉ muốn biết tuyến đường cũ có còn tồn tại để con trai có thể về nhà. Khang dẫn bà tới bến xe mới."
+        ],
+        [
+          "Thành phố sau mưa",
+          "Mưa tạnh. Những biển chỉ đường mới xuất hiện trên các con phố. Khang quay lại ứng dụng giao hàng và nhận một đơn rất bình thường: một bó hoa, một địa chỉ, một lời nhắn. Anh mỉm cười rồi lên xe."
+        ]
+      ]
+    },
+    {
+      "id": "romance_01",
+      "title": "Mùa Hạ Có Em",
+      "author": "Kho Truyện",
+      "cat": "Ngôn tình",
+      "desc": "Một câu chuyện tình yêu nhẹ nhàng giữa Minh và An, bắt đầu từ một mùa hè và lớn lên qua những năm tháng xa cách.",
+      "tone": "linear-gradient(145deg,#f6d365,#fda085)",
+      "status": "FULL",
+      "chapters": [
+        [
+          "Gặp nhau bên hiên nắng",
+          "An chuyển về thị trấn vào đầu mùa hè. Trong buổi chiều đầu tiên, cô trú mưa dưới hiên một tiệm sách và gặp Minh, chàng trai đang xếp lại những cuốn sách cũ. Minh đưa cô một chiếc khăn giấy và chỉ cho cô đường về."
+        ],
+        [
+          "Cuốn sách bị bỏ quên",
+          "Ngày hôm sau An quay lại tiệm sách để trả một cuốn tiểu thuyết cô vô tình cầm nhầm. Minh cười bảo cô có thể giữ thêm vài ngày. Từ đó, họ thường gặp nhau giữa những trang sách và những câu chuyện chưa kể."
+        ],
+        [
+          "Con đường ven sông",
+          "Một tối mất điện, hai người đi bộ dọc bờ sông. An kể về nỗi sợ phải bắt đầu lại ở một nơi xa lạ. Minh không hứa điều gì lớn lao, chỉ nói rằng nếu cô cần một người cùng đi, anh vẫn ở đây."
+        ],
+        [
+          "Lời tỏ tình dưới mưa",
+          "Cuối mùa hè, An nhận được giấy báo phải trở lại thành phố. Minh chạy đến ga trong cơn mưa và nói rằng anh đã quen với việc mỗi ngày đều chờ cô ghé tiệm sách. An nắm lấy tay anh, mỉm cười thay cho câu trả lời."
+        ],
+        [
+          "Khoảng cách",
+          "An lên thành phố học đại học. Những cuộc gọi ban đầu đều đặn rồi thưa dần vì lịch học và công việc. Hai người không cãi nhau, nhưng khoảng cách khiến những điều nhỏ bé trở nên khó nói."
+        ],
+        [
+          "Một mùa đông dài",
+          "Minh gặp biến cố gia đình và phải đóng tiệm sách một thời gian. Anh không kể với An vì sợ cô lo lắng. Khi biết chuyện, An trở về, và cả hai nhận ra tình yêu không chỉ là những ngày vui mà còn là việc ở cạnh nhau khi mọi thứ khó khăn."
+        ],
+        [
+          "Mở lại tiệm sách",
+          "Mùa xuân đến, tiệm sách được mở lại. An đề nghị giúp Minh sắp xếp những kệ sách mới. Họ dành cả ngày lau bụi, dán nhãn và nhớ lại mùa hè đầu tiên."
+        ],
+        [
+          "Chiếc vé trở về",
+          "An nhận một cơ hội làm việc lâu dài ở thành phố nhưng quyết định tìm một công việc có thể trở về thị trấn mỗi cuối tuần. Minh không yêu cầu cô hy sinh tương lai; anh chỉ muốn cả hai cùng tìm một cách để tương lai có chỗ cho nhau."
+        ],
+        [
+          "Mùa hạ mới",
+          "Một năm sau, con đường ven sông lại đầy nắng. Minh đặt một chiếc ghế nhỏ trước tiệm sách, còn An mang về những cuốn sách mới. Họ nhìn nhau và biết rằng có những tình yêu không cần ồn ào để bền lâu."
+        ],
+        [
+          "Ở cạnh nhau",
+          "Nhiều năm sau, tiệm sách vẫn mở. An và Minh vẫn tranh luận về những cuốn sách hay nhất, vẫn đi bộ bên sông sau giờ đóng cửa. Mùa hạ năm ấy không kết thúc; nó chỉ trở thành nơi câu chuyện của họ bắt đầu."
+        ]
+      ]
+    },
+    {
+      "id": "romance_02",
+      "title": "Tháng Mười Và Lá Thư Cũ",
+      "author": "Kho Truyện",
+      "cat": "Ngôn tình",
+      "desc": "Một lá thư chưa gửi đưa Linh trở lại gặp Hoàng, người cô từng bỏ lỡ mười năm trước.",
+      "tone": "linear-gradient(145deg,#d4fc79,#96e6a1)",
+      "status": "FULL",
+      "chapters": [
+        [
+          "Lá thư trong ngăn kéo",
+          "Linh dọn lại căn nhà của bà ngoại và tìm thấy một lá thư mang tên mình. Người viết là Hoàng, chàng trai cô từng thân thiết khi còn học phổ thông. Lá thư chưa bao giờ được gửi."
+        ],
+        [
+          "Mười năm trước",
+          "Linh nhớ lại những ngày cả hai cùng đi học, cùng chia nhau chiếc ô và thường ngồi ở băng ghế dưới gốc cây phượng. Khi gia đình chuyển đi, cô nghĩ Hoàng đã quên mình."
+        ],
+        [
+          "Địa chỉ cuối cùng",
+          "Cuối lá thư là địa chỉ của một quán cà phê nhỏ. Linh tìm đến vào một chiều tháng mười và bất ngờ thấy Hoàng đang ngồi bên cửa sổ."
+        ],
+        [
+          "Cuộc gặp đầu tiên",
+          "Hoàng nhận ra Linh gần như ngay lập tức. Anh cười, nói rằng có những người dù xa bao lâu vẫn có thể nhận ra bằng ánh mắt. Cả hai nói chuyện đến lúc quán đóng cửa."
+        ],
+        [
+          "Điều chưa nói",
+          "Hoàng kể anh từng định gửi lá thư nhưng ngày Linh rời đi, anh không đủ can đảm. Linh cũng thú nhận cô đã chờ một lời giữ lại nhưng không nghe thấy."
+        ],
+        [
+          "Những ngày bình thường",
+          "Họ bắt đầu gặp nhau mỗi tuần. Không ai gọi đó là hẹn hò, nhưng những bữa tối, chuyến đi ngắn và tin nhắn buổi sáng dần trở thành một phần quen thuộc của cuộc sống."
+        ],
+        [
+          "Một lần lựa chọn",
+          "Linh nhận được lời mời làm việc ở một thành phố khác. Lần này Hoàng không im lặng. Anh nói anh không muốn giữ cô lại, nhưng muốn được cùng cô bàn về tương lai."
+        ],
+        [
+          "Bức thư được gửi",
+          "Linh quyết định ở lại thêm một năm. Cô viết một lá thư mới cho Hoàng và tự tay đặt vào hộp thư của quán cà phê. Hoàng đọc xong chỉ cười và hỏi cô có muốn đi ăn tối không."
+        ],
+        [
+          "Tháng mười năm sau",
+          "Một năm sau, họ trở lại chiếc bàn cũ bên cửa sổ. Lá thư cũ đã được đóng khung, còn lá thư mới nằm trong ví Hoàng như một lời nhắc rằng những điều bị bỏ lỡ vẫn có thể được bắt đầu lại."
+        ],
+        [
+          "Muộn nhưng không lỡ",
+          "Linh hiểu rằng đôi khi tình yêu không đến muộn; chỉ là hai người cần thêm thời gian để đủ can đảm nói ra điều mình thật sự muốn. Tháng mười năm ấy trở thành ngày họ chính thức bắt đầu lại."
+        ]
+      ]
+    },
+    {
+      "id": "romance_03",
+      "title": "Em Ở Cuối Hành Lang",
+      "author": "Kho Truyện",
+      "cat": "Ngôn tình",
+      "desc": "Hai người hàng xóm trong cùng một khu chung cư từ xa lạ trở thành người quan trọng nhất của nhau.",
+      "tone": "linear-gradient(145deg,#84fab0,#8fd3f4)",
+      "status": "FULL",
+      "chapters": [
+        [
+          "Căn hộ 1208",
+          "Nam chuyển vào căn hộ mới và thường nghe tiếng đàn piano từ cuối hành lang. Chủ nhân là Vy, cô gái sống một mình và ít khi trò chuyện với hàng xóm."
+        ],
+        [
+          "Chiếc hộp giao nhầm",
+          "Một buổi sáng Nam nhận nhầm gói hàng của Vy. Khi mang sang trả, anh thấy cô đang bị đau tay và đề nghị giúp mở hộp. Đó là lần đầu họ thật sự nói chuyện."
+        ],
+        [
+          "Tách cà phê tối thứ sáu",
+          "Vy mời Nam một tách cà phê để cảm ơn. Họ ngồi ngoài ban công và phát hiện cả hai đều thích những bản nhạc cũ."
+        ],
+        [
+          "Cơn mưa trên tầng cao",
+          "Một trận mưa lớn làm mất điện. Hành lang tối, Vy lo lắng vì sợ tiếng sấm. Nam ngồi ngoài cửa căn hộ của cô kể chuyện cho đến khi điện sáng trở lại."
+        ],
+        [
+          "Không còn xa lạ",
+          "Sau hôm ấy họ thường ăn tối cùng nhau. Nam nhận ra mình bắt đầu chờ tiếng piano mỗi tối, còn Vy quen với việc thấy một ly cà phê đặt trước cửa vào sáng thứ bảy."
+        ],
+        [
+          "Bản nhạc dang dở",
+          "Vy từng bỏ dở ước mơ trở thành nhạc công. Nam khuyên cô thử chơi lại. Anh giúp cô ghi âm bản nhạc đầu tiên sau nhiều năm."
+        ],
+        [
+          "Ngày Vy rời đi",
+          "Gia đình Vy có kế hoạch chuyển cô đến thành phố khác để chăm sóc cha mẹ. Cô nghĩ tốt nhất là rời đi trước khi mối quan hệ trở nên khó xử."
+        ],
+        [
+          "Đừng im lặng",
+          "Nam tìm gặp Vy ngay trước ngày cô chuyển nhà. Anh không giữ cô lại, chỉ nói rằng điều anh sợ nhất không phải khoảng cách mà là việc cả hai lại im lặng như trước."
+        ],
+        [
+          "Chuyến xe chiều",
+          "Vy quyết định ở lại thêm một thời gian. Cô nói mình muốn thử sống theo điều mình lựa chọn, còn Nam nói anh muốn được là người đồng hành trong lựa chọn đó."
+        ],
+        [
+          "Cuối hành lang",
+          "Vài năm sau, họ vẫn sống ở tầng mười hai. Căn hộ cuối hành lang trở thành nơi bạn bè thường tụ tập nghe Vy chơi piano, còn Nam luôn là người ngồi hàng ghế đầu."
+        ]
+      ]
+    },
+    {
+      "id": "romance_04",
+      "title": "Ngày Ta Gặp Lại",
+      "author": "Kho Truyện",
+      "cat": "Ngôn tình",
+      "desc": "Sau nhiều năm xa cách, Khôi và Mai gặp lại nhau trong một dự án chung và học cách tha thứ cho quá khứ.",
+      "tone": "linear-gradient(145deg,#a18cd1,#fbc2eb)",
+      "status": "FULL",
+      "chapters": [
+        [
+          "Tên trên bảng kế hoạch",
+          "Mai nhìn thấy tên Khôi trong danh sách thành viên dự án. Cô đứng lặng vài giây, bởi họ đã không gặp nhau suốt bảy năm."
+        ],
+        [
+          "Cuộc gặp đầu tiên sau bảy năm",
+          "Khôi vẫn nói chuyện bình tĩnh như ngày trước. Anh hỏi thăm công việc của Mai, còn Mai chỉ đáp ngắn gọn. Cả hai đều biết giữa họ còn một câu chuyện chưa kết thúc."
+        ],
+        [
+          "Chuyến công tác",
+          "Công việc buộc họ đi cùng một chuyến công tác. Những giờ chờ ở sân bay và những bữa ăn vội khiến ký ức cũ dần trở lại."
+        ],
+        [
+          "Hiểu lầm cũ",
+          "Mai cuối cùng cũng hỏi vì sao Khôi từng rời đi không một lời giải thích. Khôi kể về biến cố gia đình khiến anh lúc đó tin rằng cách duy nhất là rời xa cô."
+        ],
+        [
+          "Một lời xin lỗi",
+          "Khôi không biện minh. Anh chỉ nói rằng mình đã sai khi quyết định thay cả hai. Mai nhận ra điều cô cần suốt bảy năm không phải một lý do hoàn hảo mà là một lời nói thật."
+        ],
+        [
+          "Cà phê sau giờ họp",
+          "Sau mỗi buổi họp, họ bắt đầu uống cà phê cùng nhau. Không ai vội gọi tên mối quan hệ, nhưng sự tin tưởng được xây lại từ những cuộc trò chuyện nhỏ."
+        ],
+        [
+          "Lựa chọn hiện tại",
+          "Mai nhận lời chuyển công tác sang một thành phố khác. Lần này Khôi hỏi thẳng cô có muốn anh đi cùng không, thay vì tự quyết định thay cô."
+        ],
+        [
+          "Câu trả lời",
+          "Mai nói cô chưa thể quên tất cả, nhưng cô muốn cho hiện tại một cơ hội. Khôi đồng ý rằng tình yêu lần này phải được xây bằng sự thành thật."
+        ],
+        [
+          "Ngày ta gặp lại",
+          "Dự án kết thúc bằng một buổi triển lãm. Hai người đứng giữa đám đông, cùng nhìn thành quả và hiểu rằng cuộc gặp lại này không phải để trở về quá khứ mà để bắt đầu một điều mới."
+        ],
+        [
+          "Từ hôm nay",
+          "Họ chuyển đến cùng thành phố, mỗi người vẫn có công việc riêng và cuộc sống riêng. Nhưng cuối mỗi ngày, họ biết có một người đang chờ mình trở về."
+        ]
+      ]
+    },
+    {
+      "id": "romance_05",
+      "title": "Chạm Vào Bình Minh",
+      "author": "Kho Truyện",
+      "cat": "Ngôn tình",
+      "desc": "Một nữ họa sĩ và một bác sĩ trẻ gặp nhau trong những ngày khó khăn rồi cùng tìm lại niềm tin vào tương lai.",
+      "tone": "linear-gradient(145deg,#89f7fe,#66a6ff)",
+      "status": "FULL",
+      "chapters": [
+        [
+          "Bức tranh chưa hoàn thành",
+          "Thảo là họa sĩ tự do đang mất cảm hứng. Một sáng cô ngồi vẽ ở công viên và gặp Duy, bác sĩ thường đến đó chạy bộ sau ca trực."
+        ],
+        [
+          "Ly trà nóng",
+          "Duy vô tình làm đổ nước lên góc bức tranh. Thảo khó chịu nhưng anh mang lại một ly trà nóng và xin lỗi. Cuộc trò chuyện kéo dài lâu hơn cả hai dự định."
+        ],
+        [
+          "Những ngày mệt mỏi",
+          "Duy kể về những ca trực kéo dài, còn Thảo kể về nỗi sợ tranh của mình không còn ai muốn xem. Họ không giải quyết được vấn đề của nhau, nhưng biết lắng nghe."
+        ],
+        [
+          "Bức tường màu xanh",
+          "Thảo nhận lời vẽ một bức tường cho phòng sinh hoạt của một mái ấm. Duy giúp cô tìm những người có thể hỗ trợ. Lần đầu sau nhiều tháng, cô thấy mình thực sự muốn hoàn thành một tác phẩm."
+        ],
+        [
+          "Đừng bỏ cuộc",
+          "Khi bức tranh bị hư gần ngày bàn giao, Thảo muốn bỏ cuộc. Duy nhắc cô rằng những gì cô làm có ý nghĩa với những đứa trẻ đang chờ. Thảo quay lại phòng tranh và bắt đầu sửa từ đầu."
+        ],
+        [
+          "Ngày bàn giao",
+          "Bức tường hoàn thành rực rỡ. Duy đứng cuối hành lang nhìn lũ trẻ vui đùa, còn Thảo hiểu rằng cảm hứng đôi khi đến từ việc mình tạo ra điều tốt đẹp cho người khác."
+        ],
+        [
+          "Khoảng cách của một thành phố",
+          "Duy nhận nhiệm vụ dài ngày ở tỉnh khác. Họ nhắn tin mỗi tối nhưng cả hai đều bận rộn. Thảo bắt đầu nhận ra mình không chỉ nhớ những cuộc trò chuyện mà nhớ chính con người ấy."
+        ],
+        [
+          "Trở về",
+          "Duy trở lại vào một buổi sáng nhiều nắng. Thảo mang bức tranh mới đến đón anh. Cả hai không nói nhiều, chỉ đứng cạnh nhau và cười."
+        ],
+        [
+          "Bức tranh cuối cùng",
+          "Thảo bắt đầu một bức tranh về bình minh. Ở góc nhỏ, cô vẽ một người đứng cạnh người khác nhìn mặt trời lên. Duy hỏi đó là ai, cô trả lời rằng đó là hai người đã tìm thấy nhau khi cả hai đều đang mệt."
+        ],
+        [
+          "Chạm vào bình minh",
+          "Nhiều năm sau, bức tranh vẫn treo trong ngôi nhà của họ. Mỗi buổi sáng, ánh nắng chiếu qua khung cửa. Họ hiểu rằng hạnh phúc không phải một khoảnh khắc lớn, mà là những ngày bình thường có một người cùng mình thức dậy."
+        ]
       ]
     }
   ],
@@ -64,5 +397,7 @@
   "sessions": {},
   "history": {},
   "profiles": {},
-  "admin": {"userIds":[]}
+  "admin": {
+    "userIds": []
+  }
 }
