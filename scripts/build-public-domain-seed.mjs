@@ -8,7 +8,7 @@ const books=[
   {id:'tay-du-ky',title:'Tây Du Ký',author:'Ngô Thừa Ân / 吳承恩',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/西遊記',sourceTitle:'西遊記',mode:'chapters',expected:100},
   {id:'hau-tay-du-ky',title:'Hậu Tây Du Ký',author:'Đài Sơn Nhân / 無名氏',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/後西遊記',sourceTitle:'後西遊記',mode:'chapters',expected:39},
   {id:'dong-du-ky',title:'Đông Du Ký',author:'Ngô Nguyên Thái / 吳元泰',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/東遊記',sourceTitle:'東遊記',mode:'chapters',expected:56},
-  {id:'nam-du-ky',title:'Nam Du Ký',author:'Dư Tượng Đẩu / 余象斗',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/南遊記',sourceTitle:'南遊記',mode:'south-volumes'},
+  {id:'nam-du-ky',title:'Nam Du Ký',author:'Dư Tượng Đẩu / 余象斗',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/南遊記',sourceTitle:'南遊記',mode:'south-volumes',expected:18},
   {id:'bac-du-ky',title:'Bắc Du Ký',author:'Dư Tượng Đẩu / 余象斗',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/北遊記',sourceTitle:'北遊記',mode:'single-page',expected:24},
   {id:'bat-tien-dac-dao',title:'Bát Tiên Đắc Đạo',author:'Vô Danh Thị / 無名氏',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/八仙得道',sourceTitle:'八仙得道',mode:'chapters',expected:100},
   {id:'nu-tien-ngoai-su',title:'Nữ Tiên Ngoại Sử',author:'Lữ Hùng / 呂熊',category:'Tiên hiệp / Thần ma',status:'FULL',source:'https://zh.wikisource.org/wiki/女仙外史',sourceTitle:'女仙外史',mode:'chapters',expected:100},
@@ -314,7 +314,7 @@ async function main(){
       if(index>=mirrorBooks.length)return;
       const b=mirrorBooks[index];
       console.log('Building mirror '+b.title);
-      results[index]=await buildMirrorBook(b);
+      results[index]=(b.id==='nam-du-ky'||b.id==='bac-du-ky')?await buildBook(b):await buildMirrorBook(b);
     }
   };
   await Promise.all(Array.from({length:Math.min(3,mirrorBooks.length)},()=>worker()));
