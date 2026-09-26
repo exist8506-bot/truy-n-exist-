@@ -8,6 +8,8 @@ try{
  p=await start({});
  let x=await req('/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'nguyenvanhoa',password})});
  if(x.status!==401)throw Error('production created admin without secret');
+ x=await req('/auth/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'firstprod',password})});
+ if(x.status!==201||x.data.user?.role!=='user')throw Error('first public registration became admin: '+JSON.stringify(x.data));
  p.kill('SIGTERM');await wait(300);
  p=await start({BOOTSTRAP_ADMIN_USERNAME:'prodadmin',BOOTSTRAP_ADMIN_PASSWORD:password,BOOTSTRAP_ADMIN_DISPLAY_NAME:'Prod Admin'});
  x=await req('/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'prodadmin',password})});
