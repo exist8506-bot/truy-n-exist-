@@ -634,6 +634,7 @@ async function downloadBook(bookId){
    }catch{}
   }
   if(!chapters.length)chapters=await getDownloadChapterMeta(bookId);
+   if(!chapters.length)throw Error('CHAPTER_LIST_UNAVAILABLE');
   job.total=chapters.length;
   job.done=0;
   job.updatedAt=new Date().toISOString();
