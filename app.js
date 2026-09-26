@@ -190,7 +190,7 @@ function renderHomeMode(){
   c.innerHTML='<div class="panel"><h3>🆕 Mới cập nhật</h3>'+a.map(b=>'<div class="rankrow"><span class="rankcover">🆕</span><span class="grow"><b>'+esc(b.title)+'</b><div class="muted">'+esc(b.author)+' · '+(b.chapterCount||0)+' chương</div></span><button class="btn" onclick="openBook(\''+esc(b.id)+'\')">Đọc</button></div>').join('')+'</div>';return
  }
 }window.setHomeMode=m=>{state.mode=m;state.remoteSearch=false;document.querySelectorAll('#segAll,#segReading,#segRank,#segNew').forEach(x=>x.classList.remove('active'));$('#seg'+({all:'All',reading:'Reading',rank:'Rank',new:'New'}[m]||'All'))?.classList.add('active');renderLibrary()};
-window.setDataFilter=x=>{state.filter=x;renderLibrary()};window.setDataSort=x=>{state.sort=x;renderLibrary()};
+window.setDataFilter=x=>{state.filter=x;const sf=$('#statusFilter');if(sf)sf.value=x==='all'?'all':x;renderLibrary()};window.setDataSort=x=>{state.sort=x;renderLibrary()};
 window.toggleFav=async id=>{let a=favs(),d=deletedFavs();const active=!a.includes(id);a=active?[...a,id]:a.filter(x=>x!==id);d=active?d.filter(x=>x!==id):[...new Set([...d,id])];setFavs(a);setDeletedFavs(d);updateStats();renderLibrary();if(state.token)try{await api('/favorites',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storyId:id,active})});if(active)setDeletedFavs(deletedFavs().filter(x=>x!==id));else setDeletedFavs(deletedFavs().filter(x=>x!==id))}catch{toast('Đã lưu cục bộ, sẽ đồng bộ khi online')}};
 let chapterPage=1,chapterPageSize=100,chapterTotal=0;
 async function loadChapterPage(page=1){
