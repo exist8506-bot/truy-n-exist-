@@ -317,7 +317,7 @@ if(p==='/api/v1/admin/backup'&&req.method==='GET'){const covers={};for(const f o
 }
 if(p.startsWith('/covers/')){const f=path.join(COVERS,path.basename(p));if(fs.existsSync(f))return reply(200,fs.readFileSync(f),mime(f))}
 if(p==='/'||p==='/index.html'){const f=path.join(ROOT,'index.html');return reply(200,fs.readFileSync(f,'utf8'),'text/html; charset=utf-8')}
-const file=path.normalize(path.join(ROOT,p));if(file.startsWith(ROOT)&&fs.existsSync(file)&&fs.statSync(file).isFile()){const ext=path.extname(file);const types={'.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.webmanifest':'application/manifest+json','.html':'text/html; charset=utf-8'};return reply(200,fs.readFileSync(file),types[ext]||'application/octet-stream')}return reply(404,{error:'NOT_FOUND'})}
+const file=path.normalize(path.join(ROOT,p));if((file===ROOT||file.startsWith(ROOT+path.sep))&&fs.existsSync(file)&&fs.statSync(file).isFile()){const ext=path.extname(file);const types={'.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.webmanifest':'application/manifest+json','.html':'text/html; charset=utf-8'};return reply(200,fs.readFileSync(file),types[ext]||'application/octet-stream')}return reply(404,{error:'NOT_FOUND'})}
 
 function zipEntries(buf){
   const out=[]; let eocd=-1;
