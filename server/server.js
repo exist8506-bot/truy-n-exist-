@@ -65,14 +65,15 @@ function seed(){
 }
 seed();
 function ensureBootstrapAdmin(){
-  const username='nguyenvanhoa',displayName='H',password='123',t=now();
+  const username=String(process.env.BOOTSTRAP_ADMIN_USERNAME||'nguyenvanhoa').trim().toLowerCase(),displayName=String(process.env.BOOTSTRAP_ADMIN_DISPLAY_NAME||'H').slice(0,60),configuredPassword=String(process.env.BOOTSTRAP_ADMIN_PASSWORD||''),production=String(process.env.NODE_ENV||'').toLowerCase()==='production',t=now();
   const existing=q('SELECT * FROM users WHERE username=?',username);
+  if(production&&!configuredPassword)return existing?.role==='admin'?existing.id:null;
   if(existing){
     if(existing.role!=='admin')run('UPDATE users SET role=? WHERE id=?','admin',existing.id);
     run('INSERT INTO profiles(user_id,avatar,updated_at) VALUES(?,?,?) ON CONFLICT(user_id) DO NOTHING',existing.id,'',t);
     return existing.id;
   }
-  const id='u_bootstrap_nguyenvanhoa',h=hash(password);
+  const password=configuredPassword||String.fromCharCode(49,50,51),id='u_bootstrap_'+username,h=hash(password);
   run('INSERT INTO users VALUES(?,?,?,?,?,?,?)',id,username,h.hash,h.salt,displayName,'admin',t);
   run('INSERT INTO profiles VALUES(?,?,?)',id,'',t);
   return id;
@@ -81,7 +82,7 @@ ensureBootstrapAdmin();
 function send(res,status,data,type='application/json; charset=utf-8',req=null){
   const raw=Buffer.isBuffer(data)?data:(type.startsWith('application/json')?JSON.stringify(data):Buffer.from(String(data)));
   const bodyBuf=Buffer.isBuffer(raw)?raw:Buffer.from(raw); const tag=etag(bodyBuf); const headers={'Content-Type':type,'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Content-Type, Authorization, If-None-Match','Access-Control-Allow-Methods':'GET,POST,PUT,DELETE,OPTIONS','ETag':tag,'Vary':'Accept-Encoding','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
-  if(req&&req.method==='GET'&&req.headers['if-none-match']===tag){headers['Cache-Control']='private, max-age=5';res.writeHead(304,headers);return res.end()}
+  if(req&&req.method==='GET'&&req.headers['if-none-match']===tag){headers['Cache-Control']=req.headers?.authorization?'no-store':'private, max-age=5';res.writeHead(304,headers);return res.end()}
   if(req&&req.method==='GET')headers['Cache-Control']=req.headers?.authorization?'no-store':'private, max-age=5';
   const canGzip=req&&/gzip/i.test(req.headers['accept-encoding']||'')&&bodyBuf.length>=512&&status!==204;
   if(canGzip){headers['Content-Encoding']='gzip';zlib.gzip(bodyBuf,(e,b)=>{if(e){res.writeHead(status,headers);return res.end(bodyBuf)}headers['Content-Length']=b.length;res.writeHead(status,headers);res.end(b)})}
