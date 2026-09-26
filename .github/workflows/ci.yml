@@ -44,6 +44,8 @@ jobs:
         run: node server/integration.test.js
       - name: API edge validation
         run: node server/edge-validation.test.js
+      - name: Numeric input hardening
+        run: node server/input-hardening.test.js
       - name: Start API smoke test
         run: |
           set +e
