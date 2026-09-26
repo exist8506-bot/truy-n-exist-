@@ -206,13 +206,13 @@ async function loadChapterPage(page=1){
   const normalized=local.map((c,i)=>Array.isArray(c)
     ? {bookId:state.book.id,index:i,title:c[0]||('Chương '+(i+1)),content:c[1]||''}
     : {...c,index:Number(c?.index??i),title:c?.title||('Chương '+(i+1)),content:c?.content||''});
-  const nq=String(q||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('vi');
+   const normLocal=s=>String(s??'').replace(/Đ/g,'D').replace(/đ/g,'d').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('vi'),nq=normLocal(q);
   const filteredLocal=nq?normalized.filter(c=>{
-    const title=String(c.title||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('vi');
-    const content=String(c.content||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('vi');
+     const title=normLocal(c.title||'');
+     const content=normLocal(c.content||'');
     return title.includes(nq)||content.includes(nq);
   }):normalized;
-  const startIndex=(Math.max(1,page)-1)*chapterPageSize;
+   const safePage=Number.isInteger(Number(page))&&Number(page)>=1?Number(page):1,startIndex=(safePage-1)*chapterPageSize;
   const orderedLocal=state.order==='desc'?filteredLocal.slice().reverse():filteredLocal;
   state.chapters=orderedLocal.slice(startIndex,startIndex+chapterPageSize);
   chapterPage=Math.max(1,page);
