@@ -58,6 +58,8 @@ jobs:
         run: node server/zip-hardening.test.js
       - name: Authenticated cache policy regression
         run: node server/auth-cache-policy.test.js
+      - name: Chapter content search regression
+        run: node server/chapter-content-search.test.js
       - name: Start API smoke test
         run: |
           set +e
