@@ -33,4 +33,8 @@ test('library modes keep the complete loaded dataset beyond 100 stories', async 
   await expect(page.locator('#grid .card')).toHaveCount(1);
   await page.locator('#search').fill('');
   await expect(page.locator('#grid .card')).toHaveCount(120);
+  await page.locator('#filterAll').click();
+  await page.locator('#dataTools button').nth(1).click();
+  await expect(page.locator('#grid .card')).toHaveCount(1);
+  await expect(page.locator('#grid .card').first()).toContainText('Story 120');
 });
