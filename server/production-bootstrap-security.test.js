@@ -5,7 +5,7 @@ async function req(path,opts={}){const r=await fetch('http://127.0.0.1:8787/api/
 async function start(extra){const p=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,NODE_ENV:'production',KHO_DATA_DIR:dir,...extra},stdio:['ignore','pipe','pipe']});for(let i=0;i<30;i++){try{const h=await req('/health');if(h.status===200)return p}catch{}await wait(100)}p.kill('SIGTERM');throw Error('server failed')}
 (async()=>{let p;
 try{
- p=await start({});
+ p=await start({BOOTSTRAP_ADMIN_PASSWORD:''});
  let x=await req('/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'nguyenvanhoa',password})});
  if(x.status!==401)throw Error('production created admin without secret');
  x=await req('/auth/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:'firstprod',password})});
