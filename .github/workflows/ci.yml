@@ -46,6 +46,8 @@ jobs:
         run: node server/edge-validation.test.js
       - name: Numeric input hardening
         run: node server/input-hardening.test.js
+      - name: EPUB parser regression
+        run: node server/epub-parser.test.js
       - name: Start API smoke test
         run: |
           set +e
