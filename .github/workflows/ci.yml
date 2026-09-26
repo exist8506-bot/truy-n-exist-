@@ -96,12 +96,11 @@ jobs:
           kill "$pid" 2>/dev/null || true
       - name: Prepare browser tests
         run: npm install --no-save --no-package-lock playwright@1.55.0
-      - name: TTS automatic-next failure regression
-        run: npx playwright test tests/tts-next-load-failure.spec.mjs --config=playwright.config.mjs
       - name: Frontend browser regression
         run: |
           npm install --no-save --no-package-lock playwright@1.55.0
           npx playwright install --with-deps chromium
+          npx playwright test tests/tts-next-load-failure.spec.mjs --config=playwright.config.mjs
           npx playwright test --grep-invert "Vietnamese Unicode and reader font regression" tests --config=playwright.config.mjs
       - name: Docker build
         run: docker build -t kho-truyen-full:ci .
