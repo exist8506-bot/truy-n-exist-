@@ -416,7 +416,7 @@ async function readChapter(i,options={}){
  const loadId=++readerLoadId;
  const bookId=state.book.id;
  const lang=state.lang;
- const j=await fetchChapterData(i);
+  let j;try{j=await fetchChapterData(i)}catch(e){if(loadId===readerLoadId)toast('Không tải được chương; hãy thử lại');return}
  if(loadId!==readerLoadId||bookId!==state.book?.id||lang!==state.lang)return;
  state.chapter=i;state.current=j;if(j?.translationError&&state.lang!=='vi')toast(T('translationError'));show('reader');$('#rbook').textContent=state.book.title;$('#rtitle').textContent=j.title||((T('chapterUnit'))+' '+chapterDisplayNumber(i));$('#rmeta').textContent=T('chapterUnit')+' '+chapterDisplayNumber(i)+' · '+(state.book.author||'');const bookmarkBtn=$('#bookmarkBtn');if(bookmarkBtn)bookmarkBtn.textContent=isBookmarked()?T('marked'):T('mark');$('#rtext').innerHTML=String(j.content||'').split(/\n+/).filter(Boolean).map(x=>'<p>'+esc(x)+'</p>').join('');
  applyReader();recordRead();updateReaderProgress();restoreScroll();if(!options.skipHistory)history.pushState({},'',location.pathname+'#'+encodeURIComponent(state.book.id)+'/chapter/'+i);
@@ -425,7 +425,7 @@ async function readChapter(i,options={}){
 window.readChapter=readChapter;
 window.addEventListener('popstate',async()=>{
  const m=location.hash.match(/^#([^/]+)\/chapter\/(\d+)$/);
- if(m){const id=decodeURIComponent(m[1]);if(state.books.some(b=>b.id===id)){if(state.book?.id!==id)await openBook(id);await readChapter(Number(m[2]),{skipHistory:true});return}}
+  if(m){let id='';try{id=decodeURIComponent(m[1])}catch{}if(id&&state.books.some(b=>b.id===id)){if(state.book?.id!==id)await openBook(id);await readChapter(Number(m[2]),{skipHistory:true});return}}
  if(state.book&&($('#reader')?.classList.contains('show')||$('#detail')?.classList.contains('show')))openDetail();
 });
 function recordRead(){const h=hist().filter(x=>!(x.bookId===state.book.id&&x.chapter===state.chapter));h.unshift({bookId:state.book.id,chapter:state.chapter,title:state.current?.title||'',at:Date.now()});setHist(h.slice(0,50));const p=progress();p[state.book.id]={chapter:state.chapter,percent:(p[state.book.id]?.chapter===state.chapter?Number(p[state.book.id]?.percent)||0:0),updated:Date.now()};setProgress(p);if(state.token)syncProgress().catch(()=>{})}
