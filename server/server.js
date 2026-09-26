@@ -13,7 +13,7 @@ function cacheSet(key,data){CACHE.set(key,{data,expires:Date.now()+CACHE_TTL});i
 function cacheClear(prefix=''){for(const k of CACHE.keys())if(!prefix||k.includes(prefix))CACHE.delete(k)}
 function rateLimit(req,res,group,limit,windowMs=60000){const forwarded=String(req.headers['x-forwarded-for']||'').split(',')[0].trim(),ip=(TRUST_PROXY?forwarded:'')||req.socket.remoteAddress||'unknown',key=group+'|'+ip,nowMs=Date.now();if(RATE.size>2000){for(const [k,v] of RATE)if(v.reset<=nowMs)RATE.delete(k)}let x=RATE.get(key);if(!x||x.reset<=nowMs)x={count:0,reset:nowMs+windowMs};x.count++;RATE.set(key,x);if(x.count>limit){const retry=Math.ceil((x.reset-nowMs)/1000);send(res,429,{error:'RATE_LIMITED',retryAfter:retry});return false}return true}
 function etag(data){return '"'+crypto.createHash('sha1').update(data).digest('hex')+'"'}
-const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+const norm=s=>String(s||'').replace(/Đ/g,'D').replace(/đ/g,'d').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 const q=(sql,...a)=>db.prepare(sql).get(...a); const all=(sql,...a)=>db.prepare(sql).all(...a); const run=(sql,...a)=>db.prepare(sql).run(...a);
 try{db.exec("ALTER TABLE chapters ADD COLUMN search_key TEXT DEFAULT ''");}catch{}
 for(const r of all("SELECT id,title FROM chapters WHERE search_key='' OR search_key IS NULL"))run('UPDATE chapters SET search_key=? WHERE id=?',norm(r.title),r.id);
