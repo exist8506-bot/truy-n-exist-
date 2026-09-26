@@ -58,10 +58,14 @@ x=await req('/stories/b1/chapters?page=1&pageSize=5&q=anh');if(x.status!==200||x
  if(legacyBackup.chapters[0])delete legacyBackup.chapters[0].search_key;
  x=await req('/admin/backup/restore',{method:'POST',headers:{...adminAuth,'content-type':'application/json'},body:JSON.stringify(legacyBackup)});
  if(x.status!==200)throw Error('legacy backup restore failed '+JSON.stringify(x.data));
+ if(!x.data.token)throw Error('legacy backup restore did not refresh admin session');
+ adminAuth.authorization='Bearer '+x.data.token;
  x=await req('/stories/b1/chapters?page=1&pageSize=20&q=Đêm');
  if(x.status!==200||x.data.count<1)throw Error('restored chapter search key was not rebuilt');
  x=await req('/admin/backup/restore',{method:'POST',headers:{...adminAuth,'content-type':'application/json'},body:JSON.stringify(cleanBackup)});
  if(x.status!==200)throw Error('clean backup restore after legacy check failed '+JSON.stringify(x.data));
+ if(!x.data.token)throw Error('clean backup restore did not refresh admin session');
+ adminAuth.authorization='Bearer '+x.data.token;
  const png='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';x=await req('/admin/stories/b1/cover',{method:'POST',headers:{...adminAuth,'content-type':'application/json'},body:JSON.stringify({data:'data:image/png;base64,'+png})});if(x.status!==200||!x.data.cover)throw Error('cover upload failed '+JSON.stringify(x.data)); const badImport='Chương 1\n'+('Nội dung hợp lệ để kiểm tra thiếu chương. ').repeat(3)+'\nChương 3\n'+('Nội dung hợp lệ để kiểm tra thiếu chương. ').repeat(3);const badData='data:text/plain;base64,'+Buffer.from(badImport).toString('base64');
  x=await req('/admin/import/batch',{method:'POST',headers:{...adminAuth,'content-type':'application/json'},body:JSON.stringify({filename:'bad.txt',data:badData,batchSize:2})});if(x.status!==400||x.data.error!=='IMPORT_ISSUES')throw Error('import issue validation failed '+JSON.stringify(x.data));
  x=await req('/admin/import/jobs',{headers:adminAuth});if(x.status!==200||!x.data.jobs.some(j=>j.status==='REJECTED'))throw Error('import jobs failed');
