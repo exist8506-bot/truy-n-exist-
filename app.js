@@ -167,6 +167,8 @@ async function refreshRemoteSearch(page=1){
   if(requestId!==librarySearchId)return;
   state.remoteSearch=false;
   $('#apiStatus').textContent='● Dữ liệu tĩnh';
+   await loadBooks(requestId).catch(()=>{});
+   if(requestId!==librarySearchId)return;
   renderFilterOptions();
   renderLibraryGridOnly();
   toast('Đang dùng dữ liệu tĩnh trên web');
