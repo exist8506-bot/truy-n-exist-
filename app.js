@@ -70,6 +70,7 @@ window.showHistory=()=>{show('history');renderHistory()}; window.showBookcase=()
 function normalizeBook(b){
  const src=b||{};
  const count=Number(src.chapterCount??(Array.isArray(src.chapters)?src.chapters.length:src.chapters??0));
+ const rawIndexes=Array.isArray(src.chapters)?src.chapters.map((x,i)=>Number(x?.index??x?.chapter??i)).filter(Number.isInteger):[];
  return {
   ...src,
   id:String(src.id??''),
@@ -80,8 +81,8 @@ function normalizeBook(b){
   status:String(src.status??'FULL'),
   tone:String(src.tone??''),
   chapterCount:Number.isFinite(count)?Math.max(0,count):0,
-  chapterMin:Number.isInteger(Number(src.chapterMin))?Number(src.chapterMin):(Array.isArray(src.chapters)&&src.chapters.length?Math.min(...src.chapters.map((x,i)=>Number(x?.index??i)).filter(Number.isInteger)):0),
-  chapterMax:Number.isInteger(Number(src.chapterMax))?Number(src.chapterMax):(Array.isArray(src.chapters)&&src.chapters.length?Math.max(...src.chapters.map((x,i)=>Number(x?.index??i)).filter(Number.isInteger)):-1),
+  chapterMin:Number.isInteger(Number(src.chapterMin))?Number(src.chapterMin):(rawIndexes.length?Math.min(...rawIndexes):0),
+  chapterMax:Number.isInteger(Number(src.chapterMax))?Number(src.chapterMax):(rawIndexes.length?Math.max(...rawIndexes):-1),
   chapters:Array.isArray(src.chapters)?src.chapters:[]
  };
 }
