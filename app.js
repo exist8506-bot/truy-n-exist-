@@ -95,7 +95,7 @@ async function loadStaticSeed(){
  }
  return[];
 }
-async function loadBooks(){
+async function loadBooks(searchGuard=null){
  try{
   const out=[];let page=1,total=0;
   do{
@@ -106,13 +106,13 @@ async function loadBooks(){
    page++;
    if(!items.length||items.length<100||out.length>=total)break;
   }while(page<10000);
-  state.books=out.map(normalizeBook);state.apiAvailable=true;state.remoteSearch=false;$('#apiStatus').textContent='● SQLite API';renderFilterOptions();
+   if(searchGuard!==null&&searchGuard!==librarySearchId)return state.books;state.books=out.map(normalizeBook);state.apiAvailable=true;state.remoteSearch=false;$('#apiStatus').textContent='● SQLite API';renderFilterOptions();
  }catch{
   const local=localBooks().map(normalizeBook);
   const staticBooks=await loadStaticSeed();
   const map=new Map(local.map(b=>[b.id,b]));
   for(const item of staticBooks)if(!map.has(item.id))map.set(item.id,item);
-  state.books=[...map.values()];
+   if(searchGuard!==null&&searchGuard!==librarySearchId)return state.books;state.books=[...map.values()];
   state.apiAvailable=false;
   state.remoteSearch=false;
   $('#apiStatus').textContent=staticBooks.length?'● Dữ liệu tĩnh':'● Dữ liệu local';
@@ -177,8 +177,8 @@ function renderLibraryGridOnly(){
  if(state.remoteSearch&&state.libraryTotal>state.libraryPageSize){const pages=Math.ceil(state.libraryTotal/state.libraryPageSize);let h='<div class="row pagerrow"><button class="btn" '+(state.libraryPage<=1?'disabled':'')+' onclick="refreshRemoteSearch('+(state.libraryPage-1)+')">← Trước</button><span class="muted">Trang '+state.libraryPage+'/'+pages+'</span><button class="btn" '+(state.libraryPage>=pages?'disabled':'')+' onclick="refreshRemoteSearch('+(state.libraryPage+1)+')">Sau →</button></div>';$('#pager').innerHTML=h}else $('#pager').innerHTML='';
  renderHomeMode();updateStats()
 }
-window.renderLibrary=()=>{state.libraryPage=1;librarySearchId++;renderLibraryGridOnly();clearTimeout(searchTimer);if(!state.apiAvailable||state.mode!=='all')return;const q=($('#search')?.value||'').trim(),cat=$('#categoryFilter')?.value||'all',status=$('#statusFilter')?.value||'all';if(!q&&cat==='all'&&status==='all'){state.remoteSearch=false;loadBooks().then(()=>renderLibraryGridOnly()).catch(()=>{});return}state.remoteSearch=true;const requestId=librarySearchId;searchTimer=setTimeout(()=>{if(requestId===librarySearchId)refreshRemoteSearch(1)},180)};
-window.setAdvancedFilter=()=>{state.libraryPage=1;librarySearchId++;renderLibraryGridOnly();if(!state.apiAvailable||state.mode!=='all')return;const q=($('#search')?.value||'').trim(),cat=$('#categoryFilter')?.value||'all',status=$('#statusFilter')?.value||'all';if(!q&&cat==='all'&&status==='all'){state.remoteSearch=false;loadBooks().then(()=>renderLibraryGridOnly()).catch(()=>{});return}state.remoteSearch=true;refreshRemoteSearch(1)};
+window.renderLibrary=()=>{state.libraryPage=1;librarySearchId++;renderLibraryGridOnly();clearTimeout(searchTimer);if(!state.apiAvailable||state.mode!=='all')return;const q=($('#search')?.value||'').trim(),cat=$('#categoryFilter')?.value||'all',status=$('#statusFilter')?.value||'all';if(!q&&cat==='all'&&status==='all'){state.remoteSearch=false;const guard=librarySearchId;loadBooks(guard).then(()=>{if(guard===librarySearchId)renderLibraryGridOnly()}).catch(()=>{});return}state.remoteSearch=true;const requestId=librarySearchId;searchTimer=setTimeout(()=>{if(requestId===librarySearchId)refreshRemoteSearch(1)},180)};
+window.setAdvancedFilter=()=>{state.libraryPage=1;librarySearchId++;renderLibraryGridOnly();if(!state.apiAvailable||state.mode!=='all')return;const q=($('#search')?.value||'').trim(),cat=$('#categoryFilter')?.value||'all',status=$('#statusFilter')?.value||'all';if(!q&&cat==='all'&&status==='all'){state.remoteSearch=false;const guard=librarySearchId;loadBooks(guard).then(()=>{if(guard===librarySearchId)renderLibraryGridOnly()}).catch(()=>{});return}state.remoteSearch=true;refreshRemoteSearch(1)};
 
 function renderHomeMode(){
  const c=$('#homeMode');if(!c)return;
