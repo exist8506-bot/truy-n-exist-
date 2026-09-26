@@ -343,5 +343,10 @@ function parseEpub(buf){
 function parseImportFile(filename,data){const ext=path.extname(filename||'').toLowerCase(),buf=Buffer.from(String(data||'').replace(/^data:[^;]+;base64,/,'').trim(),'base64');if(!buf.length)throw new Error('EMPTY_FILE');if(buf.length>20*1024*1024)throw new Error('IMPORT_TOO_LARGE');if(ext==='.epub'||buf.readUInt32LE(0)===0x04034b50){const e=parseEpub(buf);return {...e,format:'epub',bytes:buf.length}}const text=buf.toString('utf8').replace(/\u0000/g,'');return {title:path.basename(filename||'Truyện',ext).replace(/[_-]+/g,' ').trim(),author:'',chapters:chapterizeText(text),format:'txt',bytes:buf.length};}
 
 function mime(f){return {'.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp'}[path.extname(f).toLowerCase()]||'application/octet-stream'}
-const server=http.createServer((req,res)=>{try{route(req,res)}catch(e){console.error(e);if(!res.headersSent)send(res,500,{error:'INTERNAL_ERROR',detail:e.message},'application/json; charset=utf-8',req)}});server.listen(PORT,()=>console.log(`Kho Truyen API v1.19.0 http://localhost:${PORT}`));
-process.on('SIGINT',()=>{db.close();server.close(()=>process.exit(0))});process.on('SIGTERM',()=>{db.close();server.close(()=>process.exit(0))});
+const server=http.createServer((req,res)=>{try{route(req,res)}catch(e){console.error(e);if(!res.headersSent)send(res,500,{error:'INTERNAL_ERROR',detail:e.message},'application/json; charset=utf-8',req)}});
+if(require.main===module){
+ server.listen(PORT,()=>console.log(`Kho Truyen API v1.19.0 http://localhost:${PORT}`));
+ process.on('SIGINT',()=>{db.close();server.close(()=>process.exit(0))});
+ process.on('SIGTERM',()=>{db.close();server.close(()=>process.exit(0))});
+}
+module.exports={parseEpub,chapterizeText,stripHtml,parseImportFile,db,server};
