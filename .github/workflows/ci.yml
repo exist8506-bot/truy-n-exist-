@@ -52,6 +52,8 @@ jobs:
         run: node server/bootstrap-persistence.test.js
       - name: Chinese chapterize regression
         run: node server/chinese-chapterize.test.js
+      - name: Renumber search regression
+        run: node server/renumber-search.test.js
       - name: Start API smoke test
         run: |
           set +e
