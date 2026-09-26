@@ -9,6 +9,9 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    env:
+      BOOTSTRAP_ADMIN_USERNAME: nguyenvanhoa
+      BOOTSTRAP_ADMIN_PASSWORD: '123'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
