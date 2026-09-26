@@ -27,6 +27,8 @@ async function req(path,opts={}){
     const data='data:text/plain;base64,'+Buffer.from('Chương 1\\nNội dung đủ dài để kiểm tra batch size.').toString('base64');
     x=await req('/admin/import/batch',{method:'POST',headers:auth,body:JSON.stringify({filename:'bad-batch.txt',data,batchSize:'abc'})});
     if(x.status!==400||x.data.error!=='INVALID_BATCH_SIZE')throw Error('invalid batchSize accepted: '+JSON.stringify(x));
+    x=await req('/admin/import/commit',{method:'POST',headers:auth,body:JSON.stringify({filename:'short.txt',data:'data:text/plain;base64,'+Buffer.from('Chương 1\nngắn').toString('base64')})});
+    if(x.status!==400||x.data.error!=='IMPORT_ISSUES'||!x.data.issues?.short?.length)throw Error('short commit import accepted: '+JSON.stringify(x));
     x=await req('/admin/stories/b1/renumber',{method:'POST',headers:auth,body:JSON.stringify({start:'abc'})});
     if(x.status!==400||x.data.error!=='INVALID_RENUMBER_START')throw Error('invalid renumber start accepted: '+JSON.stringify(x));
     console.log('numeric input hardening OK');
