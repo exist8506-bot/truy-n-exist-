@@ -9,6 +9,8 @@ test('Vietnamese Unicode and reader font regression', async ({ browser }) => {
   await expect(page.locator('html')).toHaveAttribute('lang','vi');
   await expect(page.locator('#grid')).toContainText('Mùa Sao Trên Đỉnh Núi');
   await expect(page.locator('#grid')).toContainText('Quán Nhỏ Cuối Con Dốc');
+  await page.locator('#search').fill('Mùa Sao');
+  await expect(page.locator('#grid .card')).toHaveCount(1);
   await page.locator('#grid .card').first().locator('.info').click();
   await page.locator('#chapters .chapter').first().click();
   await expect(page.locator('#rtext')).toContainText('Đêm');
