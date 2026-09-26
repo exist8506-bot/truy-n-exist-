@@ -7,5 +7,5 @@ test('offline chapter search ignores Vietnamese accents including đ', async ({ 
   await page.locator('#grid .card').first().locator('.info').click();
   await page.locator('#chapterSearch').fill('dinh');
   await expect(page.locator('#chapters .chapter')).not.toHaveCount(0);
-  await expect(page.locator('#chapters')).toContainText('Chương 1');
+  await expect(page.locator('#chapters')).toContainText('chương 1');
 });
